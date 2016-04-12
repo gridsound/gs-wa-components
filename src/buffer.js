@@ -1,6 +1,6 @@
 "use strict";
 
-WalContext.Buffer = function( ctx, file, fn ) {
+walContext.Buffer = function( ctx, file, fn ) {
 	var
 		that = this,
 		reader = new FileReader()
@@ -32,9 +32,9 @@ WalContext.Buffer = function( ctx, file, fn ) {
 	}
 };
 
-WalContext.Buffer.prototype = {
+walContext.Buffer.prototype = {
 	createSample: function( dest ) {
-		var wSample = new WalContext.Sample( this.ctx, this, dest );
+		var wSample = new walContext.Sample( this.ctx, this, dest );
 		return wSample;
 	},
 	getPeaks: function( channelId, nbPeaks, timeA, timeB ) {
