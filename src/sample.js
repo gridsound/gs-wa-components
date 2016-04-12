@@ -3,8 +3,7 @@
 walContext.Sample = function( ctx, wBuffer, dest ) {
 	this.ctx = ctx;
 	this.wBuffer = wBuffer;
-	this.destination = dest || ctx.destination;
-	this.destNode = this.destination;
+	this.destNode = dest || ctx.destination;
 
 	this.when = 0;
 	this.offset = 0;
@@ -23,7 +22,11 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		this.source.start( when || this.when, offset || this.offset, duration || this.duration );
+		this.source.start(
+			when     !== undefined ? when     : this.when,
+			offset   !== undefined ? offset   : this.offset,
+			duration !== undefined ? duration : this.duration
+		);
 		return this;
 	},
 	stop: function( when ) {
