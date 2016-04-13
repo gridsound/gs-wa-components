@@ -27,6 +27,8 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
+		var that = this;
+
 		if ( !this.started ) {
 			this.started = true;
 			when = when !== undefined ? when : this.when;
@@ -37,7 +39,7 @@ walContext.Sample.prototype = {
 
 			function onplay() {
 				++that.wCtx.nbPlaying;
-				this.playing = true;
+				that.playing = true;
 			}
 			if ( when > 0 ) {
 				this.playTimeoutId = setTimeout( onplay, when );
