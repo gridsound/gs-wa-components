@@ -1,9 +1,9 @@
 "use strict";
 
-walContext.Sample = function( ctx, wBuffer, dest ) {
-	this.ctx = ctx;
+walContext.Sample = function( wCtx, wBuffer, dest ) {
+	this.wCtx = wCtx;
 	this.wBuffer = wBuffer;
-	this.destNode = dest || ctx.destination;
+	this.destNode = dest || wCtx.gain;
 
 	this.when = 0;
 	this.offset = 0;
@@ -16,7 +16,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	load: function() {
-		this.source = this.ctx.createBufferSource();
+		this.source = this.wCtx.ctx.createBufferSource();
 		this.source.buffer = this.wBuffer.buffer;
 		this.source.connect( this.destNode );
 		return this;

@@ -1,16 +1,16 @@
 "use strict";
 
-walContext.Buffer = function( ctx, file, fn ) {
+walContext.Buffer = function( wCtx, file, fn ) {
 	var
 		that = this,
 		reader = new FileReader()
 	;
 
-	this.ctx = ctx;
+	this.wCtx = wCtx;
 	this.isReady = false;
 
 	function decode( fileBuffer ) {
-		that.ctx.decodeAudioData( fileBuffer, function( buffer ) {
+		that.wCtx.ctx.decodeAudioData( fileBuffer, function( buffer ) {
 			that.buffer = buffer;
 			that.isReady = true;
 			if ( fn ) {
@@ -34,7 +34,7 @@ walContext.Buffer = function( ctx, file, fn ) {
 
 walContext.Buffer.prototype = {
 	createSample: function( dest ) {
-		var wSample = new walContext.Sample( this.ctx, this, dest );
+		var wSample = new walContext.Sample( this.wCtx, this, dest );
 		return wSample;
 	},
 	getPeaks: function( channelId, nbPeaks, timeA, timeB ) {
@@ -65,11 +65,13 @@ walContext.Buffer.prototype = {
 	},
 	getWaveForm: function( width, height, colorWave, colorBack ) {
 		var
-			leftChan = this.getPeaks( 0, width ),
-			rightChan = this.getPeaks( 1, width ),
+			l, r,
+			i = 0,
+			h2 = height / 2,
+			lChan = this.getPeaks( 0, width ),
+			rChan = this.buffer.numberOfChannels > 1 ? this.getPeaks( 1, width ) : lChan,
 			canvas = document.createElement( "canvas" ),
-			canvasCtx = canvas.getContext( "2d" ),
-			m = height / 2
+			canvasCtx = canvas.getContext( "2d" )
 		;
 
 		canvas.width = width;
@@ -81,9 +83,9 @@ walContext.Buffer.prototype = {
 		if ( colorBack || colorWave ) {
 			canvasCtx.strokeStyle = colorWave || colorBack;
 			canvasCtx.beginPath();
-			for ( var i = 0; i < width; i++ ) {
-				var l = m * ( 1 - leftChan[ i ] );
-				var r = m * ( 1 + rightChan[ i ] );
+			for ( ; i < width; ++i ) {
+				l = h2 * ( 1 - lChan[ i ] );
+				r = h2 * ( 1 + rChan[ i ] );
 				canvasCtx.moveTo( i, colorWave ? l : height );
 				canvasCtx.lineTo( i, r );
 				if ( !colorWave ) {
@@ -95,4 +97,4 @@ walContext.Buffer.prototype = {
 		}
 		return canvas;
 	}
-}
+};
