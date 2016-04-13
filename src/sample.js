@@ -52,6 +52,7 @@ walContext.Sample.prototype = {
 	stop: function( when ) {
 		if ( this.started ) {
 			this.source.stop( when );
+			this.onended();
 		}
 		return this;
 	},
