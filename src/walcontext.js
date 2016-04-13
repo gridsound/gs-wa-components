@@ -4,7 +4,7 @@ function walContext() {
 	this.ctx = new AudioContext();
 	this.buffers = [];
 	this.gain = this.ctx.createGain();
-
+	this.nbPlaying = 0;
 	this.gain.connect( this.ctx.destination );	
 };
 
