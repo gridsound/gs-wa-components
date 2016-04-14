@@ -4,10 +4,12 @@ function walContext() {
 	this.ctx = new AudioContext();
 	this.buffers = [];
 	this.gainNode = this.ctx.createGain();
+	this.analyser = this.ctx.createAnalyser();
 	this.nbPlaying = 0;
 
 	this.gainNode.connect( this.ctx.destination );
-	this.destination = this.gainNode;
+	this.analyser.connect( this.gainNode );
+	this.destination = this.analyser;
 };
 
 walContext.prototype = {
