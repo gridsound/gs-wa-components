@@ -3,7 +3,7 @@
 walContext.Sample = function( wCtx, wBuffer, dest ) {
 	this.wCtx = wCtx;
 	this.wBuffer = wBuffer;
-	this.destNode = dest || wCtx.gain;
+	this.destNode = dest || wCtx.destination;
 
 	this.fnOnended = function() {};
 	this.when = 0;
