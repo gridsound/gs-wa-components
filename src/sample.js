@@ -51,7 +51,7 @@ walContext.Sample.prototype = {
 	},
 	stop: function( when ) {
 		if ( this.started ) {
-			this.source.stop( this.wCtx.ctx.currentTime + when );
+			this.source.stop( this.wCtx.ctx.currentTime + ( when || 0 ) );
 			this.onended();
 		}
 		return this;
