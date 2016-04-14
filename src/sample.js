@@ -32,16 +32,16 @@ walContext.Sample.prototype = {
 		if ( !this.started ) {
 			this.started = true;
 			when = when !== undefined ? when : this.when;
-			this.source.start( when,
+			this.source.start(
+				this.wCtx.ctx.currentTime + when,
 				offset   !== undefined ? offset   : this.offset,
 				duration !== undefined ? duration : this.duration
 			);
-
 			function onplay() {
 				++that.wCtx.nbPlaying;
 				that.playing = true;
 			}
-			if ( when > 0 ) {
+			if ( when > this.wCtx.ctx.currentTime ) {
 				this.playTimeoutId = setTimeout( onplay, when );
 			} else {
 				onplay();
@@ -51,7 +51,7 @@ walContext.Sample.prototype = {
 	},
 	stop: function( when ) {
 		if ( this.started ) {
-			this.source.stop( when );
+			this.source.stop( this.wCtx.ctx.currentTime + when );
 			this.onended();
 		}
 		return this;
