@@ -33,8 +33,8 @@ walContext.Buffer = function( wCtx, file, fn ) {
 };
 
 walContext.Buffer.prototype = {
-	createSample: function( dest ) {
-		var wSample = new walContext.Sample( this.wCtx, this, dest );
+	createSample: function() {
+		var wSample = new walContext.Sample( this.wCtx, this );
 		return wSample;
 	},
 	getPeaks: function( channelId, nbPeaks, timeA, timeB ) {

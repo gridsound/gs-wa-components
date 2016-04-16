@@ -1,9 +1,9 @@
 "use strict";
 
-walContext.Sample = function( wCtx, wBuffer, dest ) {
+walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.wCtx = wCtx;
 	this.wBuffer = wBuffer;
-	this.destNode = dest || wCtx.destination;
+	this.connectedTo = wNode ? wNode.nodeIn : wCtx.nodeIn;
 
 	this.fnOnended = function() {};
 	this.when = 0;
@@ -15,14 +15,22 @@ walContext.Sample = function( wCtx, wBuffer, dest ) {
 };
 
 walContext.Sample.prototype = {
-	connect: function( node ) {
-		this.destNode = node;
+	connect: function( wNode ) {
+		this.connectedTo = wNode.nodeIn;
+		this.load();
+		return this;
+	},
+	disconnect: function() {
+		if ( this.source ) {
+			this.source.disconnect( this.connectedTo );
+			this.connectedTo = null;
+		}
 		return this;
 	},
 	load: function() {
 		this.source = this.wCtx.ctx.createBufferSource();
 		this.source.buffer = this.wBuffer.buffer;
-		this.source.connect( this.destNode );
+		this.source.connect( this.connectedTo );
 		this.source.onended = this.onended.bind( this );
 		return this;
 	},
@@ -36,7 +44,7 @@ walContext.Sample.prototype = {
 				this.wCtx.ctx.currentTime + when,
 				offset   !== undefined ? offset   : this.offset,
 				duration !== undefined ? duration : this.duration
-			);
+				);
 			function onplay() {
 				++that.wCtx.nbPlaying;
 				that.playing = true;
