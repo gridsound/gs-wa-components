@@ -47,17 +47,17 @@ walContext.Buffer.prototype = {
 			peaks = new Array( nbPeaks ),
 			buf = this.buffer.getChannelData( channelId ),
 			bufRangeSize = ( timeB - timeA ) * this.buffer.sampleRate,
-			bufTimeA = ~~( timeA * this.buffer.sampleRate ),
+			bufTimeA = timeA * this.buffer.sampleRate,
 			sampleSize = bufRangeSize / nbPeaks,
-			peaksIncr = ~~( sampleSize / 10 )
+			peaksIncr = sampleSize / 10
 		;
 
 		for ( ; x < nbPeaks; ++x ) {
-			a = ~~( bufTimeA + x * sampleSize );
-			b = ~~( a + sampleSize );
+			a = bufTimeA + x * sampleSize;
+			b = a + sampleSize;
 			max = 0;
 			for ( ; a < b; a += peaksIncr ) {
-				max = Math.max( max, Math.abs( buf[ a ] ) );
+				max = Math.max( max, Math.abs( buf[ ~~a ] ) );
 			}
 			peaks[ x ] = max;
 		}
