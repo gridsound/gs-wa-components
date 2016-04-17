@@ -12,34 +12,59 @@ walContext.Filters = function( wCtx ) {
 walContext.Filters.prototype = {
 	pushBack: function( node ) {
 		if ( this.nodes.length > 0 ) {
-			this.nodes[ this.nodes.length - 1 ].disconnect( this.nodeOut );
+			this.nodes[ this.nodes.length - 1 ].disconnect();
 			this.nodes[ this.nodes.length - 1 ].connect( node );
 		} else {
-			this.nodeIn.disconnect( this.nodeOut );	
+			this.nodeIn.disconnect();
 			this.nodeIn.connect( node );
 		}
 		node.connect( this.nodeOut );
 		this.nodes.push( node );
 	},
+	pushFront: function( node ) {
+		if ( this.nodes.length === 0 ) {
+			this.pushBack( node );
+		} else {
+			this.nodeIn.disconnect();
+			this.nodeIn.connect( node );
+			this.nodes.unshift( node );
+			node.connect( this.nodes[ 1 ] );
+		}
+	},
 	popBack: function() {
-		var poped = this.nodes.pop();
+		var poped = this.nodes.length ? this.nodes.pop() : null;
 		if ( poped ) {
-			poped.disconnect( this.nodeOut );
+			poped.disconnect();
 			if ( this.nodes.length === 0 ) {
-				this.nodeIn.disconnect( poped );
+				this.nodeIn.disconnect();
 				this.nodeIn.connect( this.nodeOut );
 			} else {
-				this.nodes[ this.nodes.length - 1 ].disconnect( poped );
+				this.nodes[ this.nodes.length - 1 ].disconnect();
 				this.nodes[ this.nodes.length - 1 ].connect( this.nodeOut );
 			}
+		}
+		return poped;
+	},
+	popFront: function() {
+		var poped;
+
+		if ( !this.nodes.length ) {
+			poped = null;
+		} else if ( this.nodes.length === 1 ) {
+			poped = this.popBack();
+		} else {
+			this.nodeIn.disconnect();
+			this.nodes[ 0 ].disconnect();
+			poped = this.nodes.shift();
+			this.nodeIn.connect( this.nodes[ 0 ] );
 		}
 		return poped;
 	},
 	popAll: function() {
 		if ( this.nodes.length > 0 ) {
 			var poped = this.nodes;
-			this.nodeIn.disconnect( this.nodes[ 0 ] );
-			poped[ poped.length - 1 ].disconnect( this.nodeOut );
+			this.nodeIn.disconnect();
+			poped[ poped.length - 1 ].disconnect();
 			this.nodeIn.connect( this.nodeOut );
 			this.nodes = [];
 			return poped;
@@ -52,7 +77,7 @@ walContext.Filters.prototype = {
 		this.connectedTo = node;
 	},
 	disconnect: function() {
-		this.nodeOut.disconnect( this.connectedTo );
+		this.nodeOut.disconnect();
 		this.connectedTo = null;
 	},
 	gain: function( vol ) {
