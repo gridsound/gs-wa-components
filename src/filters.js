@@ -1,23 +1,11 @@
 "use strict";
 
 walContext.Filters = function( wCtx ) {
+	this.wCtx = wCtx;
 	this.nodes = [];
 
-	// Node `input` sur laquelle seront connectés tous les nodes entrants
-	// On peut ainsi changer l'ordre des noeuds dans le tableau sans risques
 	this.nodeIn = wCtx.ctx.createGain();
-	
-	// Node `output` sur laquelle sera connecté le dernier node du tableau
-	// C'est elle qui devra être connecté à d'autres nodes
-	// Gain permettant de controler le volume d'un groupe de samples/nodes
 	this.nodeOut = wCtx.ctx.createGain();
-
-	// Ce n'est pas un nodeOut car cd n'est pas un node 
-	// appartenant au sample, c'est le node nodeIn d'un wNode
-	// auquel le sample sera connecté
-	// Besoin de le connaitre pour la deconnection
-	// this.connectedTo;
-
 	this.nodeIn.connect( this.nodeOut );
 };
 
@@ -58,9 +46,10 @@ walContext.Filters.prototype = {
 		}
 		return null;
 	},
-	connect: function( wNode ) {
-		this.nodeOut.connect( wNode.nodeIn );
-		this.connectedTo = wNode.nodeIn;
+	connect: function( node ) {
+		node = node.nodeIn || node;
+		this.nodeOut.connect( node );
+		this.connectedTo = node;
 	},
 	disconnect: function() {
 		this.nodeOut.disconnect( this.connectedTo );

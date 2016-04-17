@@ -15,14 +15,13 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 };
 
 walContext.Sample.prototype = {
-	connect: function( wNode ) {
-		this.connectedTo = wNode.nodeIn;
-		this.load();
+	connect: function( node ) {
+		this.connectedTo = node.nodeIn || node;
 		return this;
 	},
 	disconnect: function() {
 		if ( this.source ) {
-			this.source.disconnect( this.connectedTo );
+			this.source.disconnect();
 			this.connectedTo = null;
 		}
 		return this;
@@ -35,16 +34,16 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		var that = this;
-
 		if ( !this.started ) {
+			var that = this;
+
 			this.started = true;
 			when = when !== undefined ? when : this.when;
 			this.source.start(
 				this.wCtx.ctx.currentTime + when,
 				offset   !== undefined ? offset   : this.offset,
 				duration !== undefined ? duration : this.duration
-				);
+			);
 			function onplay() {
 				++that.wCtx.nbPlaying;
 				that.playing = true;
