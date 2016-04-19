@@ -17,6 +17,9 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 walContext.Sample.prototype = {
 	connect: function( node ) {
 		this.connectedTo = node.nodeIn || node;
+		if ( this.source ) {
+			this.source.connect( this.connectedTo );
+		}
 		return this;
 	},
 	disconnect: function() {
@@ -29,8 +32,10 @@ walContext.Sample.prototype = {
 	load: function() {
 		this.source = this.wCtx.ctx.createBufferSource();
 		this.source.buffer = this.wBuffer.buffer;
-		this.source.connect( this.connectedTo );
 		this.source.onended = this.onended.bind( this );
+		if ( this.connectedTo ) {
+			this.source.connect( this.connectedTo );
+		}
 		return this;
 	},
 	start: function( when, offset, duration ) {
@@ -75,6 +80,7 @@ walContext.Sample.prototype = {
 				clearTimeout( this.playTimeoutId );
 			}
 			this.fnOnended();
+			this.source = null;
 		}
 		return this;
 	}

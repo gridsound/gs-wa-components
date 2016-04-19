@@ -5,9 +5,9 @@ function walContext() {
 	this.destination = this.ctx.destination;
 	this.buffers = [];
 	this.nbPlaying = 0;
-	
 	this.gainNode = this.ctx.createGain();
 	this.filters = this.createFilters();
+	
 	this.filters.pushBack( this.gainNode );
 	this.filters.connect( this.ctx.destination );
 	this.nodeIn = this.filters.nodeIn;
