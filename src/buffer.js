@@ -2,36 +2,6 @@
 
 (function() {
 
-function waveform( wbuf, canvas, color, inverted ) {
-	var
-		i = 0,
-		w = canvas.width,
-		h = canvas.height,
-		h2 = h / 2,
-		canvasCtx = canvas.getContext( "2d" ),
-		lChan = wbuf.getPeaks( 0, w ),
-		rChan = wbuf.buffer.numberOfChannels > 1 ? wbuf.getPeaks( 1, w ) : lChan
-	;
-
-	canvasCtx.strokeStyle = color ;
-	canvasCtx.beginPath();
-	if ( inverted ) {
-		for ( ; i < w; ++i ) {
-			canvasCtx.moveTo( i, h );
-			canvasCtx.lineTo( i, h2 * ( 1 + rChan[ i ] ) );
-			canvasCtx.moveTo( i, h2 * ( 1 - lChan[ i ] ) );
-			canvasCtx.lineTo( i, 0 );
-		}
-	} else {
-		for ( ; i < w; ++i ) {
-			canvasCtx.moveTo( i, h2 * ( 1 - lChan[ i ] ) );
-			canvasCtx.lineTo( i, h2 * ( 1 + rChan[ i ] ) );
-		}
-	}
-	canvasCtx.stroke();
-	return canvas;
-}
-
 walContext.Buffer = function( wCtx, file, fn ) {
 	var
 		that = this,
@@ -94,12 +64,6 @@ walContext.Buffer.prototype = {
 			peaks[ x ] = max;
 		}
 		return peaks;
-	},
-	drawWaveform: function( canvas, color ) {
-		return waveform( this, canvas, color );
-	},
-	drawInvertedWaveform: function( canvas, color ) {
-		return waveform( this, canvas, color, true );
 	}
 };
 
