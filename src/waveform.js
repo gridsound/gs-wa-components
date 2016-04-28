@@ -9,51 +9,42 @@ function colorPix( data, index, color ) {
 	data[ index + 3 ] = color[ 3 ];    
 }
 
-function waveform( wbuf, canvas, color, inverted ) {
+function waveform( wbuf, canvasImg, color, inverted ) {
 	var
-		img,
 		y, ymin, ymax,
+		data = canvasImg.data,
 		x = 0,
-		w = canvas.width,
-		h = canvas.height,
+		w = canvasImg.width,
+		h = canvasImg.height,
 		h2 = h / 2,
-		canvasCtx = canvas.getContext( "2d" ),
 		lChan = wbuf.getPeaks( 0, w ),
 		rChan = wbuf.buffer.numberOfChannels > 1 ? wbuf.getPeaks( 1, w ) : lChan
 	;
 
 	if ( inverted ) {
-		canvasCtx.fillStyle = "rgba(" +
-			color[ 0 ] + "," +
-			color[ 1 ] + "," +
-			color[ 2 ] + "," +
-			color[ 3 ] + ")";
-		canvasCtx.fillRect( 0, 0, w, h );
+		for ( ; x < data.length; x += 4 ) {
+			colorPix( data, x, color );
+		}
 		color = [ 0, 0, 0, 0 ];
 	}
 
-	img = inverted
-		? canvasCtx.getImageData( 0, 0, w, h )
-		: canvasCtx.createImageData( w, h );
-
-	for ( ; x < w; ++x ) {
+	for ( x = 0; x < w; ++x ) {
 		ymin = ~~( h2 * ( 1 - lChan[ x ] ) );
 		ymax = ~~( h2 * ( 1 + rChan[ x ] ) );
 		for( y = ymin; y <= ymax ; ++y ) {
-			colorPix( img.data, ( y * w + x ) * 4, color );
+			colorPix( data, ( y * w + x ) * 4, color );
 		}
-		colorPix( img.data, ( h2 * w + x ) * 4, color );
+		colorPix( data, ( h2 * w + x ) * 4, color );
 	}
-	canvasCtx.putImageData( img, 0, 0 );
-	return canvas;
+	return canvasImg;
 }
 
-walContext.Buffer.prototype.drawWaveform = function( canvas, color ) {
-	return waveform( this, canvas, color );
+walContext.Buffer.prototype.drawWaveform = function( canvasImg, color ) {
+	return waveform( this, canvasImg, color );
 };
 
-walContext.Buffer.prototype.drawInvertedWaveform = function( canvas, color ) {
-	return waveform( this, canvas, color, true );
+walContext.Buffer.prototype.drawInvertedWaveform = function( canvasImg, color ) {
+	return waveform( this, canvasImg, color, true );
 };
 
 })();
