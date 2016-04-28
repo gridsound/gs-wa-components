@@ -35,5 +35,11 @@ walContext.prototype = {
 			this.load();
 		});
 		return this;
+	},
+	playSamples: function( sampleArr ) {
+		$.each( sampleArr, function() {
+			this.start();
+		});
+		return this;
 	}
 };
