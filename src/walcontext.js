@@ -41,5 +41,11 @@ walContext.prototype = {
 			this.start();
 		});
 		return this;
+	},
+	stopSamples: function( sampleArr ) {
+		$.each( sampleArr, function() {
+			this.stop();
+		});
+		return this;
 	}
 };
