@@ -29,5 +29,11 @@ walContext.prototype = {
 	},
 	createFilters: function() {
 		return new walContext.Filters( this );
+	},
+	loadSamples: function( sampleArr ) {
+		$.each( sampleArr, function() {
+			this.load();
+		});
+		return this;
 	}
 };
