@@ -36,9 +36,13 @@ walContext.prototype = {
 		});
 		return this;
 	},
-	playSamples: function( sampleArr ) {
+	playSamples: function( sampleArr, when ) {
+		var offset, start;
+
 		$.each( sampleArr, function() {
-			this.start();
+			start = when ? this.when - when : this.when;
+			offset = when ? when - this.when : this.offset;
+			this.start( start, offset < 0 ? 0 : offset );
 		});
 		return this;
 	},
