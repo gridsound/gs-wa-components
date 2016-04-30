@@ -51,5 +51,14 @@ walContext.prototype = {
 			this.stop();
 		});
 		return this;
+	},
+	getLastSample: function( sampleArr ) {
+		var s = sampleArr[ 0 ];
+
+		$.each( sampleArr, function() {
+			if ( this.when + this.duration > s.when + s.duration )
+				s = this;
+		});
+		return s;
 	}
 };
