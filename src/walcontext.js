@@ -53,11 +53,18 @@ walContext.prototype = {
 		return this;
 	},
 	getLastSample: function( sampleArr ) {
-		var s = sampleArr[ 0 ];
+		var
+			s = sampleArr[ 0 ],
+			sEnd = s.getEndTime(),
+			end
+		;
 
 		$.each( sampleArr, function() {
-			if ( this.when + this.duration > s.when + s.duration )
+			end = this.getEndTime();
+			if ( end > sEnd ) {
 				s = this;
+				sEnd = end;
+			}
 		});
 		return s;
 	}

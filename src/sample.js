@@ -9,6 +9,7 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.when = 0;
 	this.offset = 0;
 	this.duration = wBuffer.buffer.duration;
+	this.bufferDuration = wBuffer.buffer.duration;
 
 	this.started =
 	this.playing = false;
@@ -67,6 +68,31 @@ walContext.Sample.prototype = {
 			this.onended();
 		}
 		return this;
+	},
+	setWhen: function( when ) {
+		this.when = when;
+	},
+	setOffset: function( offset ) {
+		this.offset = offset > 0 ? offset : 0;
+	},
+	setDuration: function( duration ) {
+		this.duration = duration;
+	},
+	getWhen: function() {
+		return this.when;
+	},
+	getOffset: function() {
+		return this.offset;
+	},
+	getDuration: function() {
+		return this.duration;
+	},
+	getEndTime: function() {
+		var d = this.duration + this.offset > this.bufferDuration
+			  ? this.bufferDuration - this.offset
+			  : this.duration;
+
+		return this.when + d;
 	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
