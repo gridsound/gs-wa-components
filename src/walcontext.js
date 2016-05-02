@@ -4,6 +4,7 @@ function walContext() {
 	this.ctx = new AudioContext();
 	this.destination = this.ctx.destination;
 	this.buffers = [];
+	this.compositions = [];
 	this.nbPlaying = 0;
 	this.gainNode = this.ctx.createGain();
 	this.filters = this.createFilters();
@@ -29,6 +30,11 @@ walContext.prototype = {
 	},
 	createFilters: function() {
 		return new walContext.Filters( this );
+	},
+	createComposition: function() {
+		var compo = new walContext.Composition( this );
+		this.compositions.push( compo );
+		return compo;
 	},
 	loadSamples: function( sampleArr ) {
 		$.each( sampleArr, function() {
