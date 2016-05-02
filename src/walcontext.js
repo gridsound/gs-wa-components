@@ -35,43 +35,5 @@ walContext.prototype = {
 		var compo = new walContext.Composition( this );
 		this.compositions.push( compo );
 		return compo;
-	},
-	loadSamples: function( sampleArr ) {
-		$.each( sampleArr, function() {
-			this.load();
-		});
-		return this;
-	},
-	playSamples: function( sampleArr, when ) {
-		var offset, start;
-
-		$.each( sampleArr, function() {
-			start = when ? this.when - when : this.when;
-			offset = when ? when - this.when : this.offset;
-			this.start( start, offset < 0 ? 0 : offset );
-		});
-		return this;
-	},
-	stopSamples: function( sampleArr ) {
-		$.each( sampleArr, function() {
-			this.stop();
-		});
-		return this;
-	},
-	getLastSample: function( sampleArr ) {
-		var
-			s = sampleArr[ 0 ],
-			sEnd = s.getEndTime(),
-			end
-		;
-
-		$.each( sampleArr, function() {
-			end = this.getEndTime();
-			if ( end > sEnd ) {
-				s = this;
-				sEnd = end;
-			}
-		});
-		return s;
 	}
 };

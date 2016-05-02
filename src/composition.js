@@ -16,6 +16,18 @@ walContext.Composition.prototype = {
 				that.wSamples.push( this );
 			}
 		});
+	},
+	removeSamples: function( wSamplesArr ) {
+		var
+			that = this,
+			index
+		;
+
+		$.each( wSamplesArr, function() {
+			if ( that.wSamples.length !== 0 && ( index = that.wSamples.indexOf( this ) ) !== -1 ) {
+				that.wSamples.splice( index, 1 );
+			}
+		});
 	}
 };
 
