@@ -8,23 +8,12 @@ walContext.Composition = function( wCtx ) {
 	this.wSamples = [];
 };
 
-function getActiveSamples( wSamples, fromTime ) {
-	var wsArr = [];
-
-	$.each( wSamples, function() {
-		if ( !fromTime || this.getEndTime() > fromTime ) {
-			wsArr.push( this );
-		}
-	});
-	return wsArr;
-}
-
 walContext.Composition.prototype = {
 	addSamples: function( wSamplesArr ) {
 		var that = this;
-		$.each( wSamplesArr, function() {
-			if ( that.wSamples.length === 0 || that.wSamples.indexOf( this ) === -1 ) {
-				that.wSamples.push( this );
+		wSamplesArr.map( function( ws ) {
+			if ( that.wSamples.length === 0 || that.wSamples.indexOf( ws ) === -1 ) {
+				that.wSamples.push( ws );
 			}
 		});
 	},
@@ -34,48 +23,46 @@ walContext.Composition.prototype = {
 			index
 		;
 
-		$.each( wSamplesArr, function() {
-			if ( that.wSamples.length !== 0 && ( index = that.wSamples.indexOf( this ) ) !== -1 ) {
+		wSamplesArr.map( function( ws ) {
+			if ( that.wSamples.length !== 0 && ( index = that.wSamples.indexOf( ws ) ) !== -1 ) {
 				that.wSamples.splice( index, 1 );
 			}
 		});
 	},
-	loadSamples: function( fromTime ) {
-		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime );
-
-		$.each( wSamplesArr, function() {
-			this.load();
+	loadSamples: function( compoOffset ) {
+		this.wSamples.map( function( ws ) {
+			if ( !compoOffset || ws.getEndTime() > compoOffset ) {
+				ws.load();
+			}
 		});
 		return this;
 	},
-	playSamples: function( fromTime ) {
+	playSamples: function( compoOffset ) {
 		var offset, start;
-		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime );
-
-		$.each( wSamplesArr, function() {
-			start = fromTime ? this.when - fromTime : this.when;
-			offset = fromTime ? fromTime - this.when : this.offset;
-			this.start( start, offset < 0 ? 0 : offset );
+		this.wSamples.map( function( ws ) {
+			if ( !compoOffset || ws.getEndTime() > compoOffset ) {
+				start = compoOffset ? ws.when - compoOffset : ws.when;
+				offset = compoOffset ? compoOffset - ws.when : ws.offset;
+				ws.start( start, offset < 0 ? 0 : offset );
+			}
 		});
 		return this;
 	},
-	stopSamples: function( fromTime ) {
-		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime ); // fusionner avec le each du dessous
-		$.each( wSamplesArr, function() {
-			this.stop();
+	stopSamples: function( compoOffset ) {
+		this.wSamples.map( function( ws ) {
+			ws.stop();
 		});
 		return this;
 	},
 	getLastSample: function() {
 		var s, sEnd, end;
-
 		if ( this.wSamples.length ) {
 			s = this.wSamples[ 0 ];
 			sEnd = s.getEndTime()
-			$.each( this.wSamples, function() {
-				end = this.getEndTime();
+			this.wSamples.map( function( ws ) {
+				end = ws.getEndTime();
 				if ( end > sEnd ) {
-					s = this;
+					s = ws;
 					sEnd = end;
 				}
 			});
