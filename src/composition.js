@@ -41,7 +41,7 @@ walContext.Composition.prototype = {
 		});
 	},
 	loadSamples: function( fromTime ) {
-		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime ); // fusionner avec le each du dessous
+		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime );
 
 		$.each( wSamplesArr, function() {
 			this.load();
@@ -50,7 +50,7 @@ walContext.Composition.prototype = {
 	},
 	playSamples: function( fromTime ) {
 		var offset, start;
-		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime ); // fusionner avec le each du dessous
+		var wSamplesArr = !fromTime ? this.wSamples : getActiveSamples( this.wSamples, fromTime );
 
 		$.each( wSamplesArr, function() {
 			start = fromTime ? this.when - fromTime : this.when;
@@ -67,19 +67,19 @@ walContext.Composition.prototype = {
 		return this;
 	},
 	getLastSample: function() {
-		var
-			s = this.wSamples[ 0 ],
-			sEnd = s.getEndTime(),
-			end
-		;
+		var s, sEnd, end;
 
-		$.each( this.wSamples, function() {
-			end = this.getEndTime();
-			if ( end > sEnd ) {
-				s = this;
-				sEnd = end;
-			}
-		});
+		if ( this.wSamples.length ) {
+			s = this.wSamples[ 0 ];
+			sEnd = s.getEndTime()
+			$.each( this.wSamples, function() {
+				end = this.getEndTime();
+				if ( end > sEnd ) {
+					s = this;
+					sEnd = end;
+				}
+			});
+		}
 		return s;
 	}
 };
