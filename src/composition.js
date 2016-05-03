@@ -14,6 +14,7 @@ walContext.Composition.prototype = {
 		wSamplesArr.map( function( ws ) {
 			if ( that.wSamples.length === 0 || that.wSamples.indexOf( ws ) === -1 ) {
 				that.wSamples.push( ws );
+				ws.setComposition( ws );
 			}
 		});
 	},
@@ -26,6 +27,7 @@ walContext.Composition.prototype = {
 		wSamplesArr.map( function( ws ) {
 			if ( that.wSamples.length !== 0 && ( index = that.wSamples.indexOf( ws ) ) !== -1 ) {
 				that.wSamples.splice( index, 1 );
+				ws.setComposition( null );
 			}
 		});
 	},
