@@ -35,18 +35,24 @@ walContext.Sample.prototype = {
 		this.composition = compo;
 	},
 	load: function() {
-		this.source = this.wCtx.ctx.createBufferSource();
-		this.source.buffer = this.wBuffer.buffer;
-		this.source.onended = this.onended.bind( this );
-		if ( this.connectedTo ) {
-			this.source.connect( this.connectedTo );
+		if ( !this.isLoaded ) {
+			this.isLoaded = true;
+			this.source = this.wCtx.ctx.createBufferSource();
+			this.source.buffer = this.wBuffer.buffer;
+			this.source.onended = this.onended.bind( this );
+			if ( this.connectedTo ) {
+				this.source.connect( this.connectedTo );
+			}
 		}
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		if ( !this.started ) {
-			var that = this;
-
+		var that = this;
+		if ( !this.isLoaded ) {
+			console.warn( "WebAudio Library: can not start an unloaded sample." );
+		} else if ( this.started ) {
+			console.warn( "WebAudio Library: can not start a sample twice." );
+		} else {
 			this.started = true;
 			when = when !== undefined ? when : this.when;
 			this.source.start(
@@ -58,18 +64,17 @@ walContext.Sample.prototype = {
 				++that.wCtx.nbPlaying;
 				that.playing = true;
 			}
-			if ( when > this.wCtx.ctx.currentTime ) {
-				this.playTimeoutId = setTimeout( onplay, when );
+			if ( when ) {
+				this.playTimeoutId = setTimeout( onplay, when * 1000 );
 			} else {
 				onplay();
 			}
 		}
 		return this;
 	},
-	stop: function( when ) {
+	stop: function() {
 		if ( this.started ) {
-			this.source.stop( this.wCtx.ctx.currentTime + ( when || 0 ) );
-			this.onended();
+			this.source.stop( 0 );
 		}
 		return this;
 	},
@@ -101,16 +106,18 @@ walContext.Sample.prototype = {
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
-		} else if ( this.started ) {
-			this.started = false;
+		} else {
 			if ( this.playing ) {
 				this.playing = false;
 				--this.wCtx.nbPlaying;
-			} else {
+			}
+			if ( this.started ) {
+				this.started = false;
 				clearTimeout( this.playTimeoutId );
 			}
-			this.fnOnended();
+			this.isLoaded = false;
 			this.source = null;
+			this.fnOnended();
 		}
 		return this;
 	}
