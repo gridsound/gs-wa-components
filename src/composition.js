@@ -12,18 +12,44 @@ walContext.Composition = function( wCtx ) {
 	this.startedTime = 0;
 	this.pausedOffset = 0;
 	this.isPlaying = false;
+	this.isPaused = false;
 };
+
+function startSampleFrom( ws, compoOffset ) {
+	var start = ws.when - compoOffset;
+	var offset = start >= 0 ? ws.offset : ws.offset - start;
+	ws.start( start, Math.max( offset, 0 ) );
+}
+
+function updateTimeout( compo ) {
+	if ( compo.playTimeoutId )
+		clearTimeout( compo.playTimeoutId );
+	compo.playTimeoutId = setTimeout( compo.onended.bind( compo ),
+		( compo.lastSample.getEndTime() - compo.getOffset() ) * 1000 );
+}
+
+function updateInLive( compo, ws, action, oldLast ) {
+	if ( ws.getEndTime() > compo.getOffset() && action != "rm" ) {
+		ws.load();
+		startSampleFrom( ws, compo.getOffset() );
+	}
+	if ( compo.lastSample != oldLast || action == "mv" ) {
+		if ( !compo.lastSample || compo.lastSample.getEndTime() <= compo.getOffset() ) {
+			compo.onended();
+		} else {
+			updateTimeout( compo );
+		}
+	}
+}
 
 walContext.Composition.prototype = {
 	addSamples: function( wSamplesArr ) {
 		var that = this;
 		wSamplesArr.forEach( function( ws ) {
 			if ( that.wSamples.indexOf( ws ) === -1 ) {
-				if ( that.lastSample === null || ws.getEndTime() > that.lastSample.getEndTime() ) {
-					that.lastSample = ws;
-				}
 				that.wSamples.push( ws );
 				ws.setComposition( ws );
+				that.update( ws );
 			}
 		});
 	},
@@ -32,27 +58,37 @@ walContext.Composition.prototype = {
 			that = this,
 			index
 		;
-
 		wSamplesArr.forEach( function( ws ) {
 			if ( ( index = that.wSamples.indexOf( ws ) ) !== -1 ) {
 				that.wSamples.splice( index, 1 );
 				ws.setComposition( null );
-				if ( ws === that.lastSample ) {
-					that.lastSample = that.getLastSample();
-				}
+				that.update( ws, "rm" );
 			}
 		});
 	},
-	updateSamples: function( ws ) {
-		if ( this.wSamples.indexOf( ws ) !== -1 ) {
-			if ( ws !== this.lastSample && ws.getEndTime() > this.lastSample.getEndTime() ) {
-				this.lastSample = ws;
-			} else if ( ws === this.lastSample && this.wSamples.length > 1 ) {
-				this.lastSample = this.getLastSample();
+	// TODO : optimisation
+	update: function( ws, action ) {
+		var
+			that = this,
+			oldLast = this.lastSample,
+			save
+		;
+		this.lastSample = this.getLastSample();
+		if ( this.isPlaying ) {
+			if ( ws.started ) {
+				save = ws.fnOnended;
+				ws.onended( function() {
+					updateInLive( that, ws, action, oldLast );
+					save();
+					ws.onended( save );
+				});
+				ws.stop();
+			} else {
+				updateInLive( this, ws, action, oldLast );
 			}
 		}
 	},
-	loadSamples: function( compoOffset ) {
+	load: function( compoOffset ) {
 		if ( !this.isPlaying ) {
 			this.wSamples.forEach( function( ws ) {
 				if ( !compoOffset || ws.getEndTime() > compoOffset ) {
@@ -62,35 +98,38 @@ walContext.Composition.prototype = {
 		}
 		return this;
 	},
-	playSamples: function( compoOffset ) {
-		var offset, start;
+	play: function() {
+		this.playFrom( 0 );
+	},
+	playFrom: function( compoOffset ) {
+		compoOffset = compoOffset || this.getOffset();
+		this.load( compoOffset );
+		this.start( compoOffset );
+	},
+	start: function( compoOffset ) {
+		compoOffset = Math.max( compoOffset, 0 );
 		if ( this.wSamples.length && !this.isPlaying ) {
 			this.startedTime = wa.wctx.ctx.currentTime;
-			if ( compoOffset ) {
-				this.pausedOffset = compoOffset;
-			}
+			this.pausedOffset = compoOffset;
 			this.isPlaying = true;
+			this.isPaused = false;
 			this.wSamples.forEach( function( ws ) {
-				if ( !compoOffset || ws.getEndTime() > compoOffset ) {
-					start = compoOffset ? ws.when - compoOffset : ws.when;
-					offset = compoOffset ? compoOffset - ws.when : ws.offset;
-					ws.start( start, offset < 0 ? 0 : offset );
+				if ( ws.getEndTime() > compoOffset ) {
+					startSampleFrom( ws, compoOffset );
 				}
 			});
-			this.playTimeoutId = setTimeout( this.onended.bind( this ),
-				( this.lastSample.getEndTime() - this.pausedOffset ) * 1000 );
+			updateTimeout( this );
 		}
 		return this;
 	},
-	stopSamples: function( compoOffset ) {
-		var save;
+	stop: function() {
 		this.wSamples.forEach( function( ws ) {
 			ws.stop();
 		});
 		this.onended();
 		return this;
 	},
-	pauseSamples: function() {
+	pause: function() {
 		if ( this.isPlaying ) {
 			this.pausedOffset += wa.wctx.ctx.currentTime - this.startedTime;
 			this.wSamples.forEach( function( ws ) {
@@ -99,17 +138,15 @@ walContext.Composition.prototype = {
 			clearTimeout( this.playTimeoutId );
 			this.startedTime = 0;
 			this.isPlaying = false;
+			this.isPaused = true;
 			this.fnOnpaused();
 		}
 	},
-	getLastSample: function() {
-		var s = null, sEnd, end;
-		if ( this.wSamples.length ) {
-			s = this.wSamples[ 0 ];
-			sEnd = s.getEndTime()
+	getLastSample: function( ignored ) {
+		var s = null, sEnd = 0, end;
+		if ( this.wSamples.length && !( ignored && this.wSamples.length == 1 ) ) {
 			this.wSamples.forEach( function( ws ) {
-				end = ws.getEndTime();
-				if ( end > sEnd ) {
+				if ( ws != ignored && ( sEnd < ( end = ws.getEndTime() ) ) ) {
 					s = ws;
 					sEnd = end;
 				}
@@ -131,6 +168,7 @@ walContext.Composition.prototype = {
 			}
 			this.startedTime = 0;
 			this.isPlaying = false;
+			this.isPaused = false;
 			this.pausedOffset = 0;
 			this.fnOnended();
 		}
