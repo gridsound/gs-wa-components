@@ -2,7 +2,6 @@
 
 (function() {
 
-
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.wSamples = [];
@@ -66,7 +65,7 @@ walContext.Composition.prototype = {
 			}
 		});
 	},
-	// TODO : optimisation
+	// TODO : optimization
 	update: function( ws, action ) {
 		var
 			that = this,
@@ -123,10 +122,12 @@ walContext.Composition.prototype = {
 		return this;
 	},
 	stop: function() {
-		this.wSamples.forEach( function( ws ) {
-			ws.stop();
-		});
-		this.onended();
+		if ( this.isPlaying || this.isPaused ) {
+			this.wSamples.forEach( function( ws ) {
+				ws.stop();
+			});
+			this.onended();
+		}
 		return this;
 	},
 	pause: function() {
