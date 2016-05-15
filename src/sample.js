@@ -75,6 +75,7 @@ walContext.Sample.prototype = {
 	stop: function() {
 		if ( this.started ) {
 			this.source.stop( 0 );
+			this.onended();
 		}
 		return this;
 	},
@@ -106,7 +107,7 @@ walContext.Sample.prototype = {
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
-		} else {
+		} else if ( this.isLoaded ) {
 			if ( this.playing ) {
 				this.playing = false;
 				--this.wCtx.nbPlaying;

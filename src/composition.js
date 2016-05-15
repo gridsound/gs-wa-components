@@ -6,12 +6,12 @@ walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.wSamples = [];
 	this.lastSample = null;
-	this.fnOnended = function() {};
-	this.fnOnpaused = function() {};
-	this.startedTime = 0;
-	this.pausedOffset = 0;
 	this.isPlaying = false;
 	this.isPaused = false;
+	this.startedTime = 0;
+	this._currentTime = 0;
+	this.fnOnended = function() {};
+	this.fnOnpaused = function() {};
 };
 
 function startSampleFrom( ws, compoOffset ) {
@@ -21,24 +21,50 @@ function startSampleFrom( ws, compoOffset ) {
 }
 
 function updateTimeout( compo ) {
-	if ( compo.playTimeoutId )
-		clearTimeout( compo.playTimeoutId );
-	compo.playTimeoutId = setTimeout( compo.onended.bind( compo ),
-		( compo.lastSample.getEndTime() - compo.getOffset() ) * 1000 );
+	clearTimeout( compo.playTimeoutId );
+	var sec = compo.lastSample ? ( compo.lastSample.getEndTime() - compo.currentTime() ) * 1000 : 0;
+	if ( sec <= 0 ) {
+		compo.onended();
+	} else {
+		compo.playTimeoutId = setTimeout( compo.onended.bind( compo ), sec );
+	}
 }
 
 function updateInLive( compo, ws, action, oldLast ) {
-	if ( ws.getEndTime() > compo.getOffset() && action != "rm" ) {
+	if ( ws.getEndTime() > compo.currentTime() && action != "rm" ) {
 		ws.load();
-		startSampleFrom( ws, compo.getOffset() );
+		startSampleFrom( ws, compo.currentTime() );
 	}
 	if ( compo.lastSample != oldLast || action == "mv" ) {
-		if ( !compo.lastSample || compo.lastSample.getEndTime() <= compo.getOffset() ) {
-			compo.onended();
-		} else {
-			updateTimeout( compo );
-		}
+		updateTimeout( compo );
 	}
+}
+
+function softStop( compo ) {
+	compo.wSamples.forEach( function( ws ) {
+		if ( ws.started ) {
+			ws.stop();
+		}
+	});
+}
+
+function softLoad( compo ) {
+	var ct = compo.currentTime();
+	compo.wSamples.forEach( function( ws ) {
+		if ( ws.getEndTime() > ct ) {
+			ws.load();
+		}
+	});
+}
+
+function softPlay( compo ) {
+	var ct = compo.currentTime();
+	compo.wSamples.forEach( function( ws ) {
+		if ( ws.getEndTime() > ct ) {
+			startSampleFrom( ws, ct );
+		}
+	});
+	updateTimeout( compo );	
 }
 
 walContext.Composition.prototype = {
@@ -65,7 +91,6 @@ walContext.Composition.prototype = {
 			}
 		});
 	},
-	// TODO : optimization
 	update: function( ws, action ) {
 		var
 			that = this,
@@ -87,55 +112,49 @@ walContext.Composition.prototype = {
 			}
 		}
 	},
-	load: function( compoOffset ) {
+	play: function() {
 		if ( !this.isPlaying ) {
-			this.wSamples.forEach( function( ws ) {
-				if ( !compoOffset || ws.getEndTime() > compoOffset ) {
-					ws.load();
-				}
-			});
+			softLoad( this );
+			softPlay( this );
 		}
+		this.startedTime = wa.wctx.ctx.currentTime;
+		this.isPlaying = true;
+		this.isPaused = false;
 		return this;
 	},
-	play: function() {
-		this.playFrom( 0 );
-	},
-	playFrom: function( compoOffset ) {
-		compoOffset = compoOffset || this.getOffset();
-		this.load( compoOffset );
-		this.start( compoOffset );
-	},
-	start: function( compoOffset ) {
-		compoOffset = Math.max( compoOffset, 0 );
-		if ( this.wSamples.length && !this.isPlaying ) {
-			this.startedTime = wa.wctx.ctx.currentTime;
-			this.pausedOffset = compoOffset;
-			this.isPlaying = true;
-			this.isPaused = false;
-			this.wSamples.forEach( function( ws ) {
-				if ( ws.getEndTime() > compoOffset ) {
-					startSampleFrom( ws, compoOffset );
-				}
-			});
-			updateTimeout( this );
+	currentTime: function( sec ) {
+		var
+			that = this,
+			save
+		;
+		if ( !arguments.length ) {
+			return 	this.isPlaying
+					? this._currentTime + wa.wctx.ctx.currentTime - this.startedTime
+					: this._currentTime;
+		}
+		if ( this.isPlaying ) {
+			softStop( this );
+		}
+		this._currentTime = !this.lastSample || sec <= 0 ? 0
+			: Math.min( sec, this.lastSample.getEndTime() );
+		if ( this.isPlaying ) {
+			this.startedTime = this.wCtx.ctx.currentTime;
+			softLoad( this );
+			softPlay( this );
 		}
 		return this;
 	},
 	stop: function() {
 		if ( this.isPlaying || this.isPaused ) {
-			this.wSamples.forEach( function( ws ) {
-				ws.stop();
-			});
+			softStop( this );
 			this.onended();
 		}
 		return this;
 	},
 	pause: function() {
 		if ( this.isPlaying ) {
-			this.pausedOffset += wa.wctx.ctx.currentTime - this.startedTime;
-			this.wSamples.forEach( function( ws ) {
-				ws.stop();
-			});
+			this._currentTime += wa.wctx.ctx.currentTime - this.startedTime;
+			softStop( this );
 			clearTimeout( this.playTimeoutId );
 			this.startedTime = 0;
 			this.isPlaying = false;
@@ -155,11 +174,6 @@ walContext.Composition.prototype = {
 		}
 		return s;
 	},
-	getOffset: function() {
-		return	this.isPlaying
-				? this.pausedOffset + wa.wctx.ctx.currentTime - this.startedTime
-				: this.pausedOffset;
-	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
@@ -170,7 +184,7 @@ walContext.Composition.prototype = {
 			this.startedTime = 0;
 			this.isPlaying = false;
 			this.isPaused = false;
-			this.pausedOffset = 0;
+			this._currentTime = 0;
 			this.fnOnended();
 		}
 		return this;
