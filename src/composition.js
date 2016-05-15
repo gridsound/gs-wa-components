@@ -6,6 +6,7 @@ walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.wSamples = [];
 	this.lastSample = null;
+	this.duration = 0;
 	this.isPlaying = false;
 	this.isPaused = false;
 	this.startedTime = 0;
@@ -21,8 +22,11 @@ function startSampleFrom( ws, compoOffset ) {
 }
 
 function updateTimeout( compo ) {
+	var sec = compo.lastSample
+			? ( compo.duration - compo.currentTime() ) * 1000
+			: 0;
+
 	clearTimeout( compo.playTimeoutId );
-	var sec = compo.lastSample ? ( compo.lastSample.getEndTime() - compo.currentTime() ) * 1000 : 0;
 	if ( sec <= 0 ) {
 		compo.onended();
 	} else {
@@ -98,6 +102,7 @@ walContext.Composition.prototype = {
 			save
 		;
 		this.lastSample = this.getLastSample();
+		this.duration = this.lastSample ? this.lastSample.getEndTime() : 0;
 		if ( this.isPlaying ) {
 			if ( ws.started ) {
 				save = ws.fnOnended;
@@ -112,21 +117,7 @@ walContext.Composition.prototype = {
 			}
 		}
 	},
-	play: function() {
-		if ( !this.isPlaying ) {
-			softLoad( this );
-			softPlay( this );
-		}
-		this.startedTime = wa.wctx.ctx.currentTime;
-		this.isPlaying = true;
-		this.isPaused = false;
-		return this;
-	},
 	currentTime: function( sec ) {
-		var
-			that = this,
-			save
-		;
 		if ( !arguments.length ) {
 			return 	this.isPlaying
 					? this._currentTime + wa.wctx.ctx.currentTime - this.startedTime
@@ -136,12 +127,22 @@ walContext.Composition.prototype = {
 			softStop( this );
 		}
 		this._currentTime = !this.lastSample || sec <= 0 ? 0
-			: Math.min( sec, this.lastSample.getEndTime() );
+			: Math.min( sec, this.duration );
 		if ( this.isPlaying ) {
 			this.startedTime = this.wCtx.ctx.currentTime;
 			softLoad( this );
 			softPlay( this );
 		}
+		return this;
+	},
+	play: function() {
+		if ( !this.isPlaying ) {
+			softLoad( this );
+			softPlay( this );
+		}
+		this.startedTime = wa.wctx.ctx.currentTime;
+		this.isPlaying = true;
+		this.isPaused = false;
 		return this;
 	},
 	stop: function() {
@@ -178,9 +179,7 @@ walContext.Composition.prototype = {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
 		} else {
-			if ( this.playTimeoutId ) {
-				clearTimeout( this.playTimeoutId );
-			}
+			clearTimeout( this.playTimeoutId );
 			this.startedTime = 0;
 			this.isPlaying = false;
 			this.isPaused = false;
