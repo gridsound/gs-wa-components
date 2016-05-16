@@ -12,6 +12,7 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.bufferDuration = wBuffer.buffer.duration;
 	this.composition = null;
 
+	this.loaded =
 	this.started =
 	this.playing = false;
 };
@@ -35,8 +36,8 @@ walContext.Sample.prototype = {
 		this.composition = compo;
 	},
 	load: function() {
-		if ( !this.isLoaded ) {
-			this.isLoaded = true;
+		if ( !this.loaded ) {
+			this.loaded = true;
 			this.source = this.wCtx.ctx.createBufferSource();
 			this.source.buffer = this.wBuffer.buffer;
 			this.source.onended = this.onended.bind( this );
@@ -48,7 +49,7 @@ walContext.Sample.prototype = {
 	},
 	start: function( when, offset, duration ) {
 		var that = this;
-		if ( !this.isLoaded ) {
+		if ( !this.loaded ) {
 			console.warn( "WebAudio Library: can not start an unloaded sample." );
 		} else if ( this.started ) {
 			console.warn( "WebAudio Library: can not start a sample twice." );
@@ -74,40 +75,21 @@ walContext.Sample.prototype = {
 	},
 	stop: function() {
 		if ( this.started ) {
+			this.source.onended = null;
 			this.source.stop( 0 );
 			this.onended();
 		}
 		return this;
 	},
-	setWhen: function( when ) {
-		this.when = when;
-	},
-	setOffset: function( offset ) {
-		this.offset = offset > 0 ? offset : 0;
-	},
-	setDuration: function( duration ) {
-		this.duration = duration;
-	},
-	getWhen: function() {
-		return this.when;
-	},
-	getOffset: function() {
-		return this.offset;
-	},
-	getDuration: function() {
-		return this.duration;
-	},
 	getEndTime: function() {
-		var d = this.duration + this.offset > this.bufferDuration
-			  ? this.bufferDuration - this.offset
-			  : this.duration;
-
-		return this.when + d;
+		return this.when + ( this.duration + this.offset > this.bufferDuration
+			? this.bufferDuration - this.offset
+			: this.duration );
 	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
-		} else if ( this.isLoaded ) {
+		} else if ( this.loaded ) {
 			if ( this.playing ) {
 				this.playing = false;
 				--this.wCtx.nbPlaying;
@@ -116,7 +98,7 @@ walContext.Sample.prototype = {
 				this.started = false;
 				clearTimeout( this.playTimeoutId );
 			}
-			this.isLoaded = false;
+			this.loaded = false;
 			this.source = null;
 			this.fnOnended();
 		}

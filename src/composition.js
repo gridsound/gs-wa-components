@@ -46,9 +46,7 @@ function updateInLive( compo, ws, action, oldLast ) {
 
 function softStop( compo ) {
 	compo.wSamples.forEach( function( ws ) {
-		if ( ws.started ) {
-			ws.stop();
-		}
+		ws.stop();
 	});
 }
 
@@ -119,9 +117,9 @@ walContext.Composition.prototype = {
 	},
 	currentTime: function( sec ) {
 		if ( !arguments.length ) {
-			return 	this.isPlaying
-					? this._currentTime + wa.wctx.ctx.currentTime - this.startedTime
-					: this._currentTime;
+			return this.isPlaying
+				? this._currentTime + wa.wctx.ctx.currentTime - this.startedTime
+				: this._currentTime;
 		}
 		if ( this.isPlaying ) {
 			softStop( this );
@@ -137,12 +135,12 @@ walContext.Composition.prototype = {
 	},
 	play: function() {
 		if ( !this.isPlaying ) {
+			this.isPlaying = true;
+			this.isPaused = false;
+			this.startedTime = wa.wctx.ctx.currentTime;
 			softLoad( this );
 			softPlay( this );
 		}
-		this.startedTime = wa.wctx.ctx.currentTime;
-		this.isPlaying = true;
-		this.isPaused = false;
 		return this;
 	},
 	stop: function() {
@@ -154,12 +152,12 @@ walContext.Composition.prototype = {
 	},
 	pause: function() {
 		if ( this.isPlaying ) {
-			this._currentTime += wa.wctx.ctx.currentTime - this.startedTime;
-			softStop( this );
-			clearTimeout( this.playTimeoutId );
-			this.startedTime = 0;
 			this.isPlaying = false;
 			this.isPaused = true;
+			this._currentTime += wa.wctx.ctx.currentTime - this.startedTime;
+			this.startedTime = 0;
+			softStop( this );
+			clearTimeout( this.playTimeoutId );
 			this.fnOnpaused();
 		}
 	},
