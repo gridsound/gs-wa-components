@@ -6,27 +6,31 @@ walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.wSamples = [];
 	this.lastSample = null;
-	this.duration = 0;
-	this.isPlaying = false;
+	this.isPlaying =
 	this.isPaused = false;
-	this.startedTime = 0;
+	this.duration =
+	this.startedTime =
 	this._currentTime = 0;
-	this.fnOnended = function() {};
+	this.fnOnended =
 	this.fnOnpaused = function() {};
 };
 
-function startSampleFrom( ws, compoOffset ) {
-	var start = ws.when - compoOffset;
-	var offset = start >= 0 ? ws.offset : ws.offset - start;
-	ws.start( start, Math.max( offset, 0 ) );
+function updateLastSample( compo ) {
+	var end, last = null, maxend = 0;
+	compo.wSamples.forEach( function( ws ) {
+		end = ws.getEndTime();
+		if ( end > maxend ) {
+			maxend = end;
+			last = ws;
+		}
+	} );
+	compo.lastSample = last;
+	compo.duration = last ? last.getEndTime() : 0;
 }
 
 function updateTimeout( compo ) {
-	var sec = compo.lastSample
-			? ( compo.duration - compo.currentTime() ) * 1000
-			: 0;
-
 	clearTimeout( compo.playTimeoutId );
+	var sec = compo.duration && 1000 * ( compo.duration - compo.currentTime() );
 	if ( sec <= 0 ) {
 		compo.onended();
 	} else {
@@ -34,12 +38,19 @@ function updateTimeout( compo ) {
 	}
 }
 
+function startSampleFrom( ws, compoOffset ) {
+	var start = ws.when - compoOffset,
+		offset = start >= 0 ? ws.offset : ws.offset - start;
+	ws.start( start, Math.max( offset, 0 ) );
+}
+
 function updateInLive( compo, ws, action, oldLast ) {
-	if ( ws.getEndTime() > compo.currentTime() && action != "rm" ) {
+	var ct = compo.currentTime();
+	if ( ws.getEndTime() > ct && action !== "rm" ) {
 		ws.load();
-		startSampleFrom( ws, compo.currentTime() );
+		startSampleFrom( ws, ct );
 	}
-	if ( compo.lastSample != oldLast || action == "mv" ) {
+	if ( compo.lastSample !== oldLast || action === "mv" ) {
 		updateTimeout( compo );
 	}
 }
@@ -70,37 +81,35 @@ function softPlay( compo ) {
 }
 
 walContext.Composition.prototype = {
-	addSamples: function( wSamplesArr ) {
+	addSamples: function( wsamples ) {
 		var that = this;
-		wSamplesArr.forEach( function( ws ) {
-			if ( that.wSamples.indexOf( ws ) === -1 ) {
+		wsamples.forEach( function( ws ) {
+			if ( that.wSamples.indexOf( ws ) < 0 ) {
 				that.wSamples.push( ws );
 				ws.setComposition( ws );
 				that.update( ws );
 			}
 		});
+		return this;
 	},
-	removeSamples: function( wSamplesArr ) {
-		var
-			that = this,
-			index
-		;
-		wSamplesArr.forEach( function( ws ) {
-			if ( ( index = that.wSamples.indexOf( ws ) ) !== -1 ) {
-				that.wSamples.splice( index, 1 );
+	removeSamples: function( wsamples ) {
+		var ind, that = this;
+		wsamples.forEach( function( ws ) {
+			ind = that.wSamples.indexOf( ws );
+			if ( ind > -1 ) {
+				that.wSamples.splice( ind, 1 );
 				ws.setComposition( null );
 				that.update( ws, "rm" );
 			}
 		});
+		return this;
 	},
 	update: function( ws, action ) {
-		var
-			that = this,
+		var that = this,
 			oldLast = this.lastSample,
-			save
-		;
-		this.lastSample = this.getLastSample();
-		this.duration = this.lastSample ? this.lastSample.getEndTime() : 0;
+			save;
+
+		updateLastSample( this );
 		if ( this.isPlaying ) {
 			if ( ws.started ) {
 				save = ws.fnOnended;
@@ -114,18 +123,17 @@ walContext.Composition.prototype = {
 				updateInLive( this, ws, action, oldLast );
 			}
 		}
+		return this;
 	},
 	currentTime: function( sec ) {
 		if ( !arguments.length ) {
-			return this.isPlaying
-				? this._currentTime + wa.wctx.ctx.currentTime - this.startedTime
-				: this._currentTime;
+			return this._currentTime +
+				( this.isPlaying && wa.wctx.ctx.currentTime - this.startedTime );
 		}
 		if ( this.isPlaying ) {
 			softStop( this );
 		}
-		this._currentTime = !this.lastSample || sec <= 0 ? 0
-			: Math.min( sec, this.duration );
+		this._currentTime = Math.max( 0, Math.min( sec, this.duration ) );
 		if ( this.isPlaying ) {
 			this.startedTime = this.wCtx.ctx.currentTime;
 			softLoad( this );
@@ -161,26 +169,14 @@ walContext.Composition.prototype = {
 			this.fnOnpaused();
 		}
 	},
-	getLastSample: function( ignored ) {
-		var s = null, sEnd = 0, end;
-		if ( this.wSamples.length && !( ignored && this.wSamples.length == 1 ) ) {
-			this.wSamples.forEach( function( ws ) {
-				if ( ws != ignored && ( sEnd < ( end = ws.getEndTime() ) ) ) {
-					s = ws;
-					sEnd = end;
-				}
-			});
-		}
-		return s;
-	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
 		} else {
 			clearTimeout( this.playTimeoutId );
-			this.startedTime = 0;
-			this.isPlaying = false;
+			this.isPlaying =
 			this.isPaused = false;
+			this.startedTime =
 			this._currentTime = 0;
 			this.fnOnended();
 		}

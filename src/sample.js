@@ -5,13 +5,13 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.wBuffer = wBuffer;
 	this.connectedTo = wNode ? wNode.nodeIn : wCtx.nodeIn;
 
-	this.fnOnended = function() {};
-	this.when = 0;
+	this.when =
 	this.offset = 0;
 	this.duration = wBuffer.buffer.duration;
 	this.bufferDuration = wBuffer.buffer.duration;
-	this.composition = null;
 
+	this.composition = null;
+	this.fnOnended = function() {};
 	this.loaded =
 	this.started =
 	this.playing = false;
@@ -48,12 +48,12 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		var that = this;
 		if ( !this.loaded ) {
 			console.warn( "WebAudio Library: can not start an unloaded sample." );
 		} else if ( this.started ) {
 			console.warn( "WebAudio Library: can not start a sample twice." );
 		} else {
+			var that = this;
 			this.started = true;
 			when = when !== undefined ? when : this.when;
 			this.source.start(
@@ -82,9 +82,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	getEndTime: function() {
-		return this.when + ( this.duration + this.offset > this.bufferDuration
-			? this.bufferDuration - this.offset
-			: this.duration );
+		return this.when + Math.min( this.duration, this.bufferDuration - this.offset );
 	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
