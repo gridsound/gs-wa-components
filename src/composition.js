@@ -30,11 +30,12 @@ function updateLastSample( compo ) {
 
 function updateTimeout( compo ) {
 	clearTimeout( compo.playTimeoutId );
-	var sec = compo.duration && 1000 * ( compo.duration - compo.currentTime() );
+	updateLastSample( compo ); // <-- this line is here just for fix a pb in GS...
+	var sec = compo.duration && compo.duration - compo.currentTime();
 	if ( sec <= 0 ) {
 		compo.onended();
 	} else {
-		compo.playTimeoutId = setTimeout( compo.onended.bind( compo ), sec );
+		compo.playTimeoutId = setTimeout( compo.onended.bind( compo ), sec * 1000 );
 	}
 }
 
@@ -56,6 +57,7 @@ function updateInLive( compo, ws, action, oldLast ) {
 }
 
 function softStop( compo ) {
+	clearTimeout( compo.playTimeoutId );
 	compo.wSamples.forEach( function( ws ) {
 		ws.stop();
 	});
@@ -165,7 +167,6 @@ walContext.Composition.prototype = {
 			this._currentTime += wa.wctx.ctx.currentTime - this.startedTime;
 			this.startedTime = 0;
 			softStop( this );
-			clearTimeout( this.playTimeoutId );
 			this.fnOnpaused();
 		}
 	},
@@ -173,7 +174,6 @@ walContext.Composition.prototype = {
 		if ( typeof fn === "function" ) {
 			this.fnOnended = fn;
 		} else {
-			clearTimeout( this.playTimeoutId );
 			this.isPlaying =
 			this.isPaused = false;
 			this.startedTime =
