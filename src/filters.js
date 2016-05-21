@@ -6,14 +6,17 @@ walContext.Filters = function( wCtx ) {
 
 	this.nodeIn = wCtx.ctx.createGain();
 	this.nodeOut = wCtx.ctx.createGain();
+
 	this.nodeIn.connect( this.nodeOut );
+	this.connect( wCtx.ctx.destination );
 };
 
 walContext.Filters.prototype = {
 	pushBack: function( node ) {
-		if ( this.nodes.length > 0 ) {
-			this.nodes[ this.nodes.length - 1 ].disconnect();
-			this.nodes[ this.nodes.length - 1 ].connect( node );
+		if ( this.nodes.length ) {
+			var lastnode = this.nodes[ this.nodes.length - 1 ];
+			lastnode.disconnect();
+			lastnode.connect( node );
 		} else {
 			this.nodeIn.disconnect();
 			this.nodeIn.connect( node );
@@ -22,54 +25,46 @@ walContext.Filters.prototype = {
 		this.nodes.push( node );
 	},
 	pushFront: function( node ) {
-		if ( this.nodes.length === 0 ) {
-			this.pushBack( node );
-		} else {
+		if ( this.nodes.length ) {
 			this.nodeIn.disconnect();
 			this.nodeIn.connect( node );
+			node.connect( this.nodes[ 0 ] );
 			this.nodes.unshift( node );
-			node.connect( this.nodes[ 1 ] );
+		} else {
+			this.pushBack( node );
 		}
 	},
 	popBack: function() {
-		var poped = this.nodes.length ? this.nodes.pop() : null;
+		var poped = this.nodes.pop();
 		if ( poped ) {
 			poped.disconnect();
-			if ( this.nodes.length === 0 ) {
+			if ( this.nodes.length ) {
+				var lastnode = this.nodes[ this.nodes.length - 1 ];
+				lastnode.disconnect();
+				lastnode.connect( this.nodeOut );
+			} else {
 				this.nodeIn.disconnect();
 				this.nodeIn.connect( this.nodeOut );
-			} else {
-				this.nodes[ this.nodes.length - 1 ].disconnect();
-				this.nodes[ this.nodes.length - 1 ].connect( this.nodeOut );
 			}
 		}
 		return poped;
 	},
 	popFront: function() {
-		var poped;
-
-		if ( !this.nodes.length ) {
-			poped = null;
-		} else if ( this.nodes.length === 1 ) {
-			poped = this.popBack();
-		} else {
+		var poped = this.nodes.shift();
+		if ( poped ) {
+			poped.disconnect();
 			this.nodeIn.disconnect();
-			this.nodes[ 0 ].disconnect();
-			poped = this.nodes.shift();
-			this.nodeIn.connect( this.nodes[ 0 ] );
+			this.nodeIn.connect( this.nodes[ 0 ] || this.nodeOut );
 		}
 		return poped;
 	},
-	popAll: function() {
-		if ( this.nodes.length > 0 ) {
-			var poped = this.nodes;
+	empty: function() {
+		if ( this.nodes.length ) {
+			this.nodes[ this.nodes.length - 1 ].disconnect();
 			this.nodeIn.disconnect();
-			poped[ poped.length - 1 ].disconnect();
 			this.nodeIn.connect( this.nodeOut );
 			this.nodes = [];
-			return poped;
 		}
-		return null;
 	},
 	connect: function( node ) {
 		node = node.nodeIn || node;
@@ -82,9 +77,8 @@ walContext.Filters.prototype = {
 	},
 	gain: function( vol ) {
 		if ( !arguments.length ) {
-			return this.gainNode.gain.value;
+			return this.nodeOut.gain.value;
 		}
-		this.gainNode.gain.value = vol;
-		return this;
+		this.nodeOut.gain.value = vol;
 	}
 };
