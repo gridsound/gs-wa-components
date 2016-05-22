@@ -3,14 +3,12 @@
 function walContext() {
 	this.ctx = new AudioContext();
 	this.destination = this.ctx.destination;
+	this.filters = this.createFilters();
 	this.buffers = [];
 	this.compositions = [];
 	this.nbPlaying = 0;
-	this.gainNode = this.ctx.createGain();
-	this.filters = this.createFilters();
-	
-	this.filters.pushBack( this.gainNode );
-	this.filters.connect( this.ctx.destination );
+
+	this.filters.connect( this.destination );
 	this.nodeIn = this.filters.nodeIn;
 	delete this.filters.connect;
 };
@@ -18,9 +16,9 @@ function walContext() {
 walContext.prototype = {
 	gain: function( vol ) {
 		if ( !arguments.length ) {
-			return this.gainNode.gain.value;
+			return this.filter.gain();
 		}
-		this.gainNode.gain.value = vol;
+		this.filter.gain( vol );
 		return this;
 	},
 	createBuffer: function( file, fn ) {

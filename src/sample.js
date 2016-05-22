@@ -19,9 +19,12 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 
 walContext.Sample.prototype = {
 	connect: function( node ) {
-		this.connectedTo = node.nodeIn || node;
-		if ( this.source ) {
-			this.source.connect( this.connectedTo );
+		node = node.nodeIn || node;
+		if ( node instanceof AudioNode ) {
+			this.connectedTo = node;
+			if ( this.source ) {
+				this.source.connect( node );
+			}
 		}
 		return this;
 	},

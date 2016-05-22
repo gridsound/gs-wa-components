@@ -8,14 +8,16 @@ walContext.Filters = function( wCtx ) {
 	this.nodeOut = wCtx.ctx.createGain();
 
 	this.nodeIn.connect( this.nodeOut );
-	this.connect( wCtx.ctx.destination );
+	this.connect( wCtx );
 };
 
 walContext.Filters.prototype = {
 	connect: function( node ) {
 		node = node.nodeIn || node;
-		this.nodeOut.connect( node );
-		this.connectedTo = node;
+		if ( node instanceof AudioNode ) {
+			this.connectedTo = node;
+			this.nodeOut.connect( node );
+		}
 	},
 	disconnect: function() {
 		this.nodeOut.disconnect();
