@@ -7,7 +7,7 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 
 	this.when =
 	this.offset = 0;
-	this.duration = wBuffer.buffer.duration;
+	this.duration =
 	this.bufferDuration = wBuffer.buffer.duration;
 
 	this.composition = null;
@@ -85,7 +85,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	getEndTime: function() {
-		return this.when + Math.min( this.duration, this.bufferDuration - this.offset );
+		return this.when + this.duration;
 	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
