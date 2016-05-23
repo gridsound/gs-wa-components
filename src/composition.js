@@ -39,10 +39,12 @@ function updateTimeout( compo ) {
 	}
 }
 
-function startSampleFrom( ws, compoOffset ) {
-	var start = ws.when - compoOffset,
-		offset = start >= 0 ? ws.offset : ws.offset - start;
-	ws.start( start, Math.max( offset, 0 ) );
+function startSampleFrom( ws, currentTime ) {
+	var start = ws.when - currentTime;
+	ws.start( start,
+		start > 0 ? ws.offset : ws.offset - start,
+		start > 0 ? ws.duration : ws.duration + start
+	);
 }
 
 function updateInLive( compo, ws, action, oldLast ) {
