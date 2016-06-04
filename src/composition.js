@@ -90,7 +90,7 @@ walContext.Composition.prototype = {
 		wsamples.forEach( function( ws ) {
 			if ( that.wSamples.indexOf( ws ) < 0 ) {
 				that.wSamples.push( ws );
-				ws.setComposition( ws );
+				ws.composition = this;
 				that.update( ws );
 			}
 		});
@@ -102,7 +102,7 @@ walContext.Composition.prototype = {
 			ind = that.wSamples.indexOf( ws );
 			if ( ind > -1 ) {
 				that.wSamples.splice( ind, 1 );
-				ws.setComposition( null );
+				ws.composition = null;
 				that.update( ws, "rm" );
 			}
 		});

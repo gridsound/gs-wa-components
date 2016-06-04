@@ -10,7 +10,6 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.duration =
 	this.bufferDuration = wBuffer.buffer.duration;
 
-	this.composition = null;
 	this.fnOnended = function() {};
 	this.loaded =
 	this.started =
@@ -34,9 +33,6 @@ walContext.Sample.prototype = {
 			this.connectedTo = null;
 		}
 		return this;
-	},
-	setComposition: function( compo ) {
-		this.composition = compo;
 	},
 	load: function() {
 		if ( !this.loaded ) {
