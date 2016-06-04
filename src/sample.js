@@ -51,6 +51,11 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
+		function onplay() {
+			++that.wCtx.nbPlaying;
+			that.playing = true;
+		}
+
 		if ( !this.loaded ) {
 			console.warn( "WebAudio Library: can not start an unloaded sample." );
 		} else if ( this.started ) {
@@ -64,10 +69,6 @@ walContext.Sample.prototype = {
 				offset   !== undefined ? offset   : this.offset,
 				duration !== undefined ? duration : this.duration
 			);
-			function onplay() {
-				++that.wCtx.nbPlaying;
-				that.playing = true;
-			}
 			if ( when ) {
 				this.playTimeoutId = setTimeout( onplay, when * 1000 );
 			} else {
