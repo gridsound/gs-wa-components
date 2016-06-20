@@ -1,12 +1,10 @@
 "use strict";
 
-(function() {
+( function() {
 
-walContext.Buffer = function( wCtx, file, fn ) {
-	var
-		that = this,
-		reader = new FileReader()
-	;
+walContext.Buffer = function( wCtx, file, resolve, reject ) {
+	var that = this,
+		reader = new FileReader();
 
 	this.wCtx = wCtx;
 	this.isReady = false;
@@ -15,10 +13,8 @@ walContext.Buffer = function( wCtx, file, fn ) {
 		that.wCtx.ctx.decodeAudioData( fileBuffer, function( buffer ) {
 			that.buffer = buffer;
 			that.isReady = true;
-			if ( fn ) {
-				fn( that );
-			}
-		});
+			resolve( that );
+		}, reject );
 	}
 
 	// If `file` is a file waiting to be read.
@@ -43,16 +39,14 @@ walContext.Buffer.prototype = {
 		timeA = timeA || 0;
 		timeB = timeB || this.buffer.duration;
 		
-		var
-			a, b, max,
+		var a, b, max,
 			x = 0,
 			peaks = new Array( nbPeaks ),
 			buf = this.buffer.getChannelData( channelId ),
 			bufRangeSize = ( timeB - timeA ) * this.buffer.sampleRate,
 			bufTimeA = timeA * this.buffer.sampleRate,
 			sampleSize = bufRangeSize / nbPeaks,
-			peaksIncr = sampleSize / 10
-		;
+			peaksIncr = sampleSize / 10;
 
 		for ( ; x < nbPeaks; ++x ) {
 			a = bufTimeA + x * sampleSize;
@@ -67,4 +61,4 @@ walContext.Buffer.prototype = {
 	}
 };
 
-})();
+} )();
