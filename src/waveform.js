@@ -2,14 +2,14 @@
 
 ( function() {
 
-walContext.Buffer.prototype.waveformSVG = function( svg, w, h ) {
+walContext.Buffer.prototype.waveformSVG = function( svg, w, h, ofs, dur ) {
 	var x,
 		h2a = h / 2 - .5,
 		h2b = h / 2 + .5,
 		d = "M0 " + h2a,
 		path = svg ? svg.firstChild : document.createElement( "path" ),
-		lChan = this.getPeaks( 0, w ),
-		rChan = this.buffer.numberOfChannels > 1 ? this.getPeaks( 1, w ) : lChan;
+		lChan = this.getPeaks( 0, w, ofs, dur ),
+		rChan = this.buffer.numberOfChannels > 1 ? this.getPeaks( 1, w, ofs, dur ) : lChan;
 
 	if ( !svg ) {
 		svg = document.createElement( "svg" );

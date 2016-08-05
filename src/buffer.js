@@ -35,24 +35,26 @@ walContext.Buffer.prototype = {
 		var wSample = new walContext.Sample( this.wCtx, this );
 		return wSample;
 	},
-	getPeaks: function( channelId, nbPeaks, timeA, timeB ) {
-		timeA = timeA || 0;
-		timeB = timeB || this.buffer.duration;
+	getPeaks: function( channelId, nbPeaks, offset, dur ) {
+		offset = offset || 0;
+		dur = dur === undefined
+			? this.buffer.duration - offset
+			: Math.min( dur, this.buffer.duration - offset );
 		
 		var a, b, max,
 			x = 0,
 			peaks = new Array( nbPeaks ),
 			buf = this.buffer.getChannelData( channelId ),
-			bufRangeSize = ( timeB - timeA ) * this.buffer.sampleRate,
-			bufTimeA = timeA * this.buffer.sampleRate,
-			sampleSize = bufRangeSize / nbPeaks,
-			peaksIncr = sampleSize / 10;
+			samplesLen = dur * this.buffer.sampleRate,
+			offsetInd = offset * this.buffer.sampleRate,
+			samplesPerPeaks = samplesLen / nbPeaks,
+			samplesIncr = ~~Math.max( 1, samplesPerPeaks / 10 );
 
 		for ( ; x < nbPeaks; ++x ) {
-			a = bufTimeA + x * sampleSize;
-			b = a + sampleSize;
+			a = offsetInd + x * samplesPerPeaks;
+			b = a + samplesPerPeaks;
 			max = 0;
-			for ( ; a < b; a += peaksIncr ) {
+			for ( ; a < b; a += samplesIncr ) {
 				max = Math.max( max, Math.abs( buf[ ~~a ] ) );
 			}
 			peaks[ x ] = max;
