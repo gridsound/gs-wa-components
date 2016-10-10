@@ -85,25 +85,20 @@ function softPlay( compo ) {
 }
 
 walContext.Composition.prototype = {
-	addSamples: function( wsamples ) {
-		wsamples.forEach( function( ws ) {
-			if ( this.wSamples.indexOf( ws ) < 0 ) {
-				this.wSamples.push( ws );
-				ws.composition = this;
-				this.update( ws );
-			}
-		}, this );
+	add: function( waSample ) {
+		if ( waSample.forEach ) {
+			waSample.forEach( add, this );
+		} else {
+			add.call( this, waSample );
+		}
 		return this;
 	},
-	removeSamples: function( wsamples ) {
-		wsamples.forEach( function( ws ) {
-			var ind = this.wSamples.indexOf( ws );
-			if ( ind > -1 ) {
-				this.wSamples.splice( ind, 1 );
-				ws.composition = null;
-				this.update( ws, "rm" );
-			}
-		}, this );
+	remove: function( waSample ) {
+		if ( waSample.forEach ) {
+			waSample.forEach( remove, this );
+		} else {
+			remove.call( this, waSample );
+		}
 		return this;
 	},
 	update: function( ws, action ) {
@@ -183,5 +178,23 @@ walContext.Composition.prototype = {
 		return this;
 	}
 };
+
+function add( smp ) {
+	if ( this.wSamples.indexOf( smp ) < 0 ) {
+		this.wSamples.push( smp );
+		smp.composition = this;
+		this.update( smp );
+	}
+}
+
+function remove( smp ) {
+	var ind = this.wSamples.indexOf( smp );
+
+	if ( ind > -1 ) {
+		smp.composition = null;
+		this.wSamples.splice( ind, 1 );
+		this.update( smp, "rm" );
+	}
+}
 
 } )();
