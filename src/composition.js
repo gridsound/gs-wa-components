@@ -125,7 +125,7 @@ walContext.Composition.prototype = {
 	currentTime: function( sec ) {
 		if ( !arguments.length ) {
 			return this._currentTime +
-				( this.isPlaying && wa.wctx.ctx.currentTime - this.startedTime );
+				( this.isPlaying && this.wCtx.ctx.currentTime - this.startedTime );
 		}
 		if ( this.isPlaying ) {
 			softStop( this );
@@ -142,7 +142,7 @@ walContext.Composition.prototype = {
 		if ( !this.isPlaying ) {
 			this.isPlaying = true;
 			this.isPaused = false;
-			this.startedTime = wa.wctx.ctx.currentTime;
+			this.startedTime = this.wCtx.ctx.currentTime;
 			softLoad( this );
 			softPlay( this );
 		}
@@ -159,7 +159,7 @@ walContext.Composition.prototype = {
 		if ( this.isPlaying ) {
 			this.isPlaying = false;
 			this.isPaused = true;
-			this._currentTime += wa.wctx.ctx.currentTime - this.startedTime;
+			this._currentTime += this.wCtx.ctx.currentTime - this.startedTime;
 			this.startedTime = 0;
 			softStop( this );
 			this.fnOnpaused();
