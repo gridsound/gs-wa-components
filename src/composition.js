@@ -9,115 +9,46 @@ walContext.Composition = function( wCtx ) {
 	this.isPlaying =
 	this.isPaused = false;
 	this.duration =
-	this.startedTime =
+	this._startedTime =
 	this._currentTime = 0;
 	this.fnOnended =
 	this.fnOnpaused = function() {};
 };
 
-function updateLastSample( compo ) {
-	var end, last = null, maxend = 0;
-	compo.wSamples.forEach( function( ws ) {
-		end = ws.getEndTime();
-		if ( end > maxend ) {
-			maxend = end;
-			last = ws;
-		}
-	} );
-	compo.lastSample = last;
-	compo.duration = last ? last.getEndTime() : 0;
-}
-
-function updateTimeout( compo ) {
-	clearTimeout( compo.playTimeoutId );
-	updateLastSample( compo ); // <-- this line is here just for fix a pb in GS...
-	var sec = compo.duration && compo.duration - compo.currentTime();
-	if ( sec <= 0 ) {
-		compo.onended();
-	} else {
-		compo.playTimeoutId = setTimeout( compo.onended.bind( compo ), sec * 1000 );
-	}
-}
-
-function startSampleFrom( ws, currentTime ) {
-	var start = ws.when - currentTime;
-	ws.start( start,
-		start > 0 ? ws.offset : ws.offset - start,
-		start > 0 ? ws.duration : ws.duration + start
-	);
-}
-
-function updateInLive( compo, ws, action, oldLast ) {
-	var ct = compo.currentTime();
-	if ( ws.getEndTime() > ct && action !== "rm" ) {
-		ws.load();
-		startSampleFrom( ws, ct );
-	}
-	if ( compo.lastSample !== oldLast || action === "mv" ) {
-		updateTimeout( compo );
-	}
-}
-
-function softStop( compo ) {
-	clearTimeout( compo.playTimeoutId );
-	compo.wSamples.forEach( function( ws ) {
-		ws.stop();
-	} );
-}
-
-function softLoad( compo ) {
-	var ct = compo.currentTime();
-	compo.wSamples.forEach( function( ws ) {
-		if ( ws.getEndTime() > ct ) {
-			ws.load();
-		}
-	} );
-}
-
-function softPlay( compo ) {
-	var ct = compo.currentTime();
-	compo.wSamples.forEach( function( ws ) {
-		if ( ws.getEndTime() > ct ) {
-			startSampleFrom( ws, ct );
-		}
-	} );
-	updateTimeout( compo );	
-}
-
 walContext.Composition.prototype = {
-	add: function( waSample ) {
-		if ( waSample.forEach ) {
-			waSample.forEach( add, this );
+	add: function( smp ) {
+		if ( smp.forEach ) {
+			smp.forEach( add, this );
 		} else {
-			add.call( this, waSample );
+			add.call( this, smp );
 		}
 		return this;
 	},
-	remove: function( waSample ) {
-		if ( waSample.forEach ) {
-			waSample.forEach( remove, this );
+	remove: function( smp ) {
+		if ( smp.forEach ) {
+			smp.forEach( remove, this );
 		} else {
-			remove.call( this, waSample );
+			remove.call( this, smp );
 		}
 		return this;
 	},
-	update: function( ws, action ) {
-		var that = this,
-			oldLast = this.lastSample,
-			save;
+	update: function( smp, action ) {
+		var save,
+			that = this,
+			oldLast = this.lastSample;
 
 		updateLastSample( this );
 		if ( this.isPlaying ) {
-			if ( ws.started ) {
-				save = ws.fnOnended;
-				ws.onended( function() {
-					updateInLive( that, ws, action, oldLast );
+			if ( smp.started ) {
+				save = smp.fnOnended;
+				smp.onended( function() {
+					updateInLive( that, smp, action, oldLast );
 					save();
-					ws.onended( save );
+					smp.onended( save );
 				} );
-				ws.stop();
+				smp.stop();
 			} else {
-				updateInLive( this, ws, action, oldLast );
+				updateInLive( this, smp, action, oldLast );
 			}
 		}
 		return this;
@@ -125,16 +56,16 @@ walContext.Composition.prototype = {
 	currentTime: function( sec ) {
 		if ( !arguments.length ) {
 			return this._currentTime +
-				( this.isPlaying && this.wCtx.ctx.currentTime - this.startedTime );
+				( this.isPlaying && this.wCtx.ctx.currentTime - this._startedTime );
 		}
 		if ( this.isPlaying ) {
-			softStop( this );
+			stop( this );
 		}
 		this._currentTime = Math.max( 0, Math.min( sec, this.duration ) );
 		if ( this.isPlaying ) {
-			this.startedTime = this.wCtx.ctx.currentTime;
-			softLoad( this );
-			softPlay( this );
+			this._startedTime = this.wCtx.ctx.currentTime;
+			load( this );
+			play( this );
 		}
 		return this;
 	},
@@ -142,15 +73,15 @@ walContext.Composition.prototype = {
 		if ( !this.isPlaying ) {
 			this.isPlaying = true;
 			this.isPaused = false;
-			this.startedTime = this.wCtx.ctx.currentTime;
-			softLoad( this );
-			softPlay( this );
+			this._startedTime = this.wCtx.ctx.currentTime;
+			load( this );
+			play( this );
 		}
 		return this;
 	},
 	stop: function() {
 		if ( this.isPlaying || this.isPaused ) {
-			softStop( this );
+			stop( this );
 			this.onended();
 		}
 		return this;
@@ -159,11 +90,12 @@ walContext.Composition.prototype = {
 		if ( this.isPlaying ) {
 			this.isPlaying = false;
 			this.isPaused = true;
-			this._currentTime += this.wCtx.ctx.currentTime - this.startedTime;
-			this.startedTime = 0;
-			softStop( this );
+			this._currentTime += this.wCtx.ctx.currentTime - this._startedTime;
+			this._startedTime = 0;
+			stop( this );
 			this.fnOnpaused();
 		}
+		return this;
 	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
@@ -171,7 +103,7 @@ walContext.Composition.prototype = {
 		} else {
 			this.isPlaying =
 			this.isPaused = false;
-			this.startedTime =
+			this._startedTime =
 			this._currentTime = 0;
 			this.fnOnended();
 		}
@@ -194,6 +126,79 @@ function remove( smp ) {
 		smp.composition = null;
 		this.wSamples.splice( ind, 1 );
 		this.update( smp, "rm" );
+	}
+}
+
+function stop( cmp ) {
+	clearTimeout( cmp.playTimeoutId );
+	cmp.wSamples.forEach( function( smp ) {
+		smp.stop();
+	} );
+}
+
+function load( cmp ) {
+	var ct = cmp.currentTime();
+
+	cmp.wSamples.forEach( function( smp ) {
+		if ( smp.getEndTime() > ct ) {
+			smp.load();
+		}
+	} );
+}
+
+function play( cmp ) {
+	var ct = cmp.currentTime();
+
+	cmp.wSamples.forEach( function( smp ) {
+		if ( smp.getEndTime() > ct ) {
+			startSampleFrom( smp, ct );
+		}
+	} );
+	updateTimeout( cmp );	
+}
+
+function updateLastSample( cmp ) {
+	var end, last = null, maxend = 0;
+
+	cmp.wSamples.forEach( function( ws ) {
+		end = ws.getEndTime();
+		if ( end > maxend ) {
+			maxend = end;
+			last = ws;
+		}
+	} );
+	cmp.lastSample = last;
+	cmp.duration = last ? last.getEndTime() : 0;
+}
+
+function updateTimeout( cmp ) {
+	clearTimeout( cmp.playTimeoutId );
+	updateLastSample( cmp ); // <-- this line is here just for fix a pb in GS...
+	var sec = cmp.duration && cmp.duration - cmp.currentTime();
+	if ( sec <= 0 ) {
+		cmp.onended();
+	} else {
+		cmp.playTimeoutId = setTimeout( cmp.onended.bind( cmp ), sec * 1000 );
+	}
+}
+
+function startSampleFrom( smp, currentTime ) {
+	var start = smp.when - currentTime;
+
+	smp.start( start,
+		start > 0 ? smp.offset : smp.offset - start,
+		start > 0 ? smp.duration : smp.duration + start
+	);
+}
+
+function updateInLive( cmp, smp, action, oldLast ) {
+	var ct = cmp.currentTime();
+	if ( smp.getEndTime() > ct && action !== "rm" ) {
+		smp.load();
+		startSampleFrom( smp, ct );
+	}
+	if ( cmp.lastSample !== oldLast || action === "mv" ) {
+		updateTimeout( cmp );
 	}
 }
 
