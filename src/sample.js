@@ -4,19 +4,23 @@ walContext.Sample = function( wCtx, wBuffer, wNode ) {
 	this.wCtx = wCtx;
 	this.wBuffer = wBuffer;
 	this.connectedTo = wNode ? wNode.nodeIn : wCtx.nodeIn;
-
-	this.when =
-	this.offset = 0;
-	this.duration =
 	this.bufferDuration = wBuffer.buffer.duration;
-
-	this.fnOnended = function() {};
+	this.edit( 0, 0, this.bufferDuration );
 	this.loaded =
 	this.started =
 	this.playing = false;
+	this._onendedFn = function() {};
+	this.onplay = this.onplay.bind( this );
+	this.onended = this.onended.bind( this );
 };
 
 walContext.Sample.prototype = {
+	edit: function( when, offset, duration ) {
+		if ( when     != null ) { this.when     = when;     }
+		if ( offset   != null ) { this.offset   = offset;   }
+		if ( duration != null ) { this.duration = duration; }
+		return this;
+	},
 	connect: function( node ) {
 		node = node.nodeIn || node;
 		if ( node instanceof AudioNode ) {
@@ -39,7 +43,7 @@ walContext.Sample.prototype = {
 			this.loaded = true;
 			this.source = this.wCtx.ctx.createBufferSource();
 			this.source.buffer = this.wBuffer.buffer;
-			this.source.onended = this.onended.bind( this );
+			this.source.onended = this.onended;
 			if ( this.connectedTo ) {
 				this.source.connect( this.connectedTo );
 			}
@@ -47,28 +51,20 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		function onplay() {
-			++that.wCtx.nbPlaying;
-			that.playing = true;
-		}
-
 		if ( !this.loaded ) {
 			console.warn( "WebAudio Library: can not start an unloaded sample." );
 		} else if ( this.started ) {
 			console.warn( "WebAudio Library: can not start a sample twice." );
 		} else {
-			var that = this;
+			when     = when     != null ? when     : this.when;
+			offset   = offset   != null ? offset   : this.offset;
+			duration = duration != null ? duration : this.duration;
+			this.source.start( this.wCtx.ctx.currentTime + when, offset, duration );
 			this.started = true;
-			when = when !== undefined ? when : this.when;
-			this.source.start(
-				this.wCtx.ctx.currentTime + when,
-				offset   !== undefined ? offset   : this.offset,
-				duration !== undefined ? duration : this.duration
-			);
 			if ( when ) {
-				this.playTimeoutId = setTimeout( onplay, when * 1000 );
+				this.playTimeoutId = setTimeout( this.onplay, when * 1000 );
 			} else {
-				onplay();
+				this.onplay();
 			}
 		}
 		return this;
@@ -84,21 +80,25 @@ walContext.Sample.prototype = {
 	getEndTime: function() {
 		return this.when + this.duration;
 	},
+	onplay: function() {
+		this.playing = true;
+		++this.wCtx.nbPlaying;
+	},
 	onended: function( fn ) {
 		if ( typeof fn === "function" ) {
-			this.fnOnended = fn;
+			this._onendedFn = fn;
 		} else if ( this.loaded ) {
-			if ( this.playing ) {
-				this.playing = false;
-				--this.wCtx.nbPlaying;
-			}
 			if ( this.started ) {
 				this.started = false;
 				clearTimeout( this.playTimeoutId );
 			}
+			if ( this.playing ) {
+				this.playing = false;
+				--this.wCtx.nbPlaying;
+			}
 			this.loaded = false;
 			this.source = null;
-			this.fnOnended();
+			this._onendedFn();
 		}
 		return this;
 	}
