@@ -77,9 +77,6 @@ walContext.Sample.prototype = {
 		}
 		return this;
 	},
-	getEndTime: function() {
-		return this.when + this.duration;
-	},
 	onplay: function() {
 		this.playing = true;
 		++this.wCtx.nbPlaying;

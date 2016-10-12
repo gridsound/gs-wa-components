@@ -140,7 +140,7 @@ function load( cmp ) {
 	var ct = cmp.currentTime();
 
 	cmp.wSamples.forEach( function( smp ) {
-		if ( smp.getEndTime() > ct ) {
+		if ( _sampleGetEndTime( smp ) > ct ) {
 			smp.load();
 		}
 	} );
@@ -150,8 +150,8 @@ function play( cmp ) {
 	var ct = cmp.currentTime();
 
 	cmp.wSamples.forEach( function( smp ) {
-		if ( smp.getEndTime() > ct ) {
-			startSampleFrom( smp, ct );
+		if ( _sampleGetEndTime( smp ) > ct ) {
+			_sampleStart( smp, ct );
 		}
 	} );
 	updateTimeout( cmp );	
@@ -160,20 +160,20 @@ function play( cmp ) {
 function updateLastSample( cmp ) {
 	var end, last = null, maxend = 0;
 
-	cmp.wSamples.forEach( function( ws ) {
-		end = ws.getEndTime();
+	cmp.wSamples.forEach( function( smp ) {
+		end = _sampleGetEndTime( smp );
 		if ( end > maxend ) {
 			maxend = end;
-			last = ws;
+			last = smp;
 		}
 	} );
 	cmp.lastSample = last;
-	cmp.duration = last ? last.getEndTime() : 0;
+	cmp.duration = maxend;
 }
 
 function updateTimeout( cmp ) {
 	clearTimeout( cmp.playTimeoutId );
-	updateLastSample( cmp ); // <-- this line is here just for fix a pb in GS...
+	updateLastSample( cmp ); // <-- this line was here just for fix a pb in GS...
 	var sec = cmp.duration && cmp.duration - cmp.currentTime();
 	if ( sec <= 0 ) {
 		cmp.onended();
@@ -182,7 +182,19 @@ function updateTimeout( cmp ) {
 	}
 }
 
-function startSampleFrom( smp, currentTime ) {
+function updateInLive( cmp, smp, action, oldLast ) {
+	var ct = cmp.currentTime();
+
+	if ( _sampleGetEndTime( smp ) > ct && action !== "rm" ) {
+		smp.load();
+		_sampleStart( smp, ct );
+	}
+	if ( cmp.lastSample !== oldLast || action === "mv" ) {
+		updateTimeout( cmp );
+	}
+}
+
+function _sampleStart( smp, currentTime ) {
 	var start = smp.when - currentTime;
 
 	smp.start( start,
@@ -191,15 +203,8 @@ function startSampleFrom( smp, currentTime ) {
 	);
 }
 
-function updateInLive( cmp, smp, action, oldLast ) {
-	var ct = cmp.currentTime();
-	if ( smp.getEndTime() > ct && action !== "rm" ) {
-		smp.load();
-		startSampleFrom( smp, ct );
-	}
-	if ( cmp.lastSample !== oldLast || action === "mv" ) {
-		updateTimeout( cmp );
-	}
+function _sampleGetEndTime( smp ) {
+	return smp.when + smp.duration;
 }
 
 } )();
