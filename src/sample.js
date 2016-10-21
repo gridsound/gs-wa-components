@@ -1,20 +1,29 @@
 "use strict";
 
-walContext.Sample = function( wCtx, wBuffer, wNode ) {
+walContext.Sample = function( wCtx ) {
 	this.wCtx = wCtx;
-	this.wBuffer = wBuffer;
-	this.connectedTo = wNode ? wNode.nodeIn : wCtx.nodeIn;
-	this.bufferDuration = wBuffer.buffer.duration;
-	this.edit( 0, 0, this.bufferDuration );
+	this.connectedTo = wCtx.nodeIn;
 	this.loaded =
 	this.started =
 	this.playing = false;
 	this._onendedFn = function() {};
 	this.onplay = this.onplay.bind( this );
 	this.onended = this.onended.bind( this );
+	this.edit( 0, 0 );
 };
 
 walContext.Sample.prototype = {
+	setBuffer: function( wBuffer ) {
+		this.wBuffer = wBuffer;
+		return this.setBufferDuration( wBuffer.buffer.duration );
+	},
+	setBufferDuration: function( dur ) {
+		this.bufferDuration = dur;
+		if ( this.duration == null || this.duration > dur ) {
+			this.duration = dur;
+		}
+		return this;
+	},
 	edit: function( when, offset, duration ) {
 		if ( when     != null ) { this.when     = when;     }
 		if ( offset   != null ) { this.offset   = offset;   }
@@ -39,7 +48,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	load: function() {
-		if ( !this.loaded ) {
+		if ( this.wBuffer && !this.loaded ) {
 			this.loaded = true;
 			this.source = this.wCtx.ctx.createBufferSource();
 			this.source.buffer = this.wBuffer.buffer;
@@ -51,11 +60,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		if ( !this.loaded ) {
-			console.warn( "WebAudio Library: can not start an unloaded sample." );
-		} else if ( this.started ) {
-			console.warn( "WebAudio Library: can not start a sample twice." );
-		} else {
+		if ( this.loaded && !this.started ) {
 			when     = when     != null ? when     : this.when;
 			offset   = offset   != null ? offset   : this.offset;
 			duration = duration != null ? duration : this.duration;

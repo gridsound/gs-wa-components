@@ -9,7 +9,6 @@ function walContext() {
 	this.buffers = [];
 	this.compositions = [];
 	this.nbPlaying = 0;
-
 	this.filters.connect( this.destination );
 	this.nodeIn = this.filters.nodeIn;
 	delete this.filters.connect;
@@ -23,8 +22,12 @@ walContext.prototype = {
 		this.filter.gain( vol );
 		return this;
 	},
+	createSample: function() {
+		return new walContext.Sample( this );
+	},
 	createBuffer: function( file ) {
 		var that = this;
+
 		return new Promise( function( res, rej ) {
 			new walContext.Buffer( that, file, res, rej );
 		} ).then( function( buf ) {
@@ -37,6 +40,7 @@ walContext.prototype = {
 	},
 	createComposition: function() {
 		var compo = new walContext.Composition( this );
+
 		this.compositions.push( compo );
 		return compo;
 	}

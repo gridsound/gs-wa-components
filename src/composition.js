@@ -40,11 +40,11 @@ walContext.Composition.prototype = {
 		updateLastSample( this );
 		if ( this.isPlaying ) {
 			if ( smp.started ) {
-				save = smp.fnOnended;
+				save = smp._onendedFn;
 				smp.onended( function() {
 					updateInLive( that, smp, action, oldLast );
-					save();
 					smp.onended( save );
+					save();
 				} );
 				smp.stop();
 			} else {

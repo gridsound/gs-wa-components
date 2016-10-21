@@ -21,7 +21,7 @@ walContext.Buffer = function( wCtx, file, resolve, reject ) {
 	if ( file.name ) {
 		reader.addEventListener( "loadend", function() {
 			decode( reader.result );
-		});
+		} );
 		reader.readAsArrayBuffer( file );
 
 	// If `file` is already a fileBuffer.
@@ -31,10 +31,6 @@ walContext.Buffer = function( wCtx, file, resolve, reject ) {
 };
 
 walContext.Buffer.prototype = {
-	createSample: function() {
-		var wSample = new walContext.Sample( this.wCtx, this );
-		return wSample;
-	},
 	getPeaks: function( channelId, nbPeaks, offset, dur ) {
 		offset = offset || 0;
 		dur = dur === undefined
