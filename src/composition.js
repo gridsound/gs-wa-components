@@ -4,7 +4,7 @@
 
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
-	this.wSamples = [];
+	this.samples = [];
 	this.lastSample = null;
 	this.isPlaying =
 	this.isPaused = false;
@@ -33,22 +33,27 @@ walContext.Composition.prototype = {
 		return this;
 	},
 	update: function( smp, action ) {
-		var save,
-			that = this,
-			oldLast = this.lastSample;
+		var save, that = this;
 
+		if ( action !== "rm" ) {
+			// TODO: improve this part:
+			this.samples.sort( function( a, b ) {
+				return a.when < b.when ? -1
+					: a.when > b.when ? 1 : 0;
+			} );
+		}
 		updateLastSample( this );
 		if ( this.isPlaying ) {
 			if ( smp.started ) {
 				save = smp._onendedFn;
 				smp.onended( function() {
-					updateInLive( that, smp, action, oldLast );
+					_sampleUpdateLive( that, smp, action );
 					smp.onended( save );
 					save();
 				} );
 				smp.stop();
 			} else {
-				updateInLive( this, smp, action, oldLast );
+				_sampleUpdateLive( this, smp, action );
 			}
 		}
 		return this;
@@ -112,26 +117,26 @@ walContext.Composition.prototype = {
 };
 
 function add( smp ) {
-	if ( this.wSamples.indexOf( smp ) < 0 ) {
-		this.wSamples.push( smp );
+	if ( this.samples.indexOf( smp ) < 0 ) {
+		this.samples.push( smp );
 		smp.composition = this;
-		this.update( smp );
+		this.update( smp, "ad" );
 	}
 }
 
 function remove( smp ) {
-	var ind = this.wSamples.indexOf( smp );
+	var ind = this.samples.indexOf( smp );
 
 	if ( ind > -1 ) {
 		smp.composition = null;
-		this.wSamples.splice( ind, 1 );
+		this.samples.splice( ind, 1 );
 		this.update( smp, "rm" );
 	}
 }
 
 function stop( cmp ) {
 	clearTimeout( cmp.playTimeoutId );
-	cmp.wSamples.forEach( function( smp ) {
+	cmp.samples.forEach( function( smp ) {
 		smp.stop();
 	} );
 }
@@ -139,7 +144,7 @@ function stop( cmp ) {
 function load( cmp ) {
 	var ct = cmp.currentTime();
 
-	cmp.wSamples.forEach( function( smp ) {
+	cmp.samples.forEach( function( smp ) {
 		if ( _sampleGetEndTime( smp ) > ct ) {
 			smp.load();
 		}
@@ -149,32 +154,29 @@ function load( cmp ) {
 function play( cmp ) {
 	var ct = cmp.currentTime();
 
-	cmp.wSamples.forEach( function( smp ) {
+	cmp.samples.forEach( function( smp ) {
 		if ( _sampleGetEndTime( smp ) > ct ) {
 			_sampleStart( smp, ct );
 		}
 	} );
-	updateTimeout( cmp );	
+	updateEndTimeout( cmp );	
 }
 
 function updateLastSample( cmp ) {
-	var end, last = null, maxend = 0;
+	var smp = cmp.samples[ cmp.samples.length - 1 ] || null,
+		duration = smp ? _sampleGetEndTime( smp ) : 0;
 
-	cmp.wSamples.forEach( function( smp ) {
-		end = _sampleGetEndTime( smp );
-		if ( end > maxend ) {
-			maxend = end;
-			last = smp;
-		}
-	} );
-	cmp.lastSample = last;
-	cmp.duration = maxend;
+	cmp.lastSample = smp;
+	if ( Math.abs( cmp.duration - duration ) > 0.001 ) {
+		cmp.duration = duration;
+		updateEndTimeout( cmp );
+	}
 }
 
-function updateTimeout( cmp ) {
+function updateEndTimeout( cmp ) {
+	var sec = cmp.duration - cmp.currentTime();
+
 	clearTimeout( cmp.playTimeoutId );
-	updateLastSample( cmp ); // <-- this line was here just for fix a pb in GS...
-	var sec = cmp.duration && cmp.duration - cmp.currentTime();
 	if ( sec <= 0 ) {
 		cmp.onended();
 	} else {
@@ -182,15 +184,12 @@ function updateTimeout( cmp ) {
 	}
 }
 
-function updateInLive( cmp, smp, action, oldLast ) {
+function _sampleUpdateLive( cmp, smp, action ) {
 	var ct = cmp.currentTime();
 
 	if ( _sampleGetEndTime( smp ) > ct && action !== "rm" ) {
 		smp.load();
 		_sampleStart( smp, ct );
-	}
-	if ( cmp.lastSample !== oldLast || action === "mv" ) {
-		updateTimeout( cmp );
 	}
 }
 
