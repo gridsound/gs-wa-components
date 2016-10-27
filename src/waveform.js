@@ -2,7 +2,7 @@
 
 ( function() {
 
-walContext.Buffer.prototype.waveformSVG = function( svg, w, h, ofs, dur ) {
+walContext.Buffer.prototype.waveformSVG = function( svg, w, h, ofs, dur, gain ) {
 	var x,
 		h2a = h / 2 - .5,
 		h2b = h / 2 + .5,
@@ -10,6 +10,7 @@ walContext.Buffer.prototype.waveformSVG = function( svg, w, h, ofs, dur ) {
 		path = svg ? svg.firstChild : document.createElement( "path" ),
 		lChan = this.getPeaks( 0, w, ofs, dur ),
 		rChan = this.buffer.numberOfChannels > 1 ? this.getPeaks( 1, w, ofs, dur ) : lChan;
+		gain = gain !== undefined ? gain : 1;
 
 	if ( !svg ) {
 		svg = document.createElement( "svg" );
@@ -17,10 +18,10 @@ walContext.Buffer.prototype.waveformSVG = function( svg, w, h, ofs, dur ) {
 	}
 
 	for ( x = 0; x < w; ++x ) {
-		d += " L" + x + " " + ( h2a - lChan[ x ] * h2a );
+		d += " L" + x + " " + ( h2a - lChan[ x ] * h2a * gain);
 	}
 	for ( x = w - 1; x >= 0; --x ) {
-		d += " L" + x + " " + ( h2b + rChan[ x ] * h2a );
+		d += " L" + x + " " + ( h2b + rChan[ x ] * h2a * gain);
 	}
 	path.setAttribute( "d", d );
 	svg.setAttribute( "viewBox", "0 0 " + w + " " + h );
