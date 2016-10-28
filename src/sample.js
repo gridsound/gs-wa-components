@@ -5,10 +5,9 @@ walContext.Sample = function( wCtx ) {
 	this.connectedTo = wCtx.nodeIn;
 	this.loaded =
 	this.started =
-	this.playing = false;
-	this._onendedFn = function() {};
-	this.onplay = this.onplay.bind( this );
-	this.onended = this.onended.bind( this );
+	this.playing = 0;
+	this.bufferSources = [];
+	this.onended( function() {} );
 	this.edit( 0, 0 );
 };
 
@@ -34,74 +33,71 @@ walContext.Sample.prototype = {
 		node = node.nodeIn || node;
 		if ( node instanceof AudioNode ) {
 			this.connectedTo = node;
-			if ( this.source ) {
-				this.source.connect( node );
-			}
+			this.bufferSources.forEach( function( bsrc ) {
+				bsrc.connect( node );
+			} );
 		}
 		return this;
 	},
 	disconnect: function() {
-		if ( this.source ) {
-			this.source.disconnect();
-			this.connectedTo = null;
-		}
-		return this;
-	},
-	load: function() {
-		if ( this.wBuffer && !this.loaded ) {
-			this.loaded = true;
-			this.source = this.wCtx.ctx.createBufferSource();
-			this.source.buffer = this.wBuffer.buffer;
-			this.source.onended = this.onended;
-			if ( this.connectedTo ) {
-				this.source.connect( this.connectedTo );
-			}
-		}
+		this.connectedTo = null;
+		this.bufferSources.forEach( function( bsrc ) {
+			bsrc.disconnect();
+		} );
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		if ( this.loaded && !this.started ) {
+		if ( this.wBuffer ) {
+			var bsrc = this.wCtx.ctx.createBufferSource();
+
 			when     = when     != null ? when     : this.when;
 			offset   = offset   != null ? offset   : this.offset;
 			duration = duration != null ? duration : this.duration;
-			this.source.start( this.wCtx.ctx.currentTime + when, offset, duration );
-			this.started = true;
+			bsrc.buffer = this.wBuffer.buffer;
+			bsrc.onended = this._bsrcOnended.bind( this, bsrc, true );
+			bsrc.connect( this.connectedTo );
+			bsrc.start( this.wCtx.ctx.currentTime + when, offset, duration );
+			this.bufferSources.push( bsrc );
+			++this.loaded;
+			++this.started;
 			if ( when ) {
-				this.playTimeoutId = setTimeout( this.onplay, when * 1000 );
+				bsrc.gs__onplayTimeoutId = setTimeout( this._bsrcOnplay.bind( this, bsrc ), when * 1000 );
 			} else {
-				this.onplay();
+				this._bsrcOnplay( bsrc );
 			}
 		}
 		return this;
 	},
 	stop: function() {
-		if ( this.started ) {
-			this.source.onended = null;
-			this.source.stop( 0 );
-			this.onended();
-		}
+		this.bufferSources.forEach( function( bsrc ) {
+			bsrc.onended = null;
+			bsrc.stop( 0 );
+			this._bsrcOnended( bsrc, false );
+		}, this );
+		this.bufferSources.length = 0;
 		return this;
-	},
-	onplay: function() {
-		this.playing = true;
-		++this.wCtx.nbPlaying;
 	},
 	onended: function( fn ) {
-		if ( typeof fn === "function" ) {
-			this._onendedFn = fn;
-		} else if ( this.loaded ) {
-			if ( this.started ) {
-				this.started = false;
-				clearTimeout( this.playTimeoutId );
-			}
-			if ( this.playing ) {
-				this.playing = false;
-				--this.wCtx.nbPlaying;
-			}
-			this.loaded = false;
-			this.source = null;
-			this._onendedFn();
-		}
+		this._userOnended = fn;
 		return this;
+	},
+
+	// private:
+	_bsrcOnplay: function( bsrc ) {
+		bsrc.gs__isPlaying = true;
+		++this.playing;
+		++this.wCtx.nbPlaying;
+	},
+	_bsrcOnended: function( bsrc, realEvent ) {
+		clearTimeout( bsrc.gs__onplayTimeoutId );
+		if ( bsrc.gs__isPlaying ) {
+			bsrc.gs__isPlaying = false;
+			--this.playing;
+			--this.wCtx.nbPlaying;
+		}
+		if ( realEvent ) {
+			this.bufferSources.splice( this.bufferSources.indexOf( bsrc ), 1 );
+		}
+		this._userOnended();
 	}
 };

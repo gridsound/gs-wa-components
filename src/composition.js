@@ -45,7 +45,7 @@ walContext.Composition.prototype = {
 		updateLastSample( this );
 		if ( this.isPlaying ) {
 			if ( smp.started ) {
-				save = smp._onendedFn;
+				save = smp._userOnended;
 				smp.onended( function() {
 					_sampleUpdateLive( that, smp, action );
 					smp.onended( save );
@@ -69,7 +69,6 @@ walContext.Composition.prototype = {
 		this._currentTime = Math.max( 0, Math.min( sec, this.duration ) );
 		if ( this.isPlaying ) {
 			this._startedTime = this.wCtx.ctx.currentTime;
-			load( this );
 			play( this );
 		}
 		return this;
@@ -79,7 +78,6 @@ walContext.Composition.prototype = {
 			this.isPlaying = true;
 			this.isPaused = false;
 			this._startedTime = this.wCtx.ctx.currentTime;
-			load( this );
 			play( this );
 		}
 		return this;
@@ -141,16 +139,6 @@ function stop( cmp ) {
 	} );
 }
 
-function load( cmp ) {
-	var ct = cmp.currentTime();
-
-	cmp.samples.forEach( function( smp ) {
-		if ( _sampleGetEndTime( smp ) > ct ) {
-			smp.load();
-		}
-	} );
-}
-
 function play( cmp ) {
 	var ct = cmp.currentTime();
 
@@ -188,7 +176,6 @@ function _sampleUpdateLive( cmp, smp, action ) {
 	var ct = cmp.currentTime();
 
 	if ( _sampleGetEndTime( smp ) > ct && action !== "rm" ) {
-		smp.load();
 		_sampleStart( smp, ct );
 	}
 }
