@@ -1,7 +1,5 @@
 "use strict";
 
-( function() {
-
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.samples = [];
@@ -13,28 +11,21 @@ walContext.Composition = function( wCtx ) {
 	this._currentTime = 0;
 	this.fnOnended =
 	this.fnOnpaused = function() {};
+	this._add = this._add.bind( this );
+	this._remove = this._remove.bind( this );
+	this._sampleStart = this._sampleStart.bind( this );
 };
 
 walContext.Composition.prototype = {
 	add: function( smp ) {
-		if ( smp.forEach ) {
-			smp.forEach( add, this );
-		} else {
-			add.call( this, smp );
-		}
+		smp.forEach ? smp.forEach( this._add ) : this._add( smp );
 		return this;
 	},
 	remove: function( smp ) {
-		if ( smp.forEach ) {
-			smp.forEach( remove, this );
-		} else {
-			remove.call( this, smp );
-		}
+		smp.forEach ? smp.forEach( this._remove ) : this._remove( smp );
 		return this;
 	},
 	update: function( smp, action ) {
-		var save, that = this;
-
 		if ( action !== "rm" ) {
 			// TODO: improve this part:
 			this.samples.sort( function( a, b ) {
@@ -42,18 +33,11 @@ walContext.Composition.prototype = {
 					: a.when > b.when ? 1 : 0;
 			} );
 		}
-		updateLastSample( this );
+		this._updateLastSample();
 		if ( this.isPlaying ) {
-			if ( smp.started ) {
-				save = smp._userOnended;
-				smp.onended( function() {
-					_sampleUpdateLive( that, smp, action );
-					smp.onended( save );
-					save();
-				} );
-				smp.stop();
-			} else {
-				_sampleUpdateLive( this, smp, action );
+			smp.stop();
+			if ( action !== "rm" ) {
+				this._sampleStart( smp );
 			}
 		}
 		return this;
@@ -64,12 +48,11 @@ walContext.Composition.prototype = {
 				( this.isPlaying && this.wCtx.ctx.currentTime - this._startedTime );
 		}
 		if ( this.isPlaying ) {
-			stop( this );
+			this._stop();
 		}
 		this._currentTime = Math.max( 0, Math.min( sec, this.duration ) );
 		if ( this.isPlaying ) {
-			this._startedTime = this.wCtx.ctx.currentTime;
-			play( this );
+			this._play();
 		}
 		return this;
 	},
@@ -77,14 +60,13 @@ walContext.Composition.prototype = {
 		if ( !this.isPlaying ) {
 			this.isPlaying = true;
 			this.isPaused = false;
-			this._startedTime = this.wCtx.ctx.currentTime;
-			play( this );
+			this._play();
 		}
 		return this;
 	},
 	stop: function() {
 		if ( this.isPlaying || this.isPaused ) {
-			stop( this );
+			this._stop();
 			this.onended();
 		}
 		return this;
@@ -95,7 +77,7 @@ walContext.Composition.prototype = {
 			this.isPaused = true;
 			this._currentTime += this.wCtx.ctx.currentTime - this._startedTime;
 			this._startedTime = 0;
-			stop( this );
+			this._stop();
 			this.fnOnpaused();
 		}
 		return this;
@@ -111,86 +93,63 @@ walContext.Composition.prototype = {
 			this.fnOnended();
 		}
 		return this;
+	},
+
+	// private:
+	_add: function( smp ) {
+		if ( this.samples.indexOf( smp ) < 0 ) {
+			this.samples.push( smp );
+			smp.composition = this;
+			this.update( smp, "ad" );
+		}
+	},
+	_remove: function( smp ) {
+		var ind = this.samples.indexOf( smp );
+
+		if ( ind > -1 ) {
+			smp.composition = null;
+			this.samples.splice( ind, 1 );
+			this.update( smp, "rm" );
+		}
+	},
+	_stop: function() {
+		clearTimeout( this.playTimeoutId );
+		this.samples.forEach( function( smp ) {
+			smp.stop();
+		} );
+	},
+	_play: function() {
+		this._startedTime = this.wCtx.ctx.currentTime;
+		this.samples.forEach( this._sampleStart );
+		this._updateEndTimeout();
+	},
+	_updateLastSample: function() {
+		var smp = this.samples[ this.samples.length - 1 ] || null,
+			duration = smp ? smp.when + smp.duration : 0;
+
+		this.lastSample = smp;
+		if ( Math.abs( this.duration - duration ) > 0.001 ) {
+			this.duration = duration;
+			this._updateEndTimeout();
+		}
+	},
+	_updateEndTimeout: function() {
+		var sec = this.duration - this.currentTime();
+
+		clearTimeout( this.playTimeoutId );
+		if ( sec <= 0 ) {
+			this.onended();
+		} else {
+			this.playTimeoutId = setTimeout( this.onended.bind( this ), sec * 1000 );
+		}
+	},
+	_sampleStart: function( smp ) {
+		var when = smp.when - this.currentTime();
+
+		if ( when >= 0 ) {
+			smp.start( when, smp.offset, smp.duration );
+		} else if ( when > -smp.duration ) {
+			smp.start( 0, smp.offset - when, smp.duration + when );
+		}
 	}
 };
-
-function add( smp ) {
-	if ( this.samples.indexOf( smp ) < 0 ) {
-		this.samples.push( smp );
-		smp.composition = this;
-		this.update( smp, "ad" );
-	}
-}
-
-function remove( smp ) {
-	var ind = this.samples.indexOf( smp );
-
-	if ( ind > -1 ) {
-		smp.composition = null;
-		this.samples.splice( ind, 1 );
-		this.update( smp, "rm" );
-	}
-}
-
-function stop( cmp ) {
-	clearTimeout( cmp.playTimeoutId );
-	cmp.samples.forEach( function( smp ) {
-		smp.stop();
-	} );
-}
-
-function play( cmp ) {
-	var ct = cmp.currentTime();
-
-	cmp.samples.forEach( function( smp ) {
-		if ( _sampleGetEndTime( smp ) > ct ) {
-			_sampleStart( smp, ct );
-		}
-	} );
-	updateEndTimeout( cmp );	
-}
-
-function updateLastSample( cmp ) {
-	var smp = cmp.samples[ cmp.samples.length - 1 ] || null,
-		duration = smp ? _sampleGetEndTime( smp ) : 0;
-
-	cmp.lastSample = smp;
-	if ( Math.abs( cmp.duration - duration ) > 0.001 ) {
-		cmp.duration = duration;
-		updateEndTimeout( cmp );
-	}
-}
-
-function updateEndTimeout( cmp ) {
-	var sec = cmp.duration - cmp.currentTime();
-
-	clearTimeout( cmp.playTimeoutId );
-	if ( sec <= 0 ) {
-		cmp.onended();
-	} else {
-		cmp.playTimeoutId = setTimeout( cmp.onended.bind( cmp ), sec * 1000 );
-	}
-}
-
-function _sampleUpdateLive( cmp, smp, action ) {
-	var ct = cmp.currentTime();
-
-	if ( _sampleGetEndTime( smp ) > ct && action !== "rm" ) {
-		_sampleStart( smp, ct );
-	}
-}
-
-function _sampleStart( smp, currentTime ) {
-	var start = smp.when - currentTime;
-
-	smp.start( start,
-		start > 0 ? smp.offset : smp.offset - start,
-		start > 0 ? smp.duration : smp.duration + start
-	);
-}
-
-function _sampleGetEndTime( smp ) {
-	return smp.when + smp.duration;
-}
-
-} )();

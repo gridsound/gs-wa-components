@@ -3,6 +3,7 @@
 walContext.Sample = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.connectedTo = wCtx.nodeIn;
+	this.started = 0;
 	this.bufferSources = [];
 	this.onended( function() {} );
 	this.edit( 0, 0 );
@@ -55,6 +56,7 @@ walContext.Sample.prototype = {
 			bsrc.connect( this.connectedTo );
 			this.bufferSources.push( bsrc );
 			bsrc.start( this.wCtx.ctx.currentTime + when, offset, duration );
+			++this.started;
 			if ( when > 0 ) {
 				bsrc.gs__onplayTimeoutId = setTimeout( this._bsrcOnplay.bind( this, bsrc ), when * 1000 );
 			} else {
@@ -64,12 +66,14 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	stop: function() {
-		this.bufferSources.forEach( function( bsrc ) {
-			bsrc.onended = null;
-			bsrc.stop( 0 );
-			this._bsrcOnended( bsrc, false );
-		}, this );
-		this.bufferSources.length = 0;
+		if ( this.started ) {
+			this.bufferSources.forEach( function( bsrc ) {
+				bsrc.onended = null;
+				bsrc.stop( 0 );
+				this._bsrcOnended( bsrc, false );
+			}, this );
+			this.bufferSources.length = 0;
+		}
 		return this;
 	},
 	onended: function( fn ) {
@@ -91,6 +95,7 @@ walContext.Sample.prototype = {
 		if ( realEvent ) {
 			this.bufferSources.splice( this.bufferSources.indexOf( bsrc ), 1 );
 		}
+		--this.started;
 		this._userOnended();
 	}
 };
