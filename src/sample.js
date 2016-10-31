@@ -3,9 +3,6 @@
 walContext.Sample = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.connectedTo = wCtx.nodeIn;
-	this.loaded =
-	this.started =
-	this.playing = 0;
 	this.bufferSources = [];
 	this.onended( function() {} );
 	this.edit( 0, 0 );
@@ -56,11 +53,9 @@ walContext.Sample.prototype = {
 			bsrc.buffer = this.wBuffer.buffer;
 			bsrc.onended = this._bsrcOnended.bind( this, bsrc, true );
 			bsrc.connect( this.connectedTo );
-			bsrc.start( this.wCtx.ctx.currentTime + when, offset, duration );
 			this.bufferSources.push( bsrc );
-			++this.loaded;
-			++this.started;
-			if ( when ) {
+			bsrc.start( this.wCtx.ctx.currentTime + when, offset, duration );
+			if ( when > 0 ) {
 				bsrc.gs__onplayTimeoutId = setTimeout( this._bsrcOnplay.bind( this, bsrc ), when * 1000 );
 			} else {
 				this._bsrcOnplay( bsrc );
@@ -85,14 +80,12 @@ walContext.Sample.prototype = {
 	// private:
 	_bsrcOnplay: function( bsrc ) {
 		bsrc.gs__isPlaying = true;
-		++this.playing;
 		++this.wCtx.nbPlaying;
 	},
 	_bsrcOnended: function( bsrc, realEvent ) {
 		clearTimeout( bsrc.gs__onplayTimeoutId );
 		if ( bsrc.gs__isPlaying ) {
 			bsrc.gs__isPlaying = false;
-			--this.playing;
 			--this.wCtx.nbPlaying;
 		}
 		if ( realEvent ) {
