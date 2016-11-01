@@ -1,36 +1,40 @@
 "use strict";
 
-( function() {
-
-walContext.Buffer = function( wCtx, file, resolve, reject ) {
-	var that = this,
-		reader = new FileReader();
-
+walContext.Buffer = function( wCtx ) {
 	this.wCtx = wCtx;
+	this.duration = 0;
 	this.isReady = false;
-
-	function decode( fileBuffer ) {
-		that.wCtx.ctx.decodeAudioData( fileBuffer, function( buffer ) {
-			that.buffer = buffer;
-			that.isReady = true;
-			resolve( that );
-		}, reject );
-	}
-
-	// If `file` is a file waiting to be read.
-	if ( file.name ) {
-		reader.addEventListener( "loadend", function() {
-			decode( reader.result );
-		} );
-		reader.readAsArrayBuffer( file );
-
-	// If `file` is already a fileBuffer.
-	} else {
-		decode( file );
-	}
 };
 
 walContext.Buffer.prototype = {
+	setFile: function( file ) {
+		var that = this;
+
+		return new Promise( function( resolve, reject ) {
+			function decode( fileBuffer ) {
+				that.wCtx.ctx.decodeAudioData( fileBuffer, function( buffer ) {
+					that.buffer = buffer;
+					that.duration = buffer.duration;
+					that.isReady = true;
+					resolve( that );
+				}, reject );
+			}
+
+			// If `file` is a file waiting to be read.
+			if ( file.name ) {
+				var reader = new FileReader();
+
+				reader.addEventListener( "loadend", function() {
+					decode( reader.result );
+				} );
+				reader.readAsArrayBuffer( file );
+
+			// If `file` is already a fileBuffer.
+			} else {
+				decode( file );
+			}
+		} );
+	},
 	getPeaks: function( channelId, nbPeaks, offset, dur ) {
 		offset = offset || 0;
 		dur = dur === undefined
@@ -58,5 +62,3 @@ walContext.Buffer.prototype = {
 		return peaks;
 	}
 };
-
-} )();

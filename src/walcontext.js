@@ -26,14 +26,13 @@ walContext.prototype = {
 		return new walContext.Sample( this );
 	},
 	createBuffer: function( file ) {
-		var that = this;
+		var buffers = this.buffers;
 
-		return new Promise( function( res, rej ) {
-			new walContext.Buffer( that, file, res, rej );
-		} ).then( function( buf ) {
-			that.buffers.push( buf );
-			return buf;
-		} );
+		return new walContext.Buffer( this ).setFile( file )
+			.then( function( buf ) {
+				buffers.push( buf );
+				return buf;
+			} );
 	},
 	createFilters: function() {
 		return new walContext.Filters( this );
