@@ -1,26 +1,18 @@
 "use strict";
 
-walContext.Sample = function( wCtx ) {
-	this.wCtx = wCtx;
-	this.connectedTo = wCtx.nodeIn;
+walContext.Sample = function( wctx, wbuff ) {
+	this.wCtx = wctx;
+	this.wBuffer = wbuff;
+	this.connectedTo = wctx.nodeIn;
 	this.started = 0;
 	this.bufferSources = [];
 	this.onended( function() {} );
-	this.edit( 0, 0 );
+	this.edit( 0, 0, wbuff.duration );
+	this.bufferDuration = wbuff.duration;
+	wbuff.samples.push( this );
 };
 
 walContext.Sample.prototype = {
-	setBuffer: function( wBuffer ) {
-		this.wBuffer = wBuffer;
-		return this.setBufferDuration( wBuffer.buffer.duration );
-	},
-	setBufferDuration: function( dur ) {
-		this.bufferDuration = dur;
-		if ( this.duration == null || this.duration > dur ) {
-			this.duration = dur;
-		}
-		return this;
-	},
 	edit: function( when, offset, duration ) {
 		if ( when     != null ) { this.when     = when;     }
 		if ( offset   != null ) { this.offset   = offset;   }
@@ -45,7 +37,7 @@ walContext.Sample.prototype = {
 		return this;
 	},
 	start: function( when, offset, duration ) {
-		if ( this.wBuffer ) {
+		if ( this.wBuffer.buffer ) {
 			var bsrc = this.wCtx.ctx.createBufferSource();
 
 			when     = when     != null ? when     : this.when;

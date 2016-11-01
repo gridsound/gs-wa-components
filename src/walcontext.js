@@ -6,8 +6,6 @@ function walContext() {
 	this.ctx = new window.AudioContext();
 	this.destination = this.ctx.destination;
 	this.filters = this.createFilters();
-	this.buffers = [];
-	this.compositions = [];
 	this.nbPlaying = 0;
 	this.filters.connect( this.destination );
 	this.nodeIn = this.filters.nodeIn;
@@ -22,25 +20,16 @@ walContext.prototype = {
 		this.filter.gain( vol );
 		return this;
 	},
-	createSample: function() {
-		return new walContext.Sample( this );
+	createSample: function( wbuff ) {
+		return new walContext.Sample( this, wbuff );
 	},
-	createBuffer: function( file ) {
-		var buffers = this.buffers;
-
-		return new walContext.Buffer( this ).setFile( file )
-			.then( function( buf ) {
-				buffers.push( buf );
-				return buf;
-			} );
+	createBuffer: function() {
+		return new walContext.Buffer( this );
 	},
 	createFilters: function() {
 		return new walContext.Filters( this );
 	},
 	createComposition: function() {
-		var compo = new walContext.Composition( this );
-
-		this.compositions.push( compo );
-		return compo;
+		return new walContext.Composition( this );
 	}
 };

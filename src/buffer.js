@@ -3,7 +3,7 @@
 walContext.Buffer = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.duration = 0;
-	this.isReady = false;
+	this.samples = [];
 };
 
 walContext.Buffer.prototype = {
@@ -13,9 +13,7 @@ walContext.Buffer.prototype = {
 		return new Promise( function( resolve, reject ) {
 			function decode( fileBuffer ) {
 				that.wCtx.ctx.decodeAudioData( fileBuffer, function( buffer ) {
-					that.buffer = buffer;
-					that.duration = buffer.duration;
-					that.isReady = true;
+					that._setData( buffer );
 					resolve( that );
 				}, reject );
 			}
@@ -32,6 +30,19 @@ walContext.Buffer.prototype = {
 			// If `file` is already a fileBuffer.
 			} else {
 				decode( file );
+			}
+		} );
+	},
+	_setData: function( buffer ) {
+		this.buffer = buffer;
+		this._setDuration( buffer.duration );
+	},
+	_setDuration: function( dur ) {
+		this.duration = dur;
+		this.samples.forEach( function( smp ) {
+			smp.bufferDuration = dur;
+			if ( smp.duration == null || smp.duration > dur ) {
+				smp.duration = dur;
 			}
 		} );
 	},
