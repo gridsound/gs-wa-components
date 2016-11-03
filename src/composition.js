@@ -3,7 +3,6 @@
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.samples = [];
-	this.lastSample = null;
 	this.isPlaying =
 	this.isPaused = false;
 	this.duration =
@@ -11,6 +10,7 @@ walContext.Composition = function( wCtx ) {
 	this._currentTime = 0;
 	this.fnOnended =
 	this.fnOnpaused = function() {};
+	this.onended = this.onended.bind( this );
 	this._add = this._add.bind( this );
 	this._remove = this._remove.bind( this );
 	this._sampleStart = this._sampleStart.bind( this );
@@ -33,7 +33,7 @@ walContext.Composition.prototype = {
 					: a.when > b.when ? 1 : 0;
 			} );
 		}
-		this._updateLastSample();
+		this._updateDuration();
 		if ( this.isPlaying ) {
 			smp.stop();
 			if ( action !== "rm" ) {
@@ -113,7 +113,7 @@ walContext.Composition.prototype = {
 		}
 	},
 	_stop: function() {
-		clearTimeout( this.playTimeoutId );
+		clearTimeout( this.endTimeout );
 		this.samples.forEach( function( smp ) {
 			smp.stop();
 		} );
@@ -123,24 +123,25 @@ walContext.Composition.prototype = {
 		this.samples.forEach( this._sampleStart );
 		this._updateEndTimeout();
 	},
-	_updateLastSample: function() {
+	_updateDuration: function() {
 		var smp = this.samples[ this.samples.length - 1 ] || null,
 			duration = smp ? smp.when + smp.duration : 0;
 
-		this.lastSample = smp;
 		if ( Math.abs( this.duration - duration ) > 0.001 ) {
 			this.duration = duration;
 			this._updateEndTimeout();
 		}
 	},
 	_updateEndTimeout: function() {
-		var sec = this.duration - this.currentTime();
+		clearTimeout( this.endTimeout );
+		if ( this.isPlaying ) {
+			var sec = this.duration - this.currentTime();
 
-		clearTimeout( this.playTimeoutId );
-		if ( sec <= 0 ) {
-			this.onended();
-		} else {
-			this.playTimeoutId = setTimeout( this.onended.bind( this ), sec * 1000 );
+			if ( sec <= 0 ) {
+				this.onended();
+			} else {
+				this.endTimeout = setTimeout( this.onended, sec * 1000 );
+			}
 		}
 	},
 	_sampleStart: function( smp ) {
