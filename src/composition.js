@@ -5,9 +5,11 @@ walContext.Composition = function( wCtx ) {
 	this.samples = [];
 	this.isPlaying =
 	this.isPaused = false;
+	this.oldDuration =
 	this.duration =
 	this._startedTime =
 	this._currentTime = 0;
+	this._bpm = 60;
 	this.fnOnended =
 	this.fnOnpaused = function() {};
 	this.onended = this.onended.bind( this );
@@ -17,6 +19,25 @@ walContext.Composition = function( wCtx ) {
 };
 
 walContext.Composition.prototype = {
+	bpm: function( bpm ) {
+		if ( !arguments.length ) {
+			return this._bpm;
+		}
+		bpm = Math.max( 1, bpm );
+		if ( bpm !== this._bpm ) {
+			var bpmOld = this._bpm / 60,
+				bpmDiff = bpmOld / ( bpm / 60 ),
+				timeOld = this.currentTime();
+
+			wa.composition.samples.forEach( function( smp ) {
+				smp.when *= bpmDiff;
+			} );
+			this._bpm = bpm;
+			this._updateDuration();
+			this.currentTime( timeOld * bpmDiff );
+		}
+		return this;
+	},
 	add: function( smp ) {
 		smp.forEach ? smp.forEach( this._add ) : this._add( smp );
 		return this;
@@ -34,6 +55,9 @@ walContext.Composition.prototype = {
 			} );
 		}
 		this._updateDuration();
+		if ( this.oldDuration !== this.duration ) {
+			this._updateEndTimeout();
+		}
 		if ( this.isPlaying ) {
 			smp.stop();
 			if ( action !== "rm" ) {
@@ -124,19 +148,16 @@ walContext.Composition.prototype = {
 		this._updateEndTimeout();
 	},
 	_updateDuration: function() {
-		var smp = this.samples[ this.samples.length - 1 ] || null,
-			duration = smp ? smp.when + smp.duration : 0;
+		var smp = this.samples[ this.samples.length - 1 ];
 
-		if ( Math.abs( this.duration - duration ) > 0.001 ) {
-			this.duration = duration;
-			this._updateEndTimeout();
-		}
+		this.duration = smp ? smp.when + smp.duration : 0;
 	},
 	_updateEndTimeout: function() {
 		clearTimeout( this.endTimeout );
 		if ( this.isPlaying ) {
 			var sec = this.duration - this.currentTime();
 
+			this.oldDuration = this.duration;
 			if ( sec <= 0 ) {
 				this.onended();
 			} else {
