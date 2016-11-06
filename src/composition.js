@@ -1,5 +1,13 @@
 "use strict";
 
+/*
+There are A LOT of things to improve in this JS file:
+	* (line: 72) try to avoid calling Array.sort when we know there is only ONE change.
+	* (line: 193) there is a static samples Array who need to be synchronise with the samples creation/deletion.
+	* composition.update() have to update the loop instantly.
+	* the composition._play need to be reorganize...
+*/
+
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.samples = [];
@@ -15,7 +23,6 @@ walContext.Composition = function( wCtx ) {
 	this.onended = this.onended.bind( this );
 	this._add = this._add.bind( this );
 	this._remove = this._remove.bind( this );
-	this._sampleStart = this._sampleStart.bind( this );
 };
 
 walContext.Composition.prototype = {
@@ -38,6 +45,20 @@ walContext.Composition.prototype = {
 		}
 		return this;
 	},
+	loop: function( when, duration ) {
+		this.isLooping = when !== false;
+		if ( this.isLooping ) {
+			this.loopWhen = when;
+			this.loopDuration = duration;
+			this.loopEnd = when + duration;
+		} else {
+			clearTimeout( this.playTimeout );
+		}
+		if ( this.isPlaying ) {
+			this.currentTime( this.currentTime() );
+		}
+		return this;
+	},
 	add: function( smp ) {
 		smp.forEach ? smp.forEach( this._add ) : this._add( smp );
 		return this;
@@ -48,7 +69,6 @@ walContext.Composition.prototype = {
 	},
 	update: function( smp, action ) {
 		if ( action !== "rm" ) {
-			// TODO: improve this part:
 			this.samples.sort( function( a, b ) {
 				return a.when < b.when ? -1
 					: a.when > b.when ? 1 : 0;
@@ -67,14 +87,21 @@ walContext.Composition.prototype = {
 		return this;
 	},
 	currentTime: function( sec ) {
+		var that = this;
+
+		function modLoop( sec ) {
+			return !that.isLooping || sec < that.loopEnd ? sec :
+				that.loopWhen + ( sec - that.loopWhen ) % that.loopDuration;
+		}
+
 		if ( !arguments.length ) {
-			return this._currentTime +
-				( this.isPlaying && this.wCtx.ctx.currentTime - this._startedTime );
+			return !this.isPlaying ? this._currentTime :
+				modLoop( this._currentTime + this.wCtx.ctx.currentTime - this._startedTime );
 		}
 		if ( this.isPlaying ) {
 			this._stop();
 		}
-		this._currentTime = Math.max( 0, Math.min( sec, this.duration ) );
+		this._currentTime = modLoop( Math.max( 0, Math.min( sec, this.duration ) ) );
 		if ( this.isPlaying ) {
 			this._play();
 		}
@@ -138,13 +165,77 @@ walContext.Composition.prototype = {
 	},
 	_stop: function() {
 		clearTimeout( this.endTimeout );
+		clearTimeout( this.playTimeout );
 		this.samples.forEach( function( smp ) {
 			smp.stop();
 		} );
 	},
 	_play: function() {
 		this._startedTime = this.wCtx.ctx.currentTime;
-		this.samples.forEach( this._sampleStart );
+		if ( !this.isLooping ) {
+			this.samples.forEach( function( smp ) {
+				this._sampleStart( smp );
+			}, this );
+		} else {
+			this.samples.some( function( smp ) {
+				if ( smp.when < this.loopEnd ) {
+					this._sampleStart( smp );
+				} else {
+					return true;
+				}
+			}, this );
+
+			var that = this,
+				timerSec = 1,
+				nbLoopsStarted = 1,
+				nbLoops = Math.max( 1, timerSec * 2 / this.loopDuration ),
+				samples = this.samples.filter( function( smp ) {
+					return this.loopWhen < smp.when + smp.duration && smp.when < this.loopEnd;
+				}, this );
+
+			clearTimeout( this.playTimeout );
+			if ( this.currentTime() >= this.loopWhen ) {
+				startTimer();
+			} else {
+				this.playTimeout = setTimeout( startTimer, ( this.loopWhen - this.currentTime() ) * 1000 );
+			}
+
+			function startTimer() {
+				that.playTimeout = setInterval( timer, timerSec * 1000 );
+				timer();
+			}
+
+			function remainLoops() {
+				return nbLoopsStarted - (
+					that.wCtx.ctx.currentTime - that._startedTime +
+					that._currentTime - that.loopWhen
+				) / that.loopDuration;
+			}
+
+			function timer() {
+				if ( remainLoops() < nbLoops ) {
+					for ( var i = 0; i < nbLoops; ++i ) {
+						samples.forEach( function( smp ) {
+							var when = smp.when,
+								offset = smp.offset,
+								duration = smp.duration;
+
+							if ( when + duration > that.loopEnd ) {
+								duration -= when + duration - that.loopEnd;
+							}
+							when -= that.loopWhen;
+							if ( when < 0 ) {
+								offset -= when;
+								duration += when;
+								when = 0;
+							}
+							smp.start( when + remainLoops() * that.loopDuration, offset, duration );
+						} );
+						++nbLoopsStarted;
+					}
+				}
+			}
+		}
 		this._updateEndTimeout();
 	},
 	_updateDuration: function() {
@@ -154,7 +245,7 @@ walContext.Composition.prototype = {
 	},
 	_updateEndTimeout: function() {
 		clearTimeout( this.endTimeout );
-		if ( this.isPlaying ) {
+		if ( this.isPlaying && !this.isLooping ) {
 			var sec = this.duration - this.currentTime();
 
 			this.oldDuration = this.duration;
@@ -166,12 +257,21 @@ walContext.Composition.prototype = {
 		}
 	},
 	_sampleStart: function( smp ) {
-		var when = smp.when - this.currentTime();
+		var currentTime = this.currentTime(),
+			offset = smp.offset,
+			duration = smp.duration,
+			when = smp.when - currentTime;
 
-		if ( when >= 0 ) {
-			smp.start( when, smp.offset, smp.duration );
-		} else if ( when > -smp.duration ) {
-			smp.start( 0, smp.offset - when, smp.duration + when );
+		if ( when > -duration ) {
+			if ( this.isLooping && smp.when + smp.duration > this.loopEnd ) {
+				duration -= smp.when + smp.duration - this.loopEnd;
+			}
+			if ( when < 0 ) {
+				offset -= when;
+				duration += when;
+				when = 0;
+			}
+			smp.start( when, offset, duration );
 		}
 	}
 };
