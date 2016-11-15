@@ -21,7 +21,10 @@ walContext.prototype = {
 		return this;
 	},
 	createSample: function( wbuff ) {
-		return new walContext.Sample( this, wbuff );
+		var smp = new walContext.Sample( this, wbuff );
+
+		wbuff.samples.push( smp );
+		return smp;
 	},
 	createBuffer: function() {
 		return new walContext.Buffer( this );

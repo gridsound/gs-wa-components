@@ -2,8 +2,8 @@
 
 walContext.Buffer = function( wCtx ) {
 	this.wCtx = wCtx;
-	this.duration = 0;
 	this.samples = [];
+	this.sample = new walContext.Sample( wCtx, this );
 };
 
 walContext.Buffer.prototype = {
@@ -39,12 +39,15 @@ walContext.Buffer.prototype = {
 	},
 	_setDuration: function( dur ) {
 		this.duration = dur;
-		this.samples.forEach( function( smp ) {
+		this.samples.forEach( setDur );
+		setDur( this.sample );
+
+		function setDur( smp ) {
 			smp.bufferDuration = dur;
 			if ( smp.duration == null || smp.duration > dur ) {
 				smp.duration = dur;
 			}
-		} );
+		}
 	},
 	getPeaks: function( channelId, nbPeaks, offset, dur ) {
 		offset = offset || 0;

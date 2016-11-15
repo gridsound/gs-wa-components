@@ -9,7 +9,6 @@ walContext.Sample = function( wctx, wbuff ) {
 	this.onended( function() {} );
 	this.edit( 0, 0, wbuff.duration );
 	this.bufferDuration = wbuff.duration;
-	wbuff.samples.push( this );
 };
 
 walContext.Sample.prototype = {
