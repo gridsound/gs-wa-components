@@ -8,7 +8,7 @@ Object.assign( walContext.Composition.prototype, {
 			this.loopDuration = duration;
 			this.loopEnd = when + duration;
 		} else {
-			clearTimeout( this.playTimeout );
+			clearTimeout( this._loopTimeout );
 		}
 		if ( this.isPlaying ) {
 			this.currentTime( this.currentTime() );
@@ -18,7 +18,7 @@ Object.assign( walContext.Composition.prototype, {
 
 	// private:
 	_loopPlay: function() {
-		clearTimeout( this.playTimeout );
+		clearTimeout( this._loopTimeout );
 		this.samples.some( function( smp ) {
 			if ( smp.when < this.loopEnd ) {
 				this._sampleStart( smp, 0, this.currentTime(), this.loopEnd );
@@ -26,20 +26,17 @@ Object.assign( walContext.Composition.prototype, {
 				return true;
 			}
 		}, this );
-		this._loopN = Math.max( 1, 2 / this.loopDuration );
-		this._loopNbStarted = 1;
-		this._loopSamples = this.samples.filter( function( smp ) {
-			return this.loopWhen < smp.when + smp.duration && smp.when < this.loopEnd;
-		}, this );
 		if ( this.currentTime() >= this.loopWhen ) {
 			this._loopStart();
 		} else {
-			this.playTimeout = setTimeout( this._loopStart.bind( this ),
+			this._loopTimeout = setTimeout( this._loopStart.bind( this ),
 				( this.loopWhen - this.currentTime() ) * 1000 );
 		}
 	},
 	_loopStart: function() {
-		this.playTimeout = setInterval( this._loopTimer.bind( this ), 1000 );
+		this._loopN = Math.ceil( 2 / this.loopDuration );
+		this._loopNbStarted = 1;
+		this._loopTimeout = setInterval( this._loopTimer.bind( this ), 1000 );
 		this._loopTimer();
 	},
 	_loopRemain: function() {
@@ -50,12 +47,31 @@ Object.assign( walContext.Composition.prototype, {
 	},
 	_loopTimer: function() {
 		if ( this._loopRemain() < this._loopN ) {
-			for ( var i = 0; i < this._loopN; ++i ) {
-				this._loopSamples.forEach( function( smp ) {
-					this._sampleStart( smp, this._loopRemain() * this.loopDuration,
-						this.loopWhen, this.loopEnd );
-				}, this );
-				++this._loopNbStarted;
+			var smp, i, l = 0, smpi = this.getSampleAt( this.loopWhen );
+
+			if ( smpi > -1 ) {
+				while ( l++ < this._loopN ) {
+					i = smpi;
+					while ( smp = this.samples[ i++ ] ) {
+						if ( smp.when < this.loopEnd ) {
+							this._sampleStart( smp, this._loopRemain() * this.loopDuration,
+								this.loopWhen, this.loopEnd );
+						} else {
+							break;
+						}
+					}
+					++this._loopNbStarted;
+				}
+			}
+		}
+	},
+	_loopUpdate: function( smp ) {
+		this._sampleStart( smp, 0, this.currentTime(), this.loopEnd );
+		if ( smp.when + smp.duration > this.loopWhen && smp.when < this.loopEnd ) {
+			for ( var l = 1; l < this._loopRemain(); ++l ) {
+				this._sampleStart( smp,
+					l * this.loopDuration - ( this.currentTime() - this.loopWhen ),
+					this.loopWhen, this.loopEnd );
 			}
 		}
 	}

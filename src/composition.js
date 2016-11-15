@@ -1,12 +1,5 @@
 "use strict";
 
-/*
-There are A LOT of things to improve in this JS file:
-	* Try to avoid calling Array.sort when we know there is only ONE change.
-	* There is a static samples Array who need to be synchronise with the samples creation/deletion.
-	* composition.update() have to update the loop instantly.
-*/
-
 walContext.Composition = function( wCtx ) {
 	this.wCtx = wCtx;
 	this.samples = [];
@@ -52,6 +45,11 @@ walContext.Composition.prototype = {
 		smp.forEach ? smp.forEach( this._remove ) : this._remove( smp );
 		return this;
 	},
+	getSampleAt: function( sec ) {
+		return this.samples.findIndex( function( smp ) {
+			return smp.when + smp.duration > sec;
+		} );
+	},
 	update: function( smp, action ) {
 		if ( action !== "rm" ) {
 			this.samples.sort( function( a, b ) {
@@ -66,8 +64,11 @@ walContext.Composition.prototype = {
 		if ( this.isPlaying ) {
 			smp.stop();
 			if ( action !== "rm" ) {
-				this._sampleStart( smp, 0, this.currentTime(),
-					this.isLooping ? this.loopEnd : Infinity );
+				if ( this.isLooping ) {
+					this._loopUpdate( smp );
+				} else {
+					this._sampleStart( smp, 0, this.currentTime(), Infinity );
+				}
 			}
 		}
 		return this;
@@ -150,8 +151,8 @@ walContext.Composition.prototype = {
 		}
 	},
 	_stop: function() {
-		clearTimeout( this.endTimeout );
-		clearTimeout( this.playTimeout );
+		clearTimeout( this._endTimeout );
+		clearTimeout( this._loopTimeout );
 		this.samples.forEach( function( smp ) {
 			smp.stop();
 		} );
@@ -173,7 +174,7 @@ walContext.Composition.prototype = {
 		this.duration = smp ? smp.when + smp.duration : 0;
 	},
 	_updateEndTimeout: function() {
-		clearTimeout( this.endTimeout );
+		clearTimeout( this._endTimeout );
 		if ( this.isPlaying && !this.isLooping ) {
 			var sec = this.duration - this.currentTime();
 
@@ -181,7 +182,7 @@ walContext.Composition.prototype = {
 			if ( sec <= 0 ) {
 				this.onended();
 			} else {
-				this.endTimeout = setTimeout( this.onended, sec * 1000 );
+				this._endTimeout = setTimeout( this.onended, sec * 1000 );
 			}
 		}
 	},
