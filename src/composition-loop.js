@@ -21,7 +21,7 @@ Object.assign( walContext.Composition.prototype, {
 		clearTimeout( this.playTimeout );
 		this.samples.some( function( smp ) {
 			if ( smp.when < this.loopEnd ) {
-				this._sampleStart( smp );
+				this._sampleStart( smp, 0, this.currentTime(), this.loopEnd );
 			} else {
 				return true;
 			}
@@ -34,7 +34,8 @@ Object.assign( walContext.Composition.prototype, {
 		if ( this.currentTime() >= this.loopWhen ) {
 			this._loopStart();
 		} else {
-			this.playTimeout = setTimeout( this._loopStart.bind( this ), ( this.loopWhen - this.currentTime() ) * 1000 );
+			this.playTimeout = setTimeout( this._loopStart.bind( this ),
+				( this.loopWhen - this.currentTime() ) * 1000 );
 		}
 	},
 	_loopStart: function() {
@@ -51,20 +52,8 @@ Object.assign( walContext.Composition.prototype, {
 		if ( this._loopRemain() < this._loopN ) {
 			for ( var i = 0; i < this._loopN; ++i ) {
 				this._loopSamples.forEach( function( smp ) {
-					var when = smp.when,
-						offset = smp.offset,
-						duration = smp.duration;
-
-					if ( when + duration > this.loopEnd ) {
-						duration -= when + duration - this.loopEnd;
-					}
-					when -= this.loopWhen;
-					if ( when < 0 ) {
-						offset -= when;
-						duration += when;
-						when = 0;
-					}
-					smp.start( when + this._loopRemain() * this.loopDuration, offset, duration );
+					this._sampleStart( smp, this._loopRemain() * this.loopDuration,
+						this.loopWhen, this.loopEnd );
 				}, this );
 				++this._loopNbStarted;
 			}

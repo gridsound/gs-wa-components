@@ -66,7 +66,8 @@ walContext.Composition.prototype = {
 		if ( this.isPlaying ) {
 			smp.stop();
 			if ( action !== "rm" ) {
-				this._sampleStart( smp );
+				this._sampleStart( smp, 0, this.currentTime(),
+					this.isLooping ? this.loopEnd : Infinity );
 			}
 		}
 		return this;
@@ -160,7 +161,9 @@ walContext.Composition.prototype = {
 		if ( this.isLooping ) {
 			this._loopPlay();
 		} else {
-			this.samples.forEach( this._sampleStart, this );
+			this.samples.forEach( function( smp ) {
+				this._sampleStart( smp, 0, this.currentTime(), Infinity );
+			}, this );
 		}
 		this._updateEndTimeout();
 	},
@@ -182,22 +185,22 @@ walContext.Composition.prototype = {
 			}
 		}
 	},
-	_sampleStart: function( smp ) {
-		var currentTime = this.currentTime(),
+	_sampleStart: function( smp, whenExtra, currentTime, timeLimit ) {
+		var when = smp.when,
 			offset = smp.offset,
 			duration = smp.duration,
-			when = smp.when - currentTime;
+			whenRel = when - currentTime;
 
-		if ( when > -duration ) {
-			if ( this.isLooping && smp.when + smp.duration > this.loopEnd ) {
-				duration -= smp.when + smp.duration - this.loopEnd;
+		if ( whenRel > -duration ) {
+			if ( when + duration > timeLimit ) {
+				duration -= when + duration - timeLimit;
 			}
-			if ( when < 0 ) {
-				offset -= when;
-				duration += when;
-				when = 0;
+			if ( whenRel < 0 ) {
+				offset -= whenRel;
+				duration += whenRel;
+				whenRel = 0;
 			}
-			smp.start( when, offset, duration );
+			smp.start( whenRel + whenExtra, offset, duration );
 		}
 	}
 };
