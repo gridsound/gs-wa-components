@@ -196,7 +196,7 @@ walContext.Composition.prototype = {
 			duration = smp.duration,
 			whenRel = when - currentTime;
 
-		if ( whenRel > -duration ) {
+		if ( whenRel > -duration && when < timeLimit ) {
 			if ( when + duration > timeLimit ) {
 				duration -= when + duration - timeLimit;
 			}
