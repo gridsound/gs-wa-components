@@ -28,9 +28,13 @@ walContext.Composition.prototype = {
 				bpmDiff = bpmOld / ( bpm / 60 ),
 				timeOld = this.currentTime();
 
-			wa.composition.samples.forEach( function( smp ) {
+			this.samples.forEach( function( smp ) {
 				smp.when *= bpmDiff;
 			} );
+			if ( this.isLooping ) {
+				this.loop( this.loopWhen * bpmDiff,
+					this.loopDuration * bpmDiff );
+			}
 			this._bpm = bpm;
 			this._updateDuration();
 			this.currentTime( timeOld * bpmDiff );
