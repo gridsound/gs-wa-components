@@ -1,7 +1,5 @@
 "use strict";
 
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
-
 function walContext() {
 	this.ctx = new window.AudioContext();
 	this.destination = this.ctx.destination;
