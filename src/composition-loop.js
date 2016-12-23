@@ -51,14 +51,9 @@ Object.assign( walContext.Composition.prototype, {
 
 			if ( smpi > -1 ) {
 				while ( l++ < this._loopN ) {
-					i = smpi;
-					while ( smp = this.samples[ i++ ] ) {
-						if ( smp.when < this.loopEnd ) {
-							this._sampleStart( smp, this._loopRemain() * this.loopDuration,
-								this.loopWhen, this.loopEnd );
-						} else {
-							break;
-						}
+					for ( i = smpi; ( smp = this.samples[ i ] ) && smp.when < this.loopEnd; ++i ) {
+						this._sampleStart( smp, this._loopRemain() * this.loopDuration,
+							this.loopWhen, this.loopEnd );
 					}
 					++this._loopNbStarted;
 				}
