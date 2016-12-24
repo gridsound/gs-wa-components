@@ -1,17 +1,15 @@
 "use strict";
 
-walContext.Filters = function( wCtx ) {
-	this.wCtx = wCtx;
+function gswaFilters( wctx ) {
+	this.wCtx = wctx;
 	this.nodes = [];
-
-	this.nodeIn = wCtx.ctx.createGain();
-	this.nodeOut = wCtx.ctx.createGain();
-
+	this.nodeIn = wctx.ctx.createGain();
+	this.nodeOut = wctx.ctx.createGain();
 	this.nodeIn.connect( this.nodeOut );
-	this.connect( wCtx );
+	this.connect( wctx );
 };
 
-walContext.Filters.prototype = {
+gswaFilters.prototype = {
 	connect: function( node ) {
 		node = node.nodeIn || node;
 		if ( node instanceof AudioNode ) {

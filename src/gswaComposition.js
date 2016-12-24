@@ -1,7 +1,7 @@
 "use strict";
 
-walContext.Composition = function( wCtx ) {
-	this.wCtx = wCtx;
+function gswaComposition( wctx ) {
+	this.wCtx = wctx;
 	this.samples = [];
 	this.isPlaying =
 	this.isPaused = false;
@@ -17,7 +17,7 @@ walContext.Composition = function( wCtx ) {
 	this._remove = this._remove.bind( this );
 };
 
-walContext.Composition.prototype = {
+gswaComposition.prototype = {
 	bpm: function( bpm ) {
 		if ( !arguments.length ) {
 			return this._bpm;

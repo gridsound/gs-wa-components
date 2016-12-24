@@ -1,6 +1,6 @@
 "use strict";
 
-walContext.Composition.prototype.render = function() {
+gswaComposition.prototype.render = function() {
 	var currCtx,
 		offCtx,
 		loopWhen,
@@ -27,7 +27,7 @@ walContext.Composition.prototype.render = function() {
 		this.play();
 
 		return offCtx.startRendering().then( function( cmpBuf ) {
-			var data = new DataView( walContext.encodeWAV( cmpBuf ) ),
+			var data = new DataView( gswaEncodeWAV( cmpBuf ) ),
 				blob = new Blob( [ data ], {
 					type: "audio/wav"
 				} );

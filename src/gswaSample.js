@@ -1,6 +1,6 @@
 "use strict";
 
-walContext.Sample = function( wctx, wbuff ) {
+function gswaSample( wctx, wbuff ) {
 	this.wCtx = wctx;
 	this.wBuffer = wbuff;
 	this.connectedTo = wctx.nodeIn;
@@ -11,7 +11,7 @@ walContext.Sample = function( wctx, wbuff ) {
 	this.bufferDuration = wbuff.duration;
 };
 
-walContext.Sample.prototype = {
+gswaSample.prototype = {
 	edit: function( when, offset, duration ) {
 		if ( when     != null ) { this.when     = when;     }
 		if ( offset   != null ) { this.offset   = offset;   }

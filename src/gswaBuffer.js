@@ -1,12 +1,12 @@
 "use strict";
 
-walContext.Buffer = function( wCtx ) {
-	this.wCtx = wCtx;
+function gswaBuffer( wctx ) {
+	this.wCtx = wctx;
 	this.samples = [];
-	this.sample = new walContext.Sample( wCtx, this );
+	this.sample = new gswaSample( wctx, this );
 };
 
-walContext.Buffer.prototype = {
+gswaBuffer.prototype = {
 	setFile: function( file ) {
 		var that = this;
 

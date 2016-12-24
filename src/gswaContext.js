@@ -1,6 +1,6 @@
 "use strict";
 
-function walContext() {
+function gswaContext() {
 	this.ctx = new window.AudioContext();
 	this.destination = this.ctx.destination;
 	this.filters = this.createFilters();
@@ -10,7 +10,7 @@ function walContext() {
 	delete this.filters.connect;
 };
 
-walContext.prototype = {
+gswaContext.prototype = {
 	gain: function( vol ) {
 		if ( !arguments.length ) {
 			return this.filter.gain();
@@ -19,18 +19,18 @@ walContext.prototype = {
 		return this;
 	},
 	createSample: function( wbuff ) {
-		var smp = new walContext.Sample( this, wbuff );
+		var smp = new gswaSample( this, wbuff );
 
 		wbuff.samples.push( smp );
 		return smp;
 	},
 	createBuffer: function() {
-		return new walContext.Buffer( this );
+		return new gswaBuffer( this );
 	},
 	createFilters: function() {
-		return new walContext.Filters( this );
+		return new gswaFilters( this );
 	},
 	createComposition: function() {
-		return new walContext.Composition( this );
+		return new gswaComposition( this );
 	}
 };

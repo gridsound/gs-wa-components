@@ -1,6 +1,6 @@
 "use strict";
 
-Object.assign( walContext.Composition.prototype, {
+Object.assign( gswaComposition.prototype, {
 	loop: function( when, duration ) {
 		this.isLooping = when !== false;
 		if ( this.isLooping ) {

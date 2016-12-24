@@ -2,7 +2,7 @@
 
 ( function() {
 
-walContext.encodeWAV = function( buffer, opt ) {
+window.gswaEncodeWAV = function( buffer, opt ) {
 	var numChannels = buffer.numberOfChannels,
 		sampleRate = buffer.sampleRate,
 		format = opt && opt.float32 ? 3 : 1,
@@ -11,7 +11,7 @@ walContext.encodeWAV = function( buffer, opt ) {
 			? interleave( buffer.getChannelData( 0 ), buffer.getChannelData( 1 ) )
 			: buffer.getChannelData( 0 );
 
-	return encodeWAV( result, format, sampleRate, numChannels, bitDepth );
+	return encode( result, format, sampleRate, numChannels, bitDepth );
 };
 
 function interleave( ldata, rdata ) {
@@ -27,7 +27,7 @@ function interleave( ldata, rdata ) {
 	return arr;
 }
 
-function encodeWAV( samples, format, sampleRate, numChannels, bitDepth ) {
+function encode( samples, format, sampleRate, numChannels, bitDepth ) {
 	var bytesPerSample = bitDepth / 8,
 		blockAlign = numChannels * bytesPerSample,
 		buffer = new ArrayBuffer( 44 + samples.length * bytesPerSample ),
