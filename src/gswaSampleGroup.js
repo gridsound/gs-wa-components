@@ -7,11 +7,6 @@ function gswaSampleGroup() {
 };
 
 gswaSampleGroup.prototype = {
-	setCtx: function( ctx ) {
-		this.samples.forEach( function( smp ) {
-			smp.setCtx( ctx );
-		} );
-	},
 	stretch: function( factor ) {
 		this.samples.forEach( function( smp ) {
 			smp.whenRel *= factor;
