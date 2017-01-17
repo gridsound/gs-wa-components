@@ -14,8 +14,24 @@ gswaSampleGroup.prototype = {
 		this.updateDuration();
 	},
 	start: function( when, offset, duration ) {
+		when = when || 0;
+		offset = offset || 0;
+		duration = arguments.length > 2 ? duration : this.duration;
 		this.samples.forEach( function( smp ) {
-			smp.sample.start( when + smp.whenRel, smp.offset, smp.duration );
+			var sWhenRel = smp.whenRel - offset,
+				sDuration = smp.duration,
+				sOffset = smp.offset;
+
+			if ( sWhenRel < 0 ) {
+				sOffset -= sWhenRel;
+				sDuration += sWhenRel;
+			}
+			if ( sDuration > 0 ) {
+				sDuration += Math.min( duration - sWhenRel - sDuration, 0 );
+				if ( sDuration > 0 ) {
+					smp.sample.start( when + sWhenRel, sOffset, sDuration );
+				}
+			}
 		} );
 	},
 	stop: function() {
