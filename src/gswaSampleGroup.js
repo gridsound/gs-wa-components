@@ -48,23 +48,23 @@ gswaSampleGroup.prototype = {
 	addSamples: function( arr ) {
 		arr.forEach( this.addSample.bind( this ) );
 	},
-	delSample: function( smp ) {
-		del( this.samples );
-		del( this.samplesRev );
+	removeSample: function( smp ) {
+		rem( this.samples );
+		rem( this.samplesRev );
 
-		function del( arr ) {
+		function rem( arr ) {
 			arr.splice( arr.findIndex( function( _smp ) {
 				return _smp === smp;
 			} ), 1 );
 		}
 	},
-	delSamples: function( arr ) {
-		arr.forEach( this.delSample.bind( this ) );
+	removeSamples: function( arr ) {
+		arr.forEach( this.removeSample.bind( this ) );
 	},
 	updateDuration: function() {
 		this.duration = this.samplesRev.length && this.samplesRev[ 0 ].duration;
 	},
-	updateAllSamples: function() {
+	sortSamples: function() {
 		this.samples.sort( function( a, b ) {
 			return cmp( a.whenRel, b.whenRel );
 		} );
