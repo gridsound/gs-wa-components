@@ -10,9 +10,32 @@ gswaBufferSample.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
-	setBuffer: function( buffer ) {
-		this.buffer = buffer;
-		this.duration = buffer.duration;
+	setDataFromAudioBuffer: function( audioBuffer ) {
+		this.buffer = audioBuffer;
+		this.duration = audioBuffer.duration;
+		return audioBuffer;
+	},
+	setDataFromAudioData: function( audioData ) {
+		return this.ctx.decodeAudioData( audioData )
+			.then( this.setDataFromAudioBuffer.bind( this ) );
+	},
+	setDataFromBlob: function( blob ) {
+		var that = this,
+			reader = new FileReader();
+
+		return new Promise( function( resolve, reject ) {
+			reader.onloadend = function() {
+				resolve( that.setDataFromAudioData( reader.result ) );
+			};
+			reader.readAsArrayBuffer( blob );
+		} );
+	},
+	setDataFromURL: function( url ) {
+		return fetch( url )
+			.then( function( res ) {
+				return res.arrayBuffer();
+			} )
+			.then( this.setDataFromAudioData );
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
