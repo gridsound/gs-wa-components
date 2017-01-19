@@ -2,7 +2,7 @@
 
 ( function() {
 
-function gswaBufferSample() {
+window.gswaBufferSample = function() {
 	this.bufferSources = [];
 };
 
@@ -35,7 +35,7 @@ gswaBufferSample.prototype = {
 			.then( function( res ) {
 				return res.arrayBuffer();
 			} )
-			.then( this.setDataFromAudioData );
+			.then( this.setDataFromAudioData.bind( this ) );
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
