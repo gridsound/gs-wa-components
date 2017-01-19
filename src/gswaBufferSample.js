@@ -27,15 +27,18 @@ gswaBufferSample.prototype = {
 		} );
 	},
 	start: function( when, offset, duration ) {
-		var bSource = this.ctx.createBufferSource();
+		var bSource, ctx = this.ctx, buf = this.buffer;
 
-		bSource.buffer = this.buffer;
-		bSource.connect( this.connectedTo );
-		bSource.onended = _removeSource.bind( this, bSource );
-		this.bufferSources.push( bSource );
-		bSource.start( when || 0, offset || 0,
-			arguments.length > 2 ? duration : this.duration );
-		return bSource;
+		if ( ctx && buf ) {
+			bSource = ctx.createBufferSource();
+			bSource.buffer = buf;
+			bSource.onended = _removeSource.bind( this, bSource );
+			bSource.connect( this.connectedTo );
+			this.bufferSources.push( bSource );
+			bSource.start( when || 0, offset || 0,
+				arguments.length > 2 ? duration : this.duration );
+			return bSource;
+		}
 	},
 	stop: function() {
 		this.bufferSources.forEach( function( bSource ) {
