@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>gs-webaudio-library: tests</title>
+<meta charset="UTF-8"/>
+<style>
+body {
+	margin: 32px;
+	color: #bbb;
+	font: 14px monospace;
+	background: #222;
+}
+h2 {
+	color: #eee;
+}
+.imp {
+	color: #fff;
+	font-weight: bold;
+	text-shadow: 0 0 10px #fff;
+}
+</style>
+</head>
+<body>
+
+<h2>gswaBufferSample</h2>
+
+<code>
+	var audioContext = new AudioContext(),<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;waBufferSample = new gswaBufferSample();<br/>
+	<br/>
+	waBufferSample.setContext( audioContext );<br/>
+	waBufferSample.connect( audioContext.destination );<br/>
+	waBufferSample.setDataFromURL( "a.wav" ).then( ... );<br/>
+	waBufferSample.bufferSources.length; //
+	<code class="imp" id="bufsmpBsrcLen"></code><br/>
+</code>
+<br/>
+<button id="bufsmpStart">waBufferSample.<b>start</b>()</button><br/>
+<button id="bufsmpStart021">waBufferSample.<b>start</b>(0, <b>0.2</b>, <b>1</b>)</button><br/>
+<button id="bufsmpStop">waBufferSample.<b>stop</b>()</button>
+
+<script src="../src/gswaBufferSample.js"></script>
+<script>
+var 
+	elBufsmpBsrcLen = document.querySelector( "#bufsmpBsrcLen" ),
+	elBtnBufsmpStart = document.querySelector( "#bufsmpStart" ),
+	elBtnBufsmpStart021 = document.querySelector( "#bufsmpStart021" ),
+	elBtnBufsmpStop = document.querySelector( "#bufsmpStop" ),
+	audioContext = new AudioContext(),
+	waBufferSample = new gswaBufferSample();
+
+elBtnBufsmpStart.onclick =
+elBtnBufsmpStart021.onclick =
+elBtnBufsmpStop.onclick = function( e ) {
+	eval( e.target.textContent );
+};
+
+waBufferSample.setContext( audioContext );
+waBufferSample.connect( audioContext.destination );
+
+waBufferSample.setDataFromURL( "a.wav" ).then( function( audioBuffer ) {
+	if ( !( audioBuffer instanceof AudioBuffer ) ) {
+		console.error( "An AudioBuffer should be returned instead of", audioBuffer );
+	}
+	console.log( audioBuffer );
+} );
+
+requestAnimationFrame( function frame() {
+	elBufsmpBsrcLen.textContent = waBufferSample.bufferSources.length;
+	requestAnimationFrame( frame );
+} );
+
+</script>
+</body>
+</html>
