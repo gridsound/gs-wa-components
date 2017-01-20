@@ -5,32 +5,58 @@
 <meta charset="UTF-8"/>
 <style>
 body {
-	margin: 32px;
+	margin: 0;
 	color: #bbb;
-	font: 14px monospace;
+	font: 16px sans-serif;
 	background: #222;
 }
 #global {
-	display: flex;
+	box-sizing: border-box;
+	width: 600px;
+	margin: 0 auto;
+	padding: 20px;
+	transition: width .2s;
 }
-section + section {
-	padding-left: 32px;
+fieldset {
+	border: 2px solid rgba( 140, 220, 255, .2 );
+	border-radius: 4px;
+	color: #8cdcff;
 }
-h2 {
-	color: #eee;
+fieldset + fieldset {
+    margin-top: 20px;
+}
+pre {
+	margin: 10px 0 0;
+	color: #999;
+	font-size: 14px;
+}
+button {
+	margin: 2px 0;
+	border: 1px solid rgba( 67, 188, 241, .2 );
+	border-radius: 2px;
+	padding: 1px 6px;
+	color: #ddd;
+	font: inherit;
+	background: rgba( 140, 220, 255, .15 );
 }
 .imp {
 	color: #fff;
 	font-weight: bold;
 	text-shadow: 0 0 10px #fff;
 }
+@media screen and ( max-width: 800px ) {
+	#global {
+		width: 100%;
+	}
+}
 </style>
 </head>
 <body>
 
 <div id="global">
-	<section>
-		<h2>gswaBufferSample</h2>
+
+	<fieldset>
+		<legend>gswaBufferSample</legend>
 <pre>
 var audioContext = new AudioContext();
 var waBufferSample = new gswaBufferSample();
@@ -44,14 +70,15 @@ waBufferSample.setDataFromURL( "a.wav" ).then( function() {
 	<button class="btnEval">waBufferSample.stop();</button>
 } );
 </pre>
-	</section>
-	<section>
-		<h2>gswaSampleGroup</h2>
+	</fieldset>
+
+	<fieldset>
+		<legend>gswaSampleGroup</legend>
 <pre>
-var audioContext = new AudioContext(),
-	waSampleGroup = new gswaSampleGroup(),
-	waKick = new gswaBufferSample(),
-	waSnare = new gswaBufferSample();
+var audioContext = new AudioContext();
+var waSampleGroup = new gswaSampleGroup();
+var waKick = new gswaBufferSample();
+var waSnare = new gswaBufferSample();
 
 waBufKick.setContext( audioContext );
 waBufSnare.setContext( audioContext );
@@ -78,7 +105,7 @@ Promise.all( [
 	<button class="btnEval">waSampleGroup.stop();</button>
 } );
 </pre>
-	</section>
+	</fieldset>
 </div>
 
 <script src="../src/gswaBufferSample.js"></script>
@@ -129,7 +156,6 @@ requestAnimationFrame( function frame() {
 	elBufsmpBsrcLen.textContent = waBufferSample.bufferSources.length;
 	requestAnimationFrame( frame );
 } );
-
 </script>
 </body>
 </html>
