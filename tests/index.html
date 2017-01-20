@@ -30,6 +30,13 @@ pre {
 	color: #999;
 	font-size: 14px;
 }
+a {
+	color: #aef;
+	text-decoration: none;
+}
+a:hover {
+	border-bottom: 1px dotted;
+}
 button {
 	margin: 2px 0;
 	border: 1px solid rgba( 67, 188, 241, .2 );
@@ -64,7 +71,7 @@ var waBufferSample = new gswaBufferSample();
 waBufferSample.bufferSources.length; // <code class="imp" id="bufsmpBsrcLen"></code>
 waBufferSample.setContext( audioContext );
 waBufferSample.connect( audioContext.destination );
-waBufferSample.setDataFromURL( "a.wav" ).then( function() {
+waBufferSample.setDataFromURL( "<a href="a.wav">a.wav</a>" ).then( function() {
 	<button class="btnEval">waBufferSample.start();</button>
 	<button class="btnEval">waBufferSample.start(0, 0.2, 1);</button>
 	<button class="btnEval">waBufferSample.stop();</button>
@@ -86,8 +93,8 @@ waBufKick.connect( audioContext.destination );
 waBufSnare.connect( audioContext.destination );
 
 Promise.all( [
-	waKick.setDataFromURL( "kick.wav" ),
-	waSnare.setDataFromURL( "snare.wav" )
+	waKick.setDataFromURL( "<a href="kick.wav">kick.wav</a>" ),
+	waSnare.setDataFromURL( "<a href="snare.wav">snare.wav</a>" )
 ] ).then( function() {
 	waSampleGroup.addSamples( [
 		{ sample: waKick,  whenRel: 0 },
