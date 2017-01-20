@@ -71,7 +71,7 @@ var waBufferSample = new gswaBufferSample();
 waBufferSample.bufferSources.length; // <code class="imp" id="bufsmpBsrcLen"></code>
 waBufferSample.setContext( audioContext );
 waBufferSample.connect( audioContext.destination );
-waBufferSample.setDataFromURL( "<a href="a.wav">a.wav</a>" ).then( function() {
+waBufferSample.setDataFromURL( "<a href="demo/a.wav">a.wav</a>" ).then( function() {
 	<button class="btnEval">waBufferSample.start();</button>
 	<button class="btnEval">waBufferSample.start(0, 0.2, 1);</button>
 	<button class="btnEval">waBufferSample.stop();</button>
@@ -93,8 +93,8 @@ waBufKick.connect( audioContext.destination );
 waBufSnare.connect( audioContext.destination );
 
 Promise.all( [
-	waKick.setDataFromURL( "<a href="kick.wav">kick.wav</a>" ),
-	waSnare.setDataFromURL( "<a href="snare.wav">snare.wav</a>" )
+	waKick.setDataFromURL( "<a href="demo/kick.wav">kick.wav</a>" ),
+	waSnare.setDataFromURL( "<a href="demo/snare.wav">snare.wav</a>" )
 ] ).then( function() {
 	waSampleGroup.addSamples( [
 		{ sample: waKick,  whenRel: 0 },
@@ -115,8 +115,8 @@ Promise.all( [
 	</fieldset>
 </div>
 
-<script src="../src/gswaBufferSample.js"></script>
-<script src="../src/gswaSampleGroup.js"></script>
+<script src="src/gswaBufferSample.js"></script>
+<script src="src/gswaSampleGroup.js"></script>
 <script>
 var 
 	elBufsmpBsrcLen = document.querySelector( "#bufsmpBsrcLen" ),
@@ -136,9 +136,9 @@ waBufKick.connect( audioContext.destination );
 waBufSnare.connect( audioContext.destination );
 
 Promise.all( [
-	waBufferSample.setDataFromURL( "a.wav" ),
-	waBufKick.setDataFromURL( "kick.wav" ),
-	waBufSnare.setDataFromURL( "snare.wav" )
+	waBufferSample.setDataFromURL( "demo/a.wav" ),
+	waBufKick.setDataFromURL( "demo/kick.wav" ),
+	waBufSnare.setDataFromURL( "demo/snare.wav" )
 ] ).then( function() {
 	waSampleGroup.addSamples( [
 		{ sample: waBufKick,  whenRel: 0 },
