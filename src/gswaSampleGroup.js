@@ -62,7 +62,9 @@ gswaSampleGroup.prototype = {
 		arr.forEach( this.removeSample.bind( this ) );
 	},
 	updateDuration: function() {
-		this.duration = this.samplesRev.length && this.samplesRev[ 0 ].duration;
+		var smp = this.samplesRev[ 0 ];
+
+		this.duration = smp ? smp.whenRel + smp.duration : 0;
 	},
 	sortSamples: function() {
 		this.samples.sort( function( a, b ) {
@@ -73,7 +75,7 @@ gswaSampleGroup.prototype = {
 		} );
 
 		function cmp( a, b ) {
-			return a < b ? 1 : a > b ? -1 : 0;
+			return a < b ? -1 : a > b ? 1 : 0;
 		}
 	}
 };
