@@ -20,8 +20,8 @@ gswaBufferSample.prototype = {
 		this.setMetadata( audioBuffer );
 		return audioBuffer;
 	},
-	setDataFromAudioData: function( audioData ) {
-		return this.ctx.decodeAudioData( audioData )
+	setDataFromArrayBuffer: function( arrayBuffer ) {
+		return this.ctx.decodeAudioData( arrayBuffer )
 			.then( this.setDataFromAudioBuffer.bind( this ) );
 	},
 	setDataFromBlob: function( blob ) {
@@ -30,7 +30,7 @@ gswaBufferSample.prototype = {
 
 		return new Promise( function( resolve, reject ) {
 			reader.onloadend = function() {
-				resolve( that.setDataFromAudioData( reader.result ) );
+				resolve( that.setDataFromArrayBuffer( reader.result ) );
 			};
 			reader.readAsArrayBuffer( blob );
 		} );
@@ -38,7 +38,7 @@ gswaBufferSample.prototype = {
 	setDataFromURL: function( url ) {
 		return fetch( url )
 			.then( function( res ) { return res.arrayBuffer(); } )
-			.then( this.setDataFromAudioData.bind( this ) );
+			.then( this.setDataFromArrayBuffer.bind( this ) );
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
