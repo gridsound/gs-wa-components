@@ -10,9 +10,14 @@ gswaBufferSample.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
+	setMetadata: function( obj ) {
+		if ( obj ) {
+			this.duration = this.duration || obj.duration;
+		}
+	},
 	setDataFromAudioBuffer: function( audioBuffer ) {
 		this.buffer = audioBuffer;
-		this.duration = audioBuffer.duration;
+		this.setMetadata( audioBuffer );
 		return audioBuffer;
 	},
 	setDataFromAudioData: function( audioData ) {
@@ -32,9 +37,7 @@ gswaBufferSample.prototype = {
 	},
 	setDataFromURL: function( url ) {
 		return fetch( url )
-			.then( function( res ) {
-				return res.arrayBuffer();
-			} )
+			.then( function( res ) { return res.arrayBuffer(); } )
 			.then( this.setDataFromAudioData.bind( this ) );
 	},
 	connect: function( node ) {
