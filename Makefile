@@ -8,6 +8,9 @@ all:
 .PHONY: all
 
 SRC = \
+	src/gswaBufferSample.js       \
+	src/gswaSampleGroup.js        \
+	                              \
 	src/gswaContext.js            \
 	src/gswaEncodeWAV.js          \
 	src/gswaSample.js             \
