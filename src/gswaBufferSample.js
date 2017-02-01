@@ -77,9 +77,7 @@ gswaBufferSample.prototype = {
 
 function _removeSource( bSource ) {
 	this.bufferSources.splice(
-		this.bufferSources.findIndex( function( _bSource ) {
-			return bSource === _bSource;
-		} ), 1 );
+		this.bufferSources.indexOf( bSource ), 1 );
 }
 
 } )();

@@ -55,14 +55,8 @@ gswaSampleGroup.prototype = {
 		arr.forEach( this.addSample.bind( this ) );
 	},
 	removeSample: function( smp ) {
-		rem( this.samples );
-		rem( this.samplesRev );
-
-		function rem( arr ) {
-			arr.splice( arr.findIndex( function( _smp ) {
-				return _smp === smp;
-			} ), 1 );
-		}
+		this.samples.splice( this.samples.indexOf( smp ), 1 );
+		this.samplesRev.splice( this.samplesRev.indexOf( smp ), 1 );
 	},
 	removeSamples: function( arr ) {
 		arr.forEach( this.removeSample.bind( this ) );
