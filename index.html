@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>gs-webaudio-library: tests</title>
+<title>GridSound's Web Audio library</title>
 <meta charset="UTF-8"/>
+<link rel="shortcut icon" href="../assets/icon/black/32.png"/>
 <style>
 body {
 	margin: 0;
@@ -124,8 +125,7 @@ Promise.all( [
 <!-- -->
 
 <script>
-var 
-	elBufsmpBsrcLen = document.querySelector( "#bufsmpBsrcLen" ),
+var elBufsmpBsrcLen = document.querySelector( "#bufsmpBsrcLen" ),
 	elBtnEval = Array.from( document.querySelectorAll( ".btnEval" ) ),
 	audioContext = new AudioContext(),
 	waSampleGroup = new gswaSampleGroup(),
