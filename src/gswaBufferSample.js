@@ -15,6 +15,11 @@ gswaBufferSample.prototype = {
 			this.duration = this.duration || obj.duration;
 		}
 	},
+	dropData: function() {
+		this.stop();
+		this.disconnect();
+		this.buffer = null;
+	},
 	setDataFromAudioBuffer: function( audioBuffer ) {
 		this.buffer = audioBuffer;
 		this.setMetadata( audioBuffer );
