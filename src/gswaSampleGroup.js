@@ -3,7 +3,7 @@
 function gswaSampleGroup() {
 	this.samples = [];
 	this.samplesRev = [];
-	this.updateDuration();
+	this.duration = 0;
 };
 
 gswaSampleGroup.prototype = {
@@ -11,7 +11,7 @@ gswaSampleGroup.prototype = {
 		this.samples.forEach( function( smp ) {
 			smp.whenRel *= factor;
 		} );
-		this.updateDuration();
+		this._updateDur();
 	},
 	start: function( when, offset, duration ) {
 		var firstSmp = this.samples[ 0 ];
@@ -61,12 +61,18 @@ gswaSampleGroup.prototype = {
 	removeSamples: function( arr ) {
 		arr.forEach( this.removeSample.bind( this ) );
 	},
-	updateDuration: function() {
+	update: function() {
+		this._sortSmp();
+		this._updateDur();
+	},
+
+	// private:
+	_updateDur: function() {
 		var smp = this.samplesRev[ 0 ];
 
 		this.duration = smp ? smp.whenRel + smp.duration : 0;
 	},
-	sortSamples: function() {
+	_sortSmp: function() {
 		this.samples.sort( function( a, b ) {
 			return cmp( a.whenRel, b.whenRel );
 		} );
