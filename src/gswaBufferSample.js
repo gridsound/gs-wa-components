@@ -1,7 +1,5 @@
 "use strict";
 
-( function() {
-
 window.gswaBufferSample = function() {
 	this.bufferSources = [];
 };
@@ -63,7 +61,7 @@ gswaBufferSample.prototype = {
 		if ( ctx && buf ) {
 			bSource = ctx.createBufferSource();
 			bSource.buffer = buf;
-			bSource.onended = _removeSource.bind( this, bSource );
+			bSource.onended = this._removeSource.bind( this, bSource );
 			bSource.connect( this.connectedTo );
 			this.bufferSources.push( bSource );
 			bSource.start( when || 0, offset || 0,
@@ -77,12 +75,11 @@ gswaBufferSample.prototype = {
 			bSource.stop();
 		} );
 		this.bufferSources.length = 0;
+	},
+
+	// private:
+	_removeSource: function( bSource ) {
+		this.bufferSources.splice(
+			this.bufferSources.indexOf( bSource ), 1 );
 	}
 };
-
-function _removeSource( bSource ) {
-	this.bufferSources.splice(
-		this.bufferSources.indexOf( bSource ), 1 );
-}
-
-} )();
