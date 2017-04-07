@@ -20,7 +20,7 @@ gswaSampleGroup.prototype = {
 			offset = offset || 0;
 			duration = arguments.length > 2 ? duration : this.duration;
 			if ( !when ) {
-				when = firstSmp.sample.ctx.currentTime;
+				when = firstSmp.source.ctx.currentTime;
 			}
 			this.samples.forEach( function( smp ) {
 				var sWhenRel = smp.whenRel - offset,
@@ -34,7 +34,7 @@ gswaSampleGroup.prototype = {
 				if ( sDuration > 0 ) {
 					sDuration += Math.min( duration - sWhenRel - sDuration, 0 );
 					if ( sDuration > 0 ) {
-						smp.sample.start( when + sWhenRel, sOffset, sDuration );
+						smp.source.start( when + sWhenRel, sOffset, sDuration );
 					}
 				}
 			} );
@@ -42,12 +42,12 @@ gswaSampleGroup.prototype = {
 	},
 	stop: function() {
 		this.samples.forEach( function( smp ) {
-			smp.sample.stop();
+			smp.source.stop();
 		} );
 	},
 	addSample: function( smp ) {
 		smp.offset = smp.offset || 0;
-		smp.duration = smp.duration || smp.sample.duration;
+		smp.duration = smp.duration || smp.source.duration;
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 	},
