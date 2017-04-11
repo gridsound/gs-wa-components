@@ -1,6 +1,7 @@
 "use strict";
 
 function gswaSampleGroup() {
+	this.parentGroups = [];
 	this.samples = [];
 	this.samplesRev = [];
 	this.setBpm( 60 );
@@ -58,7 +59,12 @@ gswaSampleGroup.prototype = {
 		} );
 	},
 	addSample: function( smp ) {
+		var par = smp.source.parentGroups;
+
 		smp.offset = smp.offset || 0;
+		if ( par && par.indexOf( this ) < 0 ) {
+			par.push( this );
+		}
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 		this.ctx = smp.source.ctx;
@@ -67,8 +73,11 @@ gswaSampleGroup.prototype = {
 		arr.forEach( this.addSample.bind( this ) );
 	},
 	removeSample: function( smp ) {
+		var par = smp.source.parentGroups;
+
 		this.samples.splice( this.samples.indexOf( smp ), 1 );
 		this.samplesRev.splice( this.samplesRev.indexOf( smp ), 1 );
+		par && par.splice( par.indexOf( this ), 1 );
 	},
 	removeSamples: function( arr ) {
 		arr.forEach( this.removeSample.bind( this ) );
@@ -76,6 +85,9 @@ gswaSampleGroup.prototype = {
 	update: function() {
 		this._sortSmp();
 		this._updateDur();
+		this.parentGroups.forEach( function( par ) {
+			par.update();
+		} );
 	},
 
 	// private:
