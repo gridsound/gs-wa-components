@@ -34,8 +34,9 @@ gswaSampleGroup.prototype = {
 					isgroup = smpsrc instanceof gswaSampleGroup ? bps : 1,
 					smpwhen = smp.beat * bps - offset,
 					smpoffset = smp.offset * isgroup,
-					smpdur = smp.duration * isgroup;
+					smpdur = smp.duration != null ? smp.duration : smp.source.duration;
 
+				smpdur *= isgroup;
 				if ( smpwhen < 0 ) {
 					smpoffset -= smpwhen;
 					smpdur += smpwhen;
@@ -58,9 +59,6 @@ gswaSampleGroup.prototype = {
 	},
 	addSample: function( smp ) {
 		smp.offset = smp.offset || 0;
-		smp.duration = Number.isFinite( smp.duration )
-			? smp.duration
-			: smp.source.duration;
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 		this.ctx = smp.source.ctx;
@@ -101,7 +99,11 @@ gswaSampleGroup.prototype = {
 		}
 	},
 	_beatEnd: function( smp ) {
-		return smp.beat + smp.duration /
-			( smp.source instanceof gswaSampleGroup ? 1 : this.bps );
+		var dur = smp.duration != null ? smp.duration : smp.source.duration;
+
+		if ( smp.source instanceof gswaSampleGroup ) {
+			dur /= this.bps;
+		}
+		return smp.beat + dur;
 	}
 };
