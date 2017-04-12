@@ -10,6 +10,16 @@ function gswaSampleGroup() {
 
 gswaSampleGroup.id = 0;
 gswaSampleGroup.prototype = {
+	empty: function() {
+		var id = this.id;
+
+		this.samples.forEach( function( smp ) {
+			delete smp.source.parents[ id ];
+		} );
+		this.samples.length = 0;
+		this.samplesRev.length = 0;
+		this.update();
+	},
 	setBpm: function( bpm ) {
 		if ( this.bpm !== bpm ) {
 			this.bpm = bpm;
