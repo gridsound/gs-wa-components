@@ -1,12 +1,14 @@
 "use strict";
 
 function gswaSampleGroup() {
-	this.parentGroups = [];
+	this.id = ++gswaSampleGroup.id;
+	this.parents = {};
 	this.samples = [];
 	this.samplesRev = [];
 	this.setBpm( 60 );
 };
 
+gswaSampleGroup.id = 0;
 gswaSampleGroup.prototype = {
 	setBpm: function( bpm ) {
 		if ( this.bpm !== bpm ) {
@@ -59,12 +61,17 @@ gswaSampleGroup.prototype = {
 		} );
 	},
 	addSample: function( smp ) {
-		var par = smp.source.parentGroups;
+		var par = smp.source.parents,
+			id = this.id;
 
-		smp.offset = smp.offset || 0;
-		if ( par && par.indexOf( this ) < 0 ) {
-			par.push( this );
+		if ( par ) {
+			if ( !par[ id ] ) {
+				par[ id ] = { obj: this, nb: 1 };
+			} else {
+				++par[ id ].nb;
+			}
 		}
+		smp.offset = smp.offset || 0;
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 		this.ctx = smp.source.ctx;
@@ -73,21 +80,28 @@ gswaSampleGroup.prototype = {
 		arr.forEach( this.addSample.bind( this ) );
 	},
 	removeSample: function( smp ) {
-		var par = smp.source.parentGroups;
+		var par = smp.source.parents,
+			ind = this.samples.indexOf( smp );
 
-		this.samples.splice( this.samples.indexOf( smp ), 1 );
-		this.samplesRev.splice( this.samplesRev.indexOf( smp ), 1 );
-		par && par.splice( par.indexOf( this ), 1 );
+		if ( ind > 0 ) {
+			if ( --par[ this.id ].nb <= 0 ) {
+				delete par[ this.id ];
+			}
+			this.samples.splice( ind, 1 );
+			this.samplesRev.splice( this.samplesRev.indexOf( smp ), 1 );
+		}
 	},
 	removeSamples: function( arr ) {
 		arr.forEach( this.removeSample.bind( this ) );
 	},
 	update: function() {
+		var par = this.parents;
+
 		this._sortSmp();
 		this._updateDur();
-		this.parentGroups.forEach( function( par ) {
-			par.update();
-		} );
+		for ( var id in par ) {
+			par[ id ].obj.update();
+		}
 	},
 
 	// private:
