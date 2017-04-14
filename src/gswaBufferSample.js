@@ -4,19 +4,22 @@ window.gswaBufferSample = function() {
 	this.bufferSources = [];
 };
 
+gswaBufferSample.regFilename = /(?:([^/]*)\.([a-zA-Z\d]*))?$/;
 gswaBufferSample.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
-	setMetadata: function( obj ) {
-		if ( obj ) {
-			if ( obj.name ) { this.name = obj.name; }
-			if ( obj.filename ) { this.filename = obj.filename; }
-			if ( Number.isFinite( obj.duration ) ) { this.duration = obj.duration; }
-		}
-	},
 	setData: function( data ) {
-		this.data = data;
+		if ( data ) {
+			var reg, str = data.name || data;
+
+			this.data = data;
+			if ( typeof str === "string" ) {
+				reg = gswaBufferSample.regFilename.exec( str );
+				this.filename = reg[ 0 ];
+				this.name = reg[ 1 ];
+			}
+		}
 	},
 	load: function() {
 		var dat = this.data;
