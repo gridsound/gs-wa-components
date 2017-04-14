@@ -94,7 +94,7 @@ gswaSampleGroup.prototype = {
 			ind = this.samples.indexOf( smp );
 
 		if ( ind > 0 ) {
-			if ( --par[ this.id ].nb <= 0 ) {
+			if ( par && --par[ this.id ].nb <= 0 ) {
 				delete par[ this.id ];
 			}
 			this.samples.splice( ind, 1 );
