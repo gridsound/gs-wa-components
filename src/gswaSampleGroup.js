@@ -23,7 +23,7 @@ gswaSampleGroup.prototype = {
 	setBpm: function( bpm ) {
 		if ( this.bpm !== bpm ) {
 			this.bpm = bpm;
-			this.bps = 60 / bpm;
+			this.bps = bpm / 60;
 			this.samples.forEach( function( smp ) {
 				if ( smp.source instanceof gswaSampleGroup ) {
 					smp.source.setBpm( bpm );
@@ -33,34 +33,34 @@ gswaSampleGroup.prototype = {
 		}
 	},
 	start: function( when, offset, duration ) {
-		var firstSmp = this.samples[ 0 ],
-			bps = this.bps;
+		if ( this.duration ) {
+			var bps = this.bps;
 
-		if ( firstSmp ) {
-			offset = ( offset || 0 ) * bps;
-			duration = ( arguments.length > 2 ? duration : this.duration ) * bps;
-			if ( !when || when < 0 ) {
-				when = this.ctx.currentTime;
-			}
+			when = when > 0 ? when : this.ctx.currentTime;
+			offset = ( offset || 0 ) / bps;
+			duration = ( duration != null ? duration : this.duration ) / bps;
 			this.samples.forEach( function( smp ) {
-				var smpsrc = smp.source,
-					isgroup = smpsrc instanceof gswaSampleGroup ? bps : 1,
-					smpwhen = smp.beat * bps - offset,
-					smpoffset = smp.offset * isgroup,
-					smpdur = smp.duration != null ? smp.duration : smp.source.duration;
+				var src = smp.source,
+					isgroup = src instanceof gswaSampleGroup,
+					smpwhen = smp.beat / bps - offset,
+					smpoff = smp.offset,
+					smpdur = smp.duration != null ? smp.duration : src.duration;
 
-				smpdur *= isgroup;
+				if ( isgroup ) {
+					smpoff /= bps;
+					smpdur /= bps;
+				}
 				if ( smpwhen < 0 ) {
-					smpoffset -= smpwhen;
+					smpoff -= smpwhen;
 					smpdur += smpwhen;
 				}
+				smpdur += Math.min( duration - smpwhen - smpdur, 0 );
 				if ( smpdur > 0 ) {
-					smpdur += Math.min( duration - smpwhen - smpdur, 0 );
-					if ( smpdur > 0 ) {
-						smpsrc.start( when + Math.max( 0, smpwhen ),
-							smpoffset / isgroup,
-							smpdur / isgroup );
+					if ( isgroup ) {
+						smpoff *= bps;
+						smpdur *= bps;
 					}
+					src.start( when + Math.max( 0, smpwhen ), smpoff, smpdur );
 				}
 			} );
 		}
@@ -135,11 +135,9 @@ gswaSampleGroup.prototype = {
 		}
 	},
 	_beatEnd: function( smp ) {
-		var dur = smp.duration != null ? smp.duration : smp.source.duration;
+		var src = smp.source,
+			dur = smp.duration != null ? smp.duration : src.duration;
 
-		if ( smp.source instanceof gswaSampleGroup ) {
-			dur /= this.bps;
-		}
-		return smp.beat + dur;
+		return smp.beat + ( src._beatEnd ? dur : dur * this.bps );
 	}
 };
