@@ -10,15 +10,8 @@ function gswaSampleGroup() {
 
 gswaSampleGroup.id = 0;
 gswaSampleGroup.prototype = {
-	empty: function() {
-		var id = this.id;
-
-		this.samples.forEach( function( smp ) {
-			delete smp.source.parents[ id ];
-		} );
-		this.samples.length = 0;
-		this.samplesRev.length = 0;
-		this.update();
+	setContext: function( ctx ) {
+		this.ctx = ctx;
 	},
 	setBpm: function( bpm ) {
 		if ( this.bpm !== bpm ) {
@@ -31,6 +24,16 @@ gswaSampleGroup.prototype = {
 			} );
 			this._updateDur();
 		}
+	},
+	empty: function() {
+		var id = this.id;
+
+		this.samples.forEach( function( smp ) {
+			delete smp.source.parents[ id ];
+		} );
+		this.samples.length = 0;
+		this.samplesRev.length = 0;
+		this.update();
 	},
 	start: function( when, offset, duration ) {
 		if ( this.duration ) {
@@ -84,7 +87,6 @@ gswaSampleGroup.prototype = {
 		smp.offset = smp.offset || 0;
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
-		this.ctx = smp.source.ctx;
 	},
 	addSamples: function( arr ) {
 		arr.forEach( this.addSample.bind( this ) );
