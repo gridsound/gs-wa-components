@@ -42,7 +42,7 @@ gswaSampleGroup.prototype = {
 			this.samples.forEach( function( smp ) {
 				var src = smp.source,
 					isgroup = src instanceof gswaSampleGroup,
-					smpwhen = smp.beat / bps - offset,
+					smpwhen = smp.when / bps - offset,
 					smpoff = smp.offset,
 					smpdur = smp.duration != null ? smp.duration : src.duration;
 
@@ -124,7 +124,7 @@ gswaSampleGroup.prototype = {
 		var that = this;
 
 		this.samples.sort( function( a, b ) {
-			return cmp( a.beat, b.beat );
+			return cmp( a.when, b.when );
 		} );
 		this.samplesRev.sort( function( a, b ) {
 			return cmp( that._beatEnd( b ), that._beatEnd( a ) );
@@ -138,6 +138,6 @@ gswaSampleGroup.prototype = {
 		var src = smp.source,
 			dur = smp.duration != null ? smp.duration : src.duration;
 
-		return smp.beat + ( src._beatEnd ? dur : dur * this.bps );
+		return smp.when + ( src._beatEnd ? dur : dur * this.bps );
 	}
 };
