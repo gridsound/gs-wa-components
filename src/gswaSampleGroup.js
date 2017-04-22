@@ -5,6 +5,7 @@ function gswaSampleGroup() {
 	this.parents = {};
 	this.samples = [];
 	this.samplesRev = [];
+	this._onendedResolve = [];
 	this.setBpm( 60 );
 };
 
@@ -36,42 +37,21 @@ gswaSampleGroup.prototype = {
 		this.update();
 	},
 	start: function( when, offset, duration ) {
-		if ( this.duration ) {
-			var bps = this.bps;
+		var that = this;
 
-			when = when > 0 ? when : this.ctx.currentTime;
-			offset = ( offset || 0 ) / bps;
-			duration = ( duration != null ? duration : this.duration ) / bps;
-			this.samples.forEach( function( smp ) {
-				var src = smp.source,
-					isgroup = src instanceof gswaSampleGroup,
-					smpwhen = smp.when / bps - offset,
-					smpoff = smp.offset,
-					smpdur = smp.duration != null ? smp.duration : src.duration;
-
-				if ( isgroup ) {
-					smpoff /= bps;
-					smpdur /= bps;
-				}
-				if ( smpwhen < 0 ) {
-					smpoff -= smpwhen;
-					smpdur += smpwhen;
-				}
-				smpdur += Math.min( duration - smpwhen - smpdur, 0 );
-				if ( smpdur > 0 ) {
-					if ( isgroup ) {
-						smpoff *= bps;
-						smpdur *= bps;
-					}
-					src.start( when + Math.max( 0, smpwhen ), smpoff, smpdur );
-				}
-			} );
-		}
+		return new Promise( function( resolve ) {
+			that._onendedResolve.push( resolve );
+			setTimeout( resolve, that._start( when, offset, duration ) * 1000 );
+		} );
 	},
 	stop: function() {
 		this.samples.forEach( function( smp ) {
 			smp.source.stop();
 		} );
+		this._onendedResolve.forEach( function( resolve ) {
+			resolve();
+		} );
+		this._onendedResolve.length = 0;
 	},
 	addSample: function( smp ) {
 		var par = smp.source.parents,
@@ -117,6 +97,41 @@ gswaSampleGroup.prototype = {
 	},
 
 	// private:
+	_start: function( when, offset, duration ) {
+		var bps = this.bps,
+			maxdur = this.duration;
+
+		if ( maxdur ) {
+			when = when > 0 ? when : this.ctx.currentTime;
+			offset = ( offset || 0 ) / bps;
+			duration = maxdur =
+				( duration != null ? duration : maxdur ) / bps;
+			this.samples.forEach( function( smp ) {
+				var src = smp.source,
+					isgroup = src instanceof gswaSampleGroup,
+					smpwhen = smp.when / bps - offset,
+					smpoff = smp.offset,
+					smpdur = smp.duration != null ? smp.duration : src.duration;
+
+				if ( isgroup ) {
+					smpoff /= bps;
+					smpdur /= bps;
+				}
+				if ( smpwhen < 0 ) {
+					smpoff -= smpwhen;
+					smpdur += smpwhen;
+				}
+				smpdur += Math.min( duration - smpwhen - smpdur, 0 );
+				if ( smpdur > 0 ) {
+					smpwhen = when + Math.max( 0, smpwhen );
+					isgroup
+						? src._start( smpwhen, smpoff * bps, smpdur * bps )
+						: src.start( smpwhen, smpoff, smpdur );
+				}
+			} );
+		}
+		return maxdur;
+	},
 	_updateDur: function() {
 		var smp = this.samplesRev[ 0 ];
 
