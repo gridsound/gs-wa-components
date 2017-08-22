@@ -37,7 +37,8 @@ gswaBuffer.prototype = {
 	unload: function() {
 		this.stop();
 		this.disconnect();
-		this.buffer = null;
+		delete this.buffer;
+		delete this.duration;
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
