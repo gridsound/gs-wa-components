@@ -11,10 +11,10 @@ function gswaGroup() {
 
 gswaGroup.id = 0;
 gswaGroup.prototype = {
-	setContext: function( ctx ) {
+	setContext( ctx ) {
 		this.ctx = ctx;
 	},
-	setBpm: function( bpm ) {
+	setBpm( bpm ) {
 		if ( this.bpm !== bpm ) {
 			this.bpm = bpm;
 			this.bps = bpm / 60;
@@ -26,7 +26,7 @@ gswaGroup.prototype = {
 			this._updateDur();
 		}
 	},
-	empty: function() {
+	empty() {
 		var id = this.id;
 
 		this.samples.forEach( function( smp ) {
@@ -36,7 +36,7 @@ gswaGroup.prototype = {
 		this.samplesRev.length = 0;
 		this.update();
 	},
-	start: function( when, offset, duration ) {
+	start( when, offset, duration ) {
 		var that = this;
 
 		return new Promise( function( resolve ) {
@@ -44,7 +44,7 @@ gswaGroup.prototype = {
 			setTimeout( resolve, that._start( when, offset, duration ) * 1000 );
 		} );
 	},
-	stop: function() {
+	stop() {
 		this.samples.forEach( function( smp ) {
 			smp.source.stop();
 		} );
@@ -53,7 +53,7 @@ gswaGroup.prototype = {
 		} );
 		this._onendedResolve.length = 0;
 	},
-	addSample: function( smp ) {
+	addSample( smp ) {
 		var par = smp.source.parents,
 			id = this.id;
 
@@ -68,10 +68,10 @@ gswaGroup.prototype = {
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 	},
-	addSamples: function( arr ) {
+	addSamples( arr ) {
 		arr.forEach( this.addSample.bind( this ) );
 	},
-	removeSample: function( smp ) {
+	removeSample( smp ) {
 		var par = smp.source.parents,
 			ind = this.samples.indexOf( smp );
 
@@ -83,10 +83,10 @@ gswaGroup.prototype = {
 			this.samplesRev.splice( this.samplesRev.indexOf( smp ), 1 );
 		}
 	},
-	removeSamples: function( arr ) {
+	removeSamples( arr ) {
 		arr.forEach( this.removeSample.bind( this ) );
 	},
-	update: function() {
+	update() {
 		var par = this.parents;
 
 		this._sortSmp();
@@ -97,7 +97,7 @@ gswaGroup.prototype = {
 	},
 
 	// private:
-	_start: function( when, offset, duration ) {
+	_start( when, offset, duration ) {
 		var bps = this.bps,
 			maxdur = this.duration;
 
@@ -132,12 +132,12 @@ gswaGroup.prototype = {
 		}
 		return maxdur;
 	},
-	_updateDur: function() {
+	_updateDur() {
 		var smp = this.samplesRev[ 0 ];
 
 		this.duration = smp ? this._beatEnd( smp ) : 0;
 	},
-	_sortSmp: function() {
+	_sortSmp() {
 		var that = this;
 
 		this.samples.sort( function( a, b ) {
@@ -151,7 +151,7 @@ gswaGroup.prototype = {
 			return a < b ? -1 : a > b ? 1 : 0;
 		}
 	},
-	_beatEnd: function( smp ) {
+	_beatEnd( smp ) {
 		var src = smp.source,
 			dur = smp.duration != null ? smp.duration : src.duration;
 
