@@ -37,11 +37,9 @@ gswaGroup.prototype = {
 		this.update();
 	},
 	start( when, offset, duration ) {
-		var that = this;
-
-		return new Promise( function( resolve ) {
-			that._onendedResolve.push( resolve );
-			setTimeout( resolve, that._start( when, offset, duration ) * 1000 );
+		return new Promise( resolve => {
+			this._onendedResolve.push( resolve );
+			setTimeout( resolve, this._start( when, offset, duration ) * 1000 );
 		} );
 	},
 	stop() {
@@ -138,13 +136,11 @@ gswaGroup.prototype = {
 		this.duration = smp ? this._beatEnd( smp ) : 0;
 	},
 	_sortSmp() {
-		var that = this;
-
 		this.samples.sort( function( a, b ) {
 			return cmp( a.when, b.when );
 		} );
-		this.samplesRev.sort( function( a, b ) {
-			return cmp( that._beatEnd( b ), that._beatEnd( a ) );
+		this.samplesRev.sort( ( a, b ) => {
+			return cmp( this._beatEnd( b ), this._beatEnd( a ) );
 		} );
 
 		function cmp( a, b ) {
