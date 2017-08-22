@@ -1,5 +1,17 @@
 "use strict";
 
+/*
+If you try to use WebAudio on Safari, maybe you will have to use this:
+
+gswaBuffer.prototype._setDataFromArrayBuffer = function( arrayBuffer ) {
+	return new Promise( ( res, rej ) => {
+		this.ctx.decodeAudioData( arrayBuffer, audioBuffer => {
+			res( this._setDataFromAudioBuffer( audioBuffer ) );
+		}, rej );
+	} );
+};
+*/
+
 window.gswaBuffer = function() {
 	this.ABSNs = {};
 	this.ABSNsLength =
