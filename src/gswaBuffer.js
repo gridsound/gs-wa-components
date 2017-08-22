@@ -1,7 +1,9 @@
 "use strict";
 
 window.gswaBuffer = function() {
-	this.ABSNs = [];
+	this.ABSNs = {};
+	this.ABSNsLength =
+	this._currId = 0;
 };
 
 gswaBuffer.regFilename = /(?:([^/]*)\.([a-zA-Z\d]*))?$/;
@@ -39,41 +41,49 @@ gswaBuffer.prototype = {
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
-		this.ABSNs.forEach( function( absn ) {
-			absn.connect( node );
-		} );
+		for ( var id in this.ABSNs ) {
+			this.ABSNs[ id ].connect( node );
+		}
 	},
 	disconnect: function() {
 		this.connectedTo = null;
-		this.ABSNs.forEach( function( absn ) {
-			absn.disconnect();
-		} );
+		for ( var id in this.ABSNs ) {
+			this.ABSNs[ id ].disconnect();
+		}
 	},
 	start: function( when, offset, duration ) {
-		var absn, ctx = this.ctx, buf = this.buffer;
+		var absn,
+			ctx = this.ctx,
+			buf = this.buffer;
 
 		if ( ctx && buf ) {
 			absn = ctx.createBufferSource();
 			absn.buffer = buf;
-			absn.onended = this._removeSource.bind( this, absn );
 			absn.connect( this.connectedTo );
-			this.ABSNs.push( absn );
+			absn.onended = this._removeSource.bind( this, this._currId );
+			this.ABSNs[ this._currId++ ] = absn;
+			++this.ABSNsLength;
 			absn.start( when || 0, offset || 0,
 				arguments.length > 2 ? duration : this.duration );
 			return absn;
 		}
 	},
 	stop: function() {
-		this.ABSNs.forEach( function( absn ) {
+		var id, absn, ABSNs = this.ABSNs;
+
+		for ( id in ABSNs ) {
+			absn = ABSNs[ id ];
 			absn.onended = null;
 			absn.stop();
-		} );
-		this.ABSNs.length = 0;
+			delete ABSNs[ id ];
+		}
+		this.ABSNsLength = 0;
 	},
 
 	// private:
-	_removeSource: function( absn ) {
-		this.ABSNs.splice( this.ABSNs.indexOf( absn ), 1 );
+	_removeSource: function( id ) {
+		delete this.ABSNs[ id ];
+		--this.ABSNsLength;
 	},
 	_setDataFromAudioBuffer: function( audioBuffer ) {
 		this.buffer = audioBuffer;
