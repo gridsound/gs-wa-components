@@ -7,10 +7,10 @@ window.gswaBuffer = function() {
 };
 
 gswaBuffer.prototype = {
-	setContext: function( ctx ) {
+	setContext( ctx ) {
 		this.ctx = ctx;
 	},
-	load: function( data ) {
+	load( data ) {
 		return (
 			data instanceof AudioBuffer ? Promise.resolve( this._setDataFromAudioBuffer( data ) ) :
 			data instanceof ArrayBuffer ? this._setDataFromArrayBuffer( data ) :
@@ -18,25 +18,25 @@ gswaBuffer.prototype = {
 			this._setDataFromURL( data )
 		);
 	},
-	unload: function() {
+	unload() {
 		this.stop();
 		this.disconnect();
 		delete this.buffer;
 		delete this.duration;
 	},
-	connect: function( node ) {
+	connect( node ) {
 		this.connectedTo = node;
 		for ( var id in this.ABSNs ) {
 			this.ABSNs[ id ].connect( node );
 		}
 	},
-	disconnect: function() {
+	disconnect() {
 		this.connectedTo = null;
 		for ( var id in this.ABSNs ) {
 			this.ABSNs[ id ].disconnect();
 		}
 	},
-	simpleStart: function() {
+	simpleStart() {
 		var absn = this._newABSN();
 
 		if ( absn ) {
@@ -47,7 +47,7 @@ gswaBuffer.prototype = {
 			} ) );
 		}
 	},
-	start: function( when, offset, duration ) {
+	start( when, offset, duration ) {
 		var absn = this._newABSN();
 
 		if ( absn ) {
@@ -59,7 +59,7 @@ gswaBuffer.prototype = {
 			return absn;
 		}
 	},
-	stop: function() {
+	stop() {
 		if ( this._absn ) {
 			this._absn.stop();
 		}
@@ -69,7 +69,7 @@ gswaBuffer.prototype = {
 	},
 
 	// private:
-	_newABSN: function() {
+	_newABSN() {
 		var absn,
 			ctx = this.ctx,
 			buf = this.buffer;
@@ -81,20 +81,20 @@ gswaBuffer.prototype = {
 		}
 		return absn;
 	},
-	_removeSource: function( id ) {
+	_removeSource( id ) {
 		delete this.ABSNs[ id ];
 		--this.ABSNsLength;
 	},
-	_setDataFromAudioBuffer: function( audioBuffer ) {
+	_setDataFromAudioBuffer( audioBuffer ) {
 		this.buffer = audioBuffer;
 		this.duration = audioBuffer.duration;
 		return audioBuffer;
 	},
-	_setDataFromArrayBuffer: function( arrayBuffer ) {
+	_setDataFromArrayBuffer( arrayBuffer ) {
 		return this.ctx.decodeAudioData( arrayBuffer )
 			.then( this._setDataFromAudioBuffer.bind( this ) );
 	},
-	_setDataFromBlob: function( blob ) {
+	_setDataFromBlob( blob ) {
 		var that = this,
 			reader = new FileReader();
 
@@ -105,7 +105,7 @@ gswaBuffer.prototype = {
 			reader.readAsArrayBuffer( blob );
 		} );
 	},
-	_setDataFromURL: function( url ) {
+	_setDataFromURL( url ) {
 		return fetch( url )
 			.then( function( res ) { return res.arrayBuffer(); } )
 			.then( this._setDataFromArrayBuffer.bind( this ) );
