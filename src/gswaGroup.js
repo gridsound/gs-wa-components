@@ -1,7 +1,7 @@
 "use strict";
 
-function gswaSampleGroup() {
-	this.id = ++gswaSampleGroup.id;
+function gswaGroup() {
+	this.id = ++gswaGroup.id;
 	this.parents = {};
 	this.samples = [];
 	this.samplesRev = [];
@@ -9,8 +9,8 @@ function gswaSampleGroup() {
 	this.setBpm( 60 );
 };
 
-gswaSampleGroup.id = 0;
-gswaSampleGroup.prototype = {
+gswaGroup.id = 0;
+gswaGroup.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
@@ -19,7 +19,7 @@ gswaSampleGroup.prototype = {
 			this.bpm = bpm;
 			this.bps = bpm / 60;
 			this.samples.forEach( function( smp ) {
-				if ( smp.source instanceof gswaSampleGroup ) {
+				if ( smp.source instanceof gswaGroup ) {
 					smp.source.setBpm( bpm );
 				}
 			} );
@@ -108,7 +108,7 @@ gswaSampleGroup.prototype = {
 				( duration != null ? duration : maxdur ) / bps;
 			this.samples.forEach( function( smp ) {
 				var src = smp.source,
-					isgroup = src instanceof gswaSampleGroup,
+					isgroup = src instanceof gswaGroup,
 					smpwhen = smp.when / bps - offset,
 					smpoff = smp.offset,
 					smpdur = smp.duration != null ? smp.duration : src.duration;
