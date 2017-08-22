@@ -36,15 +36,21 @@ gswaBuffer.prototype = {
 			this.ABSNs[ id ].disconnect();
 		}
 	},
-	start: function( when, offset, duration ) {
-		var absn,
-			ctx = this.ctx,
-			buf = this.buffer;
+	simpleStart: function() {
+		var absn = this._newABSN();
 
-		if ( ctx && buf ) {
-			absn = ctx.createBufferSource();
-			absn.buffer = buf;
-			absn.connect( this.connectedTo );
+		if ( absn ) {
+			this._absn = absn;
+			return ( this._promise = new Promise( function( resolve ) {
+				absn.onended = resolve;
+				absn.start();
+			} ) );
+		}
+	},
+	start: function( when, offset, duration ) {
+		var absn = this._newABSN();
+
+		if ( absn ) {
 			absn.onended = this._removeSource.bind( this, this._currId );
 			this.ABSNs[ this._currId++ ] = absn;
 			++this.ABSNsLength;
@@ -54,18 +60,27 @@ gswaBuffer.prototype = {
 		}
 	},
 	stop: function() {
-		var id, absn, ABSNs = this.ABSNs;
-
-		for ( id in ABSNs ) {
-			absn = ABSNs[ id ];
-			absn.onended = null;
-			absn.stop();
-			delete ABSNs[ id ];
+		if ( this._absn ) {
+			this._absn.stop();
 		}
-		this.ABSNsLength = 0;
+		for ( var id in this.ABSNs ) {
+			this.ABSNs[ id ].stop();
+		}
 	},
 
 	// private:
+	_newABSN: function() {
+		var absn,
+			ctx = this.ctx,
+			buf = this.buffer;
+
+		if ( ctx && buf ) {
+			absn = ctx.createBufferSource();
+			absn.buffer = buf;
+			absn.connect( this.connectedTo );
+		}
+		return absn;
+	},
 	_removeSource: function( id ) {
 		delete this.ABSNs[ id ];
 		--this.ABSNsLength;
