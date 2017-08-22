@@ -1,11 +1,12 @@
 "use strict";
 
-window.gswaBufferSample = function() {
-	this.bufferSources = [];
+window.gswaBuffer = function() {
+	this.ABSNs = [];
 };
 
-gswaBufferSample.regFilename = /(?:([^/]*)\.([a-zA-Z\d]*))?$/;
-gswaBufferSample.prototype = {
+gswaBuffer.regFilename = /(?:([^/]*)\.([a-zA-Z\d]*))?$/;
+
+gswaBuffer.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
@@ -15,7 +16,7 @@ gswaBufferSample.prototype = {
 
 			this.data = data;
 			if ( typeof str === "string" ) {
-				reg = gswaBufferSample.regFilename.exec( str );
+				reg = gswaBuffer.regFilename.exec( str );
 				this.filename = reg[ 0 ];
 				this.name = reg[ 1 ];
 			}
@@ -38,42 +39,41 @@ gswaBufferSample.prototype = {
 	},
 	connect: function( node ) {
 		this.connectedTo = node;
-		this.bufferSources.forEach( function( bsrc ) {
-			bsrc.connect( node );
+		this.ABSNs.forEach( function( absn ) {
+			absn.connect( node );
 		} );
 	},
 	disconnect: function() {
 		this.connectedTo = null;
-		this.bufferSources.forEach( function( bsrc ) {
-			bsrc.disconnect();
+		this.ABSNs.forEach( function( absn ) {
+			absn.disconnect();
 		} );
 	},
 	start: function( when, offset, duration ) {
-		var bSource, ctx = this.ctx, buf = this.buffer;
+		var absn, ctx = this.ctx, buf = this.buffer;
 
 		if ( ctx && buf ) {
-			bSource = ctx.createBufferSource();
-			bSource.buffer = buf;
-			bSource.onended = this._removeSource.bind( this, bSource );
-			bSource.connect( this.connectedTo );
-			this.bufferSources.push( bSource );
-			bSource.start( when || 0, offset || 0,
+			absn = ctx.createBufferSource();
+			absn.buffer = buf;
+			absn.onended = this._removeSource.bind( this, absn );
+			absn.connect( this.connectedTo );
+			this.ABSNs.push( absn );
+			absn.start( when || 0, offset || 0,
 				arguments.length > 2 ? duration : this.duration );
-			return bSource;
+			return absn;
 		}
 	},
 	stop: function() {
-		this.bufferSources.forEach( function( bSource ) {
-			bSource.onended = null;
-			bSource.stop();
+		this.ABSNs.forEach( function( absn ) {
+			absn.onended = null;
+			absn.stop();
 		} );
-		this.bufferSources.length = 0;
+		this.ABSNs.length = 0;
 	},
 
 	// private:
-	_removeSource: function( bSource ) {
-		this.bufferSources.splice(
-			this.bufferSources.indexOf( bSource ), 1 );
+	_removeSource: function( absn ) {
+		this.ABSNs.splice( this.ABSNs.indexOf( absn ), 1 );
 	},
 	_setDataFromAudioBuffer: function( audioBuffer ) {
 		this.buffer = audioBuffer;
