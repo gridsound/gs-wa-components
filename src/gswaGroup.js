@@ -42,6 +42,9 @@ gswaGroup.prototype = {
 			setTimeout( resolve, this._start( when, offset, duration ) * 1000 );
 		} );
 	},
+	startBeat( wBeat, oBeat, dBeat ) {
+		return this.start( wBeat / this.bps, oBeat / this.bps, dBeat / this.bps );
+	},
 	stop() {
 		this.samples.forEach( function( smp ) {
 			smp.source.stop();
