@@ -6,32 +6,16 @@ window.gswaBuffer = function() {
 	this._currId = 0;
 };
 
-gswaBuffer.regFilename = /(?:([^/]*)\.([a-zA-Z\d]*))?$/;
-
 gswaBuffer.prototype = {
 	setContext: function( ctx ) {
 		this.ctx = ctx;
 	},
-	setData: function( data ) {
-		if ( data ) {
-			var reg, str = data.name || data;
-
-			this.data = data;
-			if ( typeof str === "string" ) {
-				reg = gswaBuffer.regFilename.exec( str );
-				this.filename = reg[ 0 ];
-				this.name = reg[ 1 ];
-			}
-		}
-	},
-	load: function() {
-		var dat = this.data;
-
+	load: function( data ) {
 		return (
-			dat instanceof AudioBuffer ? Promise.resolve( this._setDataFromAudioBuffer( dat ) ) :
-			dat instanceof ArrayBuffer ? this._setDataFromArrayBuffer( dat ) :
-			dat instanceof Blob ? this._setDataFromBlob( dat ) :
-			this._setDataFromURL( dat )
+			data instanceof AudioBuffer ? Promise.resolve( this._setDataFromAudioBuffer( data ) ) :
+			data instanceof ArrayBuffer ? this._setDataFromArrayBuffer( data ) :
+			data instanceof Blob ? this._setDataFromBlob( data ) :
+			this._setDataFromURL( data )
 		);
 	},
 	unload: function() {
