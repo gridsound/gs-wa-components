@@ -39,11 +39,20 @@ gswaGroup.prototype = {
 	start( when, offset, duration ) {
 		return new Promise( resolve => {
 			this._onendedResolve.push( resolve );
-			setTimeout( resolve, this._start( when, offset, duration ) * 1000 );
+			setTimeout( resolve, this._start(
+				when || this.ctx.currentTime,
+				offset || 0,
+				duration != null ? duration : this.duration
+			) * 1000 );
 		} );
 	},
 	startBeat( wBeat, oBeat, dBeat ) {
-		return this.start( wBeat / this.bps, oBeat / this.bps, dBeat / this.bps );
+		var argLen = arguments.length;
+
+		return this.start(
+			argLen > 0 ? wBeat / this.bps : undefined,
+			argLen > 1 ? oBeat / this.bps : undefined,
+			argLen > 2 ? dBeat / this.bps : undefined );
 	},
 	stop() {
 		this.samples.forEach( function( smp ) {
@@ -65,7 +74,6 @@ gswaGroup.prototype = {
 				++par[ id ].nb;
 			}
 		}
-		smp.offset = smp.offset || 0;
 		this.samples.push( smp );
 		this.samplesRev.push( smp );
 	},
@@ -100,6 +108,7 @@ gswaGroup.prototype = {
 		var smp = this.samplesRev[ 0 ];
 
 		this.duration = smp ? this._smpEnd( smp ) : 0;
+		this.durationBeat = this.duration * this.bps;
 	},
 	_sortSmp() {
 		this.samples.sort( ( a, b ) => cmp( this._smpWhen( a ), this._smpWhen( b ) ) );
@@ -132,38 +141,29 @@ gswaGroup.prototype = {
 		return this._smpWhen( smp ) + this._smpDuration( smp );
 	},
 	_start( when, offset, duration ) {
-		var bps = this.bps,
-			maxdur = this.duration;
-
-		if ( maxdur ) {
-			when = when > 0 ? when : this.ctx.currentTime;
-			offset = ( offset || 0 ) / bps;
-			duration =
-			maxdur = ( duration != null ? duration : maxdur ) / bps;
-			this.samples.forEach( function( smp ) {
+		if ( this.duration ) {
+			this.samples.forEach( smp => {
 				var src = smp.source,
 					isgroup = src instanceof gswaGroup,
-					smpwhen = smp.when / bps - offset,
-					smpoff = smp.offset,
-					smpdur = smp.duration != null ? smp.duration : src.duration;
+					smpwhen = this._smpWhen( smp ) - offset,
+					smpoff = this._smpOffset( smp ),
+					smpdur = this._smpDuration( smp ),
+					smpend = smpwhen + smpdur;
 
-				if ( isgroup ) {
-					smpoff /= bps;
-					smpdur /= bps;
-				}
 				if ( smpwhen < 0 ) {
 					smpoff -= smpwhen;
 					smpdur += smpwhen;
 				}
-				smpdur += Math.min( duration - smpwhen - smpdur, 0 );
+				if ( smpend > duration ) {
+					smpdur -= smpend - duration;
+				}
 				if ( smpdur > 0 ) {
 					smpwhen = when + Math.max( 0, smpwhen );
-					isgroup
-						? src._start( smpwhen, smpoff * bps, smpdur * bps )
-						: src.start( smpwhen, smpoff, smpdur );
+					src[ isgroup ? "_start" : "start" ]( smpwhen, smpoff, smpdur );
 				}
 			} );
+			return this.duration;
 		}
-		return maxdur;
+		return 0;
 	}
 };
