@@ -88,16 +88,49 @@ gswaGroup.prototype = {
 		arr.forEach( this.removeSample.bind( this ) );
 	},
 	update() {
-		var par = this.parents;
-
 		this._sortSmp();
 		this._updateDur();
-		for ( var id in par ) {
-			par[ id ].obj.update();
+		for ( var id in this.parents ) {
+			this.parents[ id ].obj.update();
 		}
 	},
 
 	// private:
+	_updateDur() {
+		var smp = this.samplesRev[ 0 ];
+
+		this.duration = smp ? this._smpEnd( smp ) : 0;
+	},
+	_sortSmp() {
+		this.samples.sort( ( a, b ) => cmp( this._smpWhen( a ), this._smpWhen( b ) ) );
+		this.samplesRev.sort( ( a, b ) => cmp( this._smpEnd( b ), this._smpEnd( a ) ) );
+
+		function cmp( a, b ) {
+			return a < b ? -1 : a > b ? 1 : 0;
+		}
+	},
+	_smpWhen( smp ) {
+		return "whenBeat" in smp
+			? smp.whenBeat / this.bps
+			: smp.when;
+	},
+	_smpOffset( smp ) {
+		return "offsetBeat" in smp
+			? smp.offsetBeat / this.bps
+			: smp.offset || 0;
+	},
+	_smpDuration( smp ) {
+		return "durationBeat" in smp
+			? smp.durationBeat / this.bps
+			: smp.duration != null
+				? smp.duration
+				: "durationBeat" in smp.source
+					? smp.source.durationBeat / this.bps
+					: smp.source.duration;
+	},
+	_smpEnd( smp ) {
+		return this._smpWhen( smp ) + this._smpDuration( smp );
+	},
 	_start( when, offset, duration ) {
 		var bps = this.bps,
 			maxdur = this.duration;
@@ -105,8 +138,8 @@ gswaGroup.prototype = {
 		if ( maxdur ) {
 			when = when > 0 ? when : this.ctx.currentTime;
 			offset = ( offset || 0 ) / bps;
-			duration = maxdur =
-				( duration != null ? duration : maxdur ) / bps;
+			duration =
+			maxdur = ( duration != null ? duration : maxdur ) / bps;
 			this.samples.forEach( function( smp ) {
 				var src = smp.source,
 					isgroup = src instanceof gswaGroup,
@@ -132,28 +165,5 @@ gswaGroup.prototype = {
 			} );
 		}
 		return maxdur;
-	},
-	_updateDur() {
-		var smp = this.samplesRev[ 0 ];
-
-		this.duration = smp ? this._beatEnd( smp ) : 0;
-	},
-	_sortSmp() {
-		this.samples.sort( function( a, b ) {
-			return cmp( a.when, b.when );
-		} );
-		this.samplesRev.sort( ( a, b ) => {
-			return cmp( this._beatEnd( b ), this._beatEnd( a ) );
-		} );
-
-		function cmp( a, b ) {
-			return a < b ? -1 : a > b ? 1 : 0;
-		}
-	},
-	_beatEnd( smp ) {
-		var src = smp.source,
-			dur = smp.duration != null ? smp.duration : src.duration;
-
-		return smp.when + ( src._beatEnd ? dur : dur * this.bps );
 	}
 };
