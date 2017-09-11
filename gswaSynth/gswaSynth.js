@@ -24,6 +24,7 @@ gswaSynth.prototype = {
 	},
 	simpleStart( key ) {
 		var oscObj, oscId, oscNode;
+
 		for ( oscId in this.data.oscillators ) {
 			oscObj = this.data.oscillators[ oscId ];
 			oscNode = this._newOscNode( key, oscObj.type, oscObj.detune );
@@ -52,38 +53,39 @@ gswaSynth.prototype = {
 		}
 	},
 	stop() {
-		var oscObj, oscId, oscNode, oscNodeId;
+		var nodeStack, oscId, nodeId,
+			oscs = this.data.oscillators;
 
 		this.simplePlayStack.forEach( function( oscNode ) {
 			oscNode.stop();
-		});
+		} );
 		this.simplePlayStack.length = 0;
-
-		for ( oscId in this.data.oscillators ) {
-			oscObj = this.data.oscillators[ oscId ];
-			for ( oscNodeId in oscObj.nodeStack ) {
-				oscNode = oscObj.nodeStack[ oscNodeId ];
-				oscNode.stop();
+		for ( oscId in oscs ) {
+			nodeStack = oscs[ oscId ].nodeStack;
+			for ( nodeId in nodeStack ) {
+				nodeStack[ nodeId ].stop();
 			}
 		}
 	},
 	change( obj ) {
-		var data = this.data;
+		var osc, oscId, data = this.data;
 
 		gswaSynth.assignDeep( data, obj );
+		for ( oscId in obj.oscillators ) {
+			osc = data.oscillators[ oscId ];
+			osc.nodeStack = {};
+			osc.nodeStackLength = 0;
+		}
 	},
 
 	// private:
 	_newOscNode( key, type, detune ) {
-		var oscNode,
-			ctx = this.ctx;
-		if ( ctx ) {
-			oscNode = ctx.createOscillator();
-			oscNode.connect( this.connectedTo );
-			oscNode.frequency.value = gswaSynth.keyToHz[ key ];
-			oscNode.type = type;
-			oscNode.detune.value = detune;
-		}
+		var oscNode = this.ctx.createOscillator();
+
+		oscNode.connect( this.connectedTo );
+		oscNode.frequency.value = gswaSynth.keyToHz[ key ];
+		oscNode.type = type;
+		oscNode.detune.value = detune;
 		return oscNode;
 	},
 	_removeOscNode( oscObj, id ) {
