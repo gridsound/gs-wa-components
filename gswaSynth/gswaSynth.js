@@ -1,9 +1,8 @@
 "use strict";
 
 window.gswaSynth = function() {
-	this.nodeStack = {};
-	this.nodeStackLength = 0;
-	this.osc = {};
+	this.data = {};
+	this.simplePlayStack = [];
 	this._currId = 0;
 };
 
@@ -24,75 +23,72 @@ gswaSynth.prototype = {
 		}
 	},
 	simpleStart( key ) {
-		var oscNode = this._newOscNode( key );
-
-		if ( oscNode ) {
-			this._oscNode = oscNode;
-			return ( this._promise = new Promise( function( resolve ) {
-				oscNode.onended = resolve;
-				oscNode.start();
-			} ) );
+		var oscObj, oscId, oscNode;
+		for ( oscId in this.data.oscillators ) {
+			oscObj = this.data.oscillators[ oscId ];
+			oscNode = this._newOscNode( key, oscObj.type, oscObj.detune );
+			if ( oscNode ) {
+				this.simplePlayStack.push( oscNode );
+				oscNode.start( 0 );
+			}
 		}
 	},
 	start( key, when, offset, duration ) {
-		var oscNode = this._newOscNode();
+		var oscObj, oscId, oscNode;
 
-		if ( oscNode ) {
-			oscNode.onended = this._removeSource.bind( this, this._currId );
-			this.nodeStack[ this._currId++ ] = oscNode;
-			++this.nodeStackLength;
-			oscNode.start( when || 0, offset || 0,
-				arguments.length > 2 ? duration : this.duration );
-			return oscNode;
+		for ( oscId in this.data.oscillators ) {
+			oscObj = this.data.oscillators[ oscId ];
+			oscNode = this._newOscNode( key, oscObj.type, oscObj.detune );
+			if ( oscNode ) {
+				oscObj.nodeStack[ this._currId ] = oscNode;
+				oscNode.onended = this._removeOscNode.bind( this, oscObj, this._currId );
+				++this._currId;
+				++oscObj.nodeStackLength;
+				oscNode.start( when || 0 ); // ?
+				if ( arguments.length > 3 ) {
+					oscNode.stop( when + duration );
+				}
+			}
 		}
 	},
 	stop() {
-		if ( this._oscNode ) {
-			this._oscNode.stop();
-		}
-		for ( var id in this.nodeStack ) {
-			this.nodeStack[ id ].stop();
+		var oscObj, oscId, oscNode, oscNodeId;
+
+		this.simplePlayStack.forEach( function( oscNode ) {
+			oscNode.stop();
+		});
+		this.simplePlayStack.length = 0;
+
+		for ( oscId in this.data.oscillators ) {
+			oscObj = this.data.oscillators[ oscId ];
+			for ( oscNodeId in oscObj.nodeStack ) {
+				oscNode = oscObj.nodeStack[ oscNodeId ];
+				oscNode.stop();
+			}
 		}
 	},
 	change( obj ) {
-		var id, newOsc,
-			data = this.data;
+		var data = this.data;
 
-		for ( id in obj.oscillators ) {
-			newOsc = obj.oscillators[ id ];
-			newOsc ? data.oscillators[ id ]
-				? _updateOscStack(newOsc, data.oscillators[ id ])
-				: _createOscStack(newOsc, data.oscillators[ id ])
-				: 2; // delete
-		}
 		gswaSynth.assignDeep( data, obj );
 	},
 
 	// private:
-	_newOscNode( key ) {
+	_newOscNode( key, type, detune ) {
 		var oscNode,
 			ctx = this.ctx;
-
 		if ( ctx ) {
 			oscNode = ctx.createOscillator();
 			oscNode.connect( this.connectedTo );
 			oscNode.frequency.value = gswaSynth.keyToHz[ key ];
+			oscNode.type = type;
+			oscNode.detune.value = detune;
 		}
 		return oscNode;
 	},
-	_updateOscStack( newOsc, osc ) {
-		var oscNode;
-
-		for ( oscNode in this.nodeStack ) {
-			if ( "type" in newOsc )
-				oscNode.type = newOsc.type;
-			if ( "detune" in newOsc )
-				oscNode.detune.value = newOsc.detune;
-		}
-	},
-	_removeSource( id ) {
-		delete this.nodeStack[ id ];
-		--this.nodeStackLength;
+	_removeOscNode( oscObj, id ) {
+		delete oscObj.nodeStack[ id ];
+		--oscObj.nodeStackLength;
 	}
 };
 
