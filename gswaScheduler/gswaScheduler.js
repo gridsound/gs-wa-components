@@ -5,12 +5,11 @@ function gswaScheduler() {};
 gswaScheduler.prototype = {
 	setBPM( bpm ) {
 		this.bps = bpm / 60;
+		this._updateDur();
 	},
 	setData( data ) {
 		this.data = data;
-		this.duration = data.reduce( ( dur, smp ) => {
-			return Math.max( dur, this._sWhn( smp ) + this._sDur( smp ) );
-		}, 0 );
+		this._updateDur();
 	},
 	stop() {
 		if ( this._smps ) {
@@ -54,6 +53,11 @@ gswaScheduler.prototype = {
 	},
 
 	// private:
+	_updateDur() {
+		this.duration = this.data.reduce( ( dur, smp ) => {
+			return Math.max( dur, this._sWhn( smp ) + this._sDur( smp ) );
+		}, 0 );
+	},
 	_sWhn( smp ) { return "whenBeat" in smp ? smp.whenBeat / this.bps : smp.when; },
 	_sOff( smp ) { return "offsetBeat" in smp ? smp.offsetBeat / this.bps : smp.offset || 0; },
 	_sDur( smp ) { return "durationBeat" in smp ? smp.durationBeat / this.bps : smp.duration; },
