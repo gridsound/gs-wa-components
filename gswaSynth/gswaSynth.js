@@ -39,7 +39,6 @@ gswaSynth.prototype = {
 		var oscObj, oscId, oscNode;
 
 		for ( oscId in this.data.oscillators ) {
-			lg("start")
 			oscObj = this.data.oscillators[ oscId ];
 			oscNode = this._newOscNode( key, oscObj.type, oscObj.detune, oscObj.gain );
 
@@ -108,8 +107,6 @@ gswaSynth.prototype = {
 		oscNode.frequency.value = gswaSynth.keyToHz[ key ];
 		oscNode.type = type;
 		oscNode.detune.value = detune;
-		lg(oscNode);
-		lg(gain);
 		oscNode.connect( gain );
 		gain.connect( this.connectedTo );
 		return oscNode;
