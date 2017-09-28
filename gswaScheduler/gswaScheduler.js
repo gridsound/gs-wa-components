@@ -14,6 +14,11 @@ gswaScheduler.prototype = {
 		this.data = data;
 		this._updateDur();
 	},
+	currentTime() {
+		return this.started
+			? ( this.ctx.currentTime - this._startedTime ) * this.bps
+			: 0;
+	},
 	stop() {
 		if ( this.started ) {
 			clearTimeout( this._timeout );
@@ -33,6 +38,7 @@ gswaScheduler.prototype = {
 		dur = dur || dur === 0 ? dur : this.duration;
 		this.started = true;
 		this._smps = [];
+		this._startedTime = this.ctx.currentTime;
 		this.data.forEach( smp => {
 			var sWhn = this._sWhn( smp ) - off,
 				sOff = this._sOff( smp ),
