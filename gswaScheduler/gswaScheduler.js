@@ -12,10 +12,9 @@ gswaScheduler.prototype = {
 		this._updateDur();
 	},
 	stop() {
-		if ( this._smps ) {
+		if ( this.started ) {
 			clearTimeout( this._timeout );
 			this.onstop && this._smps.forEach( this.onstop );
-			delete this._smps;
 			this._onended();
 		}
 	},
@@ -29,6 +28,7 @@ gswaScheduler.prototype = {
 		when = when || 0;
 		off = off || 0;
 		dur = dur || dur === 0 ? dur : this.duration;
+		this.started = true;
 		this._smps = [];
 		this.data.forEach( smp => {
 			var sWhn = this._sWhn( smp ) - off,
@@ -62,6 +62,8 @@ gswaScheduler.prototype = {
 	_sOff( smp ) { return "offsetBeat" in smp ? smp.offsetBeat / this.bps : smp.offset || 0; },
 	_sDur( smp ) { return "durationBeat" in smp ? smp.durationBeat / this.bps : smp.duration; },
 	_onended() {
+		delete this.started;
+		delete this._smps;
 		this.onended && this.onended( this.data );
 	}
 };
