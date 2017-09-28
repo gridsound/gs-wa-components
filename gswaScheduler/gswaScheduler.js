@@ -3,6 +3,9 @@
 function gswaScheduler() {};
 
 gswaScheduler.prototype = {
+	setContext( ctx ) {
+		this.ctx = ctx;
+	},
 	setBPM( bpm ) {
 		this.bps = bpm / 60;
 		this._updateDur();
