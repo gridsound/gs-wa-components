@@ -16,7 +16,10 @@ gswaScheduler.prototype = {
 	},
 	currentTime() {
 		return this.started
-			? ( this.ctx.currentTime - this._startedTime ) * this.bps
+			? ( this.ctx.currentTime -
+				this._startedTime -
+				this._startedWhen +
+				this._startedOffset ) * this.bps
 			: 0;
 	},
 	stop() {
@@ -35,10 +38,12 @@ gswaScheduler.prototype = {
 	start( when, off, dur ) {
 		when = when || 0;
 		off = off || 0;
-		dur = dur || dur === 0 ? dur : this.duration;
+		dur = dur || dur === 0 ? dur : ( this.duration - off );
 		this.started = true;
-		this._smps = [];
+		this._startedWhen = when;
+		this._startedOffset = off;
 		this._startedTime = this.ctx.currentTime;
+		this._smps = [];
 		this.data.forEach( smp => {
 			var sWhn = this._sWhn( smp ) - off,
 				sOff = this._sOff( smp ),
