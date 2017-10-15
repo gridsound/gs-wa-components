@@ -28,16 +28,25 @@ gswaScheduler.prototype = {
 			this._onended();
 		}
 	},
-	startBeat( whenBeat, offsetBeat, durationBeat ) {
+	startBeat( whenBeat, offsetBeat, durationBeat, loopStartBeat, loopDurationBeat ) {
 		return this.start(
 			this.ctx.currentTime + whenBeat / this.bps,
 			offsetBeat / this.bps,
-			durationBeat / this.bps );
+			durationBeat / this.bps,
+		 	loopStartBeat / this.bps,
+			loopDurationBeat / this.bps
+		);
 	},
-	start( when, off, dur ) {
+	start( when, off, dur, loopStart, loopDuration ) {
 		when = when || this.ctx.currentTime;
 		off = off || 0;
 		dur = dur || dur === 0 ? dur : ( this.duration - off );
+
+		this._start( when, off, dur );
+	},
+
+	// private:
+	_start(  when, off, dur  ) {
 		this.started = true;
 		this._startedWhen = when;
 		this._startedOffset = off;
