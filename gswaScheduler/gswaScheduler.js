@@ -15,41 +15,58 @@ gswaScheduler.prototype = {
 		this._updateDur();
 	},
 	currentTime() {
-		return this.started
-			? ( this.ctx.currentTime -
-				this._startedWhen +
-				this._startedOffset ) * this.bps
-			: 0;
+		var curr = this._currentTime();
+
+		return this._loop && curr > ( this._loopB * this.bps )
+			? ( this._loopA * this.bps ) + ( curr - ( this._loopB * this.bps ) ) % ( this._loopDur * this.bps )
+			: curr;
 	},
 	stop() {
 		if ( this.started ) {
-			clearTimeout( this._timeout );
+			this._loop
+				? clearInterval( this._timeID )
+				: clearTimeout( this._timeID );
+			delete this._loop;
 			this.onstop && this._smps.forEach( this.onstop );
 			this._onended();
 		}
 	},
-	startBeat( whenBeat, offsetBeat, durationBeat, loopStartBeat, loopDurationBeat ) {
+	startBeat( whn, off, dur, loopA, loopB ) {
 		return this.start(
-			this.ctx.currentTime + whenBeat / this.bps,
-			offsetBeat / this.bps,
-			durationBeat / this.bps,
-		 	loopStartBeat / this.bps,
-			loopDurationBeat / this.bps
+			this.ctx.currentTime + (
+			whn   == null ? 0 : whn / this.bps ),
+			off   == null ? 0 : off / this.bps,
+			dur   == null ? null : dur / this.bps,
+			loopA == null ? null : loopA / this.bps,
+			loopB == null ? null : loopB / this.bps
 		);
 	},
-	start( when, off, dur, loopStart, loopDuration ) {
+	start( when, off, dur, loopA, loopB ) {
 		when = when || this.ctx.currentTime;
 		off = off || 0;
-		dur = dur || dur === 0 ? dur : ( this.duration - off );
+		dur = Number.isFinite( dur ) ? dur : this.duration - off;
+		this.started = true;
+		this._startedWhen = when;
+		this._startedOffset = off;
+		this._loop = Number.isFinite( loopA );
+		if ( this._loop ) {
+			var loopDur = loopB - loopA;
 
+			this._loopA = loopA;
+			this._loopDur = loopDur;
+			this._loopB = loopB;
+			this._whenLoopStop = loopB - this._startedOffset + this._startedWhen;
+			this._scheduleLoop( loopA, loopDur );
+			this._timeID = setInterval( this._scheduleLoop.bind( this, loopA, loopDur ), 1000 );
+			dur = loopB - off;
+		} else {
+			this._timeID = setTimeout( this._onended.bind( this ), dur * 1000 );
+		}
 		this._start( when, off, dur );
 	},
 
 	// private:
-	_start(  when, off, dur  ) {
-		this.started = true;
-		this._startedWhen = when;
-		this._startedOffset = off;
+	_start( when, off, dur ) {
 		this._smps = [];
 		this.data.forEach( smp => {
 			var sWhn = this._sWhn( smp ) - off,
@@ -70,7 +87,13 @@ gswaScheduler.prototype = {
 				this.onstart( smp, when + sWhn, sOff, sDur );
 			}
 		} );
-		this._timeout = setTimeout( this._onended.bind( this ), dur * 1000 );
+	},
+	_currentTime() {
+		return this.started
+			? ( this.ctx.currentTime -
+				this._startedWhen +
+				this._startedOffset ) * this.bps
+			: 0;
 	},
 
 	// private:
@@ -78,6 +101,12 @@ gswaScheduler.prototype = {
 		this.duration = this.data.reduce( ( dur, smp ) => {
 			return Math.max( dur, this._sWhn( smp ) + this._sDur( smp ) );
 		}, 0 );
+	},
+	_scheduleLoop( loopA, loopDur ) {
+		while ( this._whenLoopStop < this.ctx.currentTime + 2 ) {
+			this._start( this._whenLoopStop, loopA, loopDur );
+			this._whenLoopStop += loopDur;
+		}
 	},
 	_sWhn( smp ) { return "whenBeat" in smp ? smp.whenBeat / this.bps : smp.when; },
 	_sOff( smp ) { return "offsetBeat" in smp ? smp.offsetBeat / this.bps : smp.offset || 0; },
