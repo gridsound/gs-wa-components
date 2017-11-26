@@ -26,7 +26,7 @@ gswaSynth.prototype = {
 		var oscId, oscNode;
 
 		for ( oscId in this.data.oscillators ) {
-			oscNode = this._oscNewNode( this.data.oscillators[ oscId ], key );
+			oscNode = this._oscCreateNode( this.data.oscillators[ oscId ], key );
 			if ( oscNode ) {
 				this.simplePlayStack.push( oscNode );
 				oscNode.start( 0 );
@@ -38,16 +38,16 @@ gswaSynth.prototype = {
 
 		for ( oscId in this.data.oscillators ) {
 			oscObj = this.data.oscillators[ oscId ];
-			oscNode = this._oscNewNode( oscObj, key );
+			oscNode = this._oscCreateNode( oscObj, key );
 
 			if ( oscNode ) {
 				oscNode._when = when;
 				oscNode._duration = duration;
 				oscNode._key = key;
-				oscObj.nodeStack[ this._currId ] = oscNode;
-				oscNode.onended = this._removeOscNode.bind( this, oscObj, this._currId );
+				oscObj._nodeStack[ this._currId ] = oscNode;
+				oscNode.onended = this._oscDeleteNode.bind( this, oscObj, this._currId );
 				++this._currId;
-				++oscObj.nodeStackLength;
+				++oscObj._nodeStackLength;
 				oscNode.start( when || 0 ); // ?
 				if ( arguments.length > 3 ) {
 					oscNode.stop( when + duration );
@@ -60,41 +60,24 @@ gswaSynth.prototype = {
 		this.simplePlayStack.length = 0;
 	},
 	change( obj ) {
-		var osc, oscId, firstOscData,
-		 	data = this.data;
+		var oscs = this.data.oscillators;
 
-		// Check if data.oscillators is empty
-		// If not, save the first oscillator.
-		// If the change occurs during the playback
-		// The first oscillator will be used to create the nodeStack of the new oscillators
-		for ( oscId in data.oscillators ) {
-			firstOscData = data[ oscId ];
-			break;
-		}
-
-		for ( oscId in obj.oscillators ) {
-			var oscSrc = obj.oscillators[ oscId ];
-
-			// If the oscillators object exists
-			// And if it's not empty
-			// And if there is already an oscillator with the ID oscId
-			// Update or remove
-			// Else create
-			firstOscData && oscId in data.oscillators ?
-				oscSrc ? this._updateOscillator( oscSrc, data.oscillators[ oscId ] )
-					   : this._deleteOscillator( oscSrc, data.oscillators[ oscId ] )
-			: this._createOscillator( firstOscData, oscSrc, oscId );
-		}
+		Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
+			obj ? oscs[ id ]
+				? this._oscUpdate( id, obj )
+				: this._oscCreate( id, obj )
+				: this._oscDelete( id );
+		} );
 	},
 
 	// private:
 	_forEachNode( fn ) {
 		this.simplePlayStack.forEach( fn );
 		Object.values( this.data.oscillators ).forEach( osc => {
-			Object.values( osc.nodeStack ).forEach( fn );
+			Object.values( osc._nodeStack ).forEach( fn );
 		} );
 	},
-	_oscNewNode( osc, key ) {
+	_oscCreateNode( osc, key ) {
 		var node = this.ctx.createOscillator();
 
 		node.type = osc.type;
@@ -103,56 +86,55 @@ gswaSynth.prototype = {
 		node.connect( osc._gain );
 		return node;
 	},
-	_removeOscNode( oscObj, id ) {
-		delete oscObj.nodeStack[ id ];
-		--oscObj.nodeStackLength;
+	_oscDeleteNode( osc, id ) {
+		delete osc._nodeStack[ id ];
+		--osc._nodeStackLength;
 	},
-	_createOscillator( firstOscData, oscSrc, oscId ) {
-		var newOscNode,
-			oscNodeBase,
-			newOsc = this.data.oscillators[ oscId ] = {
+	_oscCreate( id, obj ) {
+		var newNode,
+			oscs = this.data.oscillators,
+			oscFirst = Object.values( oscs )[ 0 ],
+			osc = Object.assign( {
 				_gain: this.ctx.createGain(),
-				gain: oscSrc.gain,
-				type: oscSrc.type,
-				detune: oscSrc.detune,
-				nodeStack: {},
-				nodeStackLength: 0
-			};
+				_nodeStack: {},
+				_nodeStackLength: 0
+			}, obj );
 
-		newOsc._gain.gain.value = oscSrc.gain;
-		newOsc._gain.connect( this.connectedTo );
-
-		// If there are at least one oscillator and its nodeStack's not empty (when playing)
-		// Use it to fill the new oscillator's nodeStack
-		if ( firstOscData && firstOscData.nodeStackLength > 0 ) {
-			for ( nodeId in firstOscData.nodeStack ) {
-				oscNodeSrc = firstOscData.nodeStack[ nodeId ];
-				newOscNode = this._oscNewNode( firstOscData, oscNodeSrc.key );
-				newOsc.nodeStack.push( newOscNode );
-				++newOsc.nodeStackLength;
-				newOsc.onended = this._removeOscNode.bind( this, newOscNode, oscId );
-				newOsc._when = oscNodeSrc._when;
-				newOsc._duration = oscNodeSrc._duration;
-				newOscNode.start( newOsc._when );
-				oscNode.stop( newOsc._when + newOsc._duration );
-			}
+		osc._gain.gain.value = obj.gain;
+		osc._gain.connect( this.connectedTo );
+		oscs[ id ] = osc;
+		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
+			Object.values( oscFirst._nodeStack ).forEach( node => {
+				newNode = this._oscCreateNode( oscFirst, node._key );
+				id = osc._nodeStackLength++;
+				osc._nodeStack[ id ] = newNode;
+				newNode._when = node._when;
+				newNode._duration = node._duration;
+				newNode.onended = this._oscDeleteNode.bind( this, osc, id );
+				newNode.start( node._when );
+				newNode.stop( node._when + node._duration );
+			} );
 		}
 	},
-	_updateOscillator( oscSrc, oscDest ) {
-		oscDest.type = oscSrc.type;
-		oscDest.detune = oscSrc.detune;
-		oscDest.gainValue =
-		oscDest.gain.gain.value = oscSrc.gainValue;
-		for ( nodeId in oscDest.nodeStack ) {
-			oscDest.nodeStack[ nodeId ].type = oscDest.type;
-			oscDest.nodeStack[ nodeId ].detune.value = oscDest.detune;
+	_oscUpdate( id, obj ) {
+		var osc = this.data.oscillators[ id ];
+
+		Object.assign( osc, obj );
+		if ( "gain" in obj ) {
+			osc._gain.gain.value = obj.gain;
 		}
+		Object.values( osc._nodeStack ).forEach( node => {
+			if ( "type" in obj ) { node.type = obj.type; }
+			if ( "detune" in obj ) { node.detune.value = obj.detune; }
+		} );
 	},
-	_deleteOscillator( osc ) {
-		for ( nodeId in osc.nodeStack ) {
-			osc.nodeStack[ nodeId ].stop();
-		}
-		osc = undefined;
+	_oscDelete( id ) {
+		var oscs = this.data.oscillators;
+
+		Object.values( oscs[ id ]._nodeStack ).forEach( node => {
+			node.stop();
+		} );
+		delete oscs[ id ];
 	}
 };
 
