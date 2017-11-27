@@ -109,7 +109,7 @@ gswaSynth.prototype = {
 		oscs[ id ] = osc;
 		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
 			Object.values( oscFirst._nodeStack ).forEach( node => {
-				newNode = this._oscCreateNode( oscFirst, node._key );
+				newNode = this._oscCreateNode( osc, node._key );
 				id = osc._nodeStackLength++;
 				osc._nodeStack[ id ] = newNode;
 				newNode._when = node._when;
