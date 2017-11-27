@@ -62,7 +62,7 @@ gswaSynth.prototype = {
 	change( obj ) {
 		var oscs = this.data.oscillators;
 
-		Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
+		obj.oscillators && Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
 			obj ? oscs[ id ]
 				? this._oscUpdate( id, obj )
 				: this._oscCreate( id, obj )
