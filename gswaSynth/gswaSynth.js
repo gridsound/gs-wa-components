@@ -83,7 +83,7 @@ gswaSynth.prototype = {
 		node.type = osc.type;
 		node.detune.value = osc.detune;
 		node.frequency.value = gswaSynth.keyToHz[ key ];
-		node.connect( osc._gain );
+		node.connect( osc._pan );
 		return node;
 	},
 	_oscDeleteNode( osc, id ) {
@@ -96,11 +96,14 @@ gswaSynth.prototype = {
 			oscFirst = Object.values( oscs )[ 0 ],
 			osc = Object.assign( {
 				_gain: this.ctx.createGain(),
+				_pan: this.ctx.createStereoPanner(),
 				_nodeStack: {},
 				_nodeStackLength: 0
 			}, obj );
 
+		osc._pan.pan.value = obj.pan;
 		osc._gain.gain.value = obj.gain;
+		osc._pan.connect( osc._gain );
 		osc._gain.connect( this.connectedTo );
 		oscs[ id ] = osc;
 		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
@@ -120,9 +123,8 @@ gswaSynth.prototype = {
 		var osc = this.data.oscillators[ id ];
 
 		Object.assign( osc, obj );
-		if ( "gain" in obj ) {
-			osc._gain.gain.value = obj.gain;
-		}
+		if ( "gain" in obj ) { osc._gain.gain.value = obj.gain; }
+		if ( "pan" in obj ) { osc._pan.pan.value = obj.pan; }
 		Object.values( osc._nodeStack ).forEach( node => {
 			if ( "type" in obj ) { node.type = obj.type; }
 			if ( "detune" in obj ) { node.detune.value = obj.detune; }
