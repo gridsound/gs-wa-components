@@ -10,7 +10,12 @@ window.gswaSynth = function() {
 
 gswaSynth.prototype = {
 	setContext( ctx ) {
+		this.stop();
+		this.disconnect();
 		this.ctx = ctx;
+		Object.values( this.data.oscillators ).forEach( osc => {
+			this._oscCreateMainNodes( osc, osc );
+		} );
 	},
 	connect( nodeDest ) {
 		this.connectedTo = nodeDest;
