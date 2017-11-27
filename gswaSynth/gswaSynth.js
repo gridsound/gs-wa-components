@@ -95,15 +95,11 @@ gswaSynth.prototype = {
 			oscs = this.data.oscillators,
 			oscFirst = Object.values( oscs )[ 0 ],
 			osc = Object.assign( {
-				_gain: this.ctx.createGain(),
-				_pan: this.ctx.createStereoPanner(),
 				_nodeStack: {},
 				_nodeStackLength: 0
 			}, obj );
 
-		osc._pan.pan.value = obj.pan;
-		osc._gain.gain.value = obj.gain;
-		osc._pan.connect( osc._gain );
+		this._oscCreateMainNodes( osc, obj );
 		osc._gain.connect( this.connectedTo );
 		oscs[ id ] = osc;
 		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
@@ -137,6 +133,13 @@ gswaSynth.prototype = {
 			node.stop();
 		} );
 		delete oscs[ id ];
+	},
+	_oscCreateMainNodes( osc, obj ) {
+		osc._gain = this.ctx.createGain();
+		osc._pan = this.ctx.createStereoPanner();
+		osc._pan.pan.value = obj.pan;
+		osc._gain.gain.value = obj.gain;
+		osc._pan.connect( osc._gain );
 	}
 };
 
