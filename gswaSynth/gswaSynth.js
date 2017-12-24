@@ -8,6 +8,8 @@ window.gswaSynth = function() {
 	};
 };
 
+gswaSynth.nativeTypes = [ "sine", "triangle", "sawtooth", "square" ];
+
 gswaSynth.prototype = {
 	setContext( ctx ) {
 		this.stop();
@@ -82,10 +84,19 @@ gswaSynth.prototype = {
 			Object.values( osc._nodeStack ).forEach( fn );
 		} );
 	},
+	_nodeSetType( node, type ) {
+		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
+			node.type = type;
+		} else {
+			var wave = gswaPeriodicWaves[ type ];
+
+			node.setPeriodicWave( this.ctx.createPeriodicWave( wave.real, wave.imag ) );
+		}
+	},
 	_oscCreateNode( osc, key ) {
 		var node = this.ctx.createOscillator();
 
-		node.type = osc.type;
+		this._nodeSetType( node, osc.type );
 		node.detune.value = osc.detune;
 		node.frequency.value = gswaSynth.keyToHz[ key ];
 		node.connect( osc._pan );
@@ -127,7 +138,7 @@ gswaSynth.prototype = {
 		if ( "gain" in obj ) { osc._gain.gain.value = obj.gain; }
 		if ( "pan" in obj ) { osc._pan.pan.value = obj.pan; }
 		Object.values( osc._nodeStack ).forEach( node => {
-			if ( "type" in obj ) { node.type = obj.type; }
+			if ( "type" in obj ) { this._nodeSetType( node, obj.type ); }
 			if ( "detune" in obj ) { node.detune.value = obj.detune; }
 		} );
 	},
