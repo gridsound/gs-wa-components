@@ -2,7 +2,7 @@
 
 window.gswaSynth = function() {
 	this._currId = 0;
-	this.simplePlayStack = [];
+	this._liveKeyPressed = {};
 	this.data = {
 		oscillators: {}
 	};
@@ -29,61 +29,73 @@ gswaSynth.prototype = {
 		Object.values( this.data.oscillators )
 			.forEach( osc => osc._gain.disconnect() );
 	},
-	simpleStart( key ) {
-		var oscId, oscNode;
+	liveMidiKeyStart( midiKey ) {
+		if ( !this._liveKeyPressed[ midiKey ] ) {
+			var node, arrNodes = [];
 
-		for ( oscId in this.data.oscillators ) {
-			oscNode = this._oscCreateNode( this.data.oscillators[ oscId ], key );
-			if ( oscNode ) {
-				this.simplePlayStack.push( oscNode );
-				oscNode.start( 0 );
-			}
+			this._liveKeyPressed[ midiKey ] = arrNodes;
+			Object.values( this.data.oscillators ).forEach( osc => {
+				node = this._oscCreateNode( osc, midiKey );
+				arrNodes.push( node );
+				node._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), 0, .012 ); // tmp
+				node.start( 0 );
+			} );
 		}
+	},
+	liveMidiKeyStop( midiKey ) {
+		var arrNodes = this._liveKeyPressed[ midiKey ],
+			currTime = this.ctx.currentTime;
+
+		if ( arrNodes ) {
+			arrNodes.forEach( n => {
+				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), 0, .015 ); // tmp
+				n.stop( currTime + .015 );
+			} );
+			delete this._liveKeyPressed[ midiKey ];
+		}
+	},
+	liveKeyStopAll() {
+		Object.keys( this._liveKeyPressed ).forEach( this.liveMidiKeyStop, this );
 	},
 	start( key, when, offset, duration ) {
-		var oscObj, oscId, oscNode;
+		Object.values( this.data.oscillators ).forEach( osc => {
+			var n = this._oscCreateNode( osc, key );
 
-		for ( oscId in this.data.oscillators ) {
-			oscObj = this.data.oscillators[ oscId ];
-			oscNode = this._oscCreateNode( oscObj, key );
-
-			if ( oscNode ) {
-				oscNode._when = when;
-				oscNode._duration = duration;
-				oscNode._key = key;
-				oscObj._nodeStack[ this._currId ] = oscNode;
-				oscNode.onended = this._oscDeleteNode.bind( this, oscObj, this._currId );
-				++this._currId;
-				++oscObj._nodeStackLength;
-				oscNode.start( when || 0 ); // ?
-				if ( arguments.length > 3 ) {
-					oscNode.stop( when + duration );
-				}
+			n._when = when;
+			n.start( when || 0 );
+			if ( arguments.length > 3 ) {
+				n._duration = duration;
+				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, .012 ); // tmp
+				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + duration - .015, .015 ); // tmp
+				n.stop( when + duration );
 			}
-		}
+		} );
 	},
 	stop() {
-		this._forEachNode( node => node.stop() );
-		this.simplePlayStack.length = 0;
+		Object.values( this.data.oscillators ).forEach( osc => {
+			Object.values( osc._nodeStack ).forEach( n => n.stop() );
+		} );
 	},
 	change( obj ) {
 		var oscs = this.data.oscillators;
 
-		obj.oscillators && Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
-			obj ? oscs[ id ]
-				? this._oscUpdate( id, obj )
-				: this._oscCreate( id, obj )
-				: this._oscDelete( id );
-		} );
+		if ( obj.oscillators ) {
+			Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
+				obj ? oscs[ id ]
+					? this._oscUpdate( id, obj )
+					: this._oscCreate( id, obj )
+					: this._oscDelete( id );
+			} );
+			Object.values( this._liveKeyPressed ).forEach( keypressed => {
+				keypressed.forEach( node => {
+					if ( "type" in obj ) { this._nodeSetType( node, obj.type ); }
+					if ( "detune" in obj ) { node.detune.value = obj.detune; }
+				} );
+			} );
+		}
 	},
 
 	// private:
-	_forEachNode( fn ) {
-		this.simplePlayStack.forEach( fn );
-		Object.values( this.data.oscillators ).forEach( osc => {
-			Object.values( osc._nodeStack ).forEach( fn );
-		} );
-	},
 	_nodeSetType( node, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
 			node.type = type;
@@ -94,12 +106,24 @@ gswaSynth.prototype = {
 		}
 	},
 	_oscCreateNode( osc, key ) {
-		var node = this.ctx.createOscillator();
+		var node = this.ctx.createOscillator(),
+			gainEnvNode = this.ctx.createGain();
 
 		this._nodeSetType( node, osc.type );
 		node.detune.value = osc.detune;
-		node.frequency.value = gswaSynth.keyToHz[ key ];
-		node.connect( osc._pan );
+		if ( !gswaSynth.midiKeyToHz[ key ] ) {
+			lg(key, gswaSynth.midiKeyToHz[ key ])
+		}
+		node.frequency.value = gswaSynth.midiKeyToHz[ key ];
+		node.onended = this._oscDeleteNode.bind( this, osc, this._currId );
+		gainEnvNode.gain.value = 0;
+		node.connect( gainEnvNode );
+		gainEnvNode.connect( osc._pan );
+		node._gainEnvNode = gainEnvNode;
+		node._key = key;
+		osc._nodeStack[ this._currId ] = node;
+		++this._currId;
+		++osc._nodeStackLength;
 		return node;
 	},
 	_oscDeleteNode( osc, id ) {
@@ -121,13 +145,14 @@ gswaSynth.prototype = {
 		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
 			Object.values( oscFirst._nodeStack ).forEach( node => {
 				newNode = this._oscCreateNode( osc, node._key );
-				id = osc._nodeStackLength++;
-				osc._nodeStack[ id ] = newNode;
 				newNode._when = node._when;
-				newNode._duration = node._duration;
-				newNode.onended = this._oscDeleteNode.bind( this, osc, id );
 				newNode.start( node._when );
-				newNode.stop( node._when + node._duration );
+				if ( typeof node._duration === "number" ) {
+					newNode._duration = node._duration;
+					newNode.stop( node._when + node._duration );
+				} else {
+					this._liveKeyPressed[ node._key ].push( newNode );
+				}
 			} );
 		}
 	},
@@ -159,93 +184,110 @@ gswaSynth.prototype = {
 	}
 };
 
-gswaSynth.keyToHz = {
-	"A0":    27.5,
-	"A#0":   29.1353,
-	"B0":    30.8677,
-	"C1":    32.7032,
-	"C#1":   34.6479,
-	"D1":    36.7081,
-	"D#1":   38.8909,
-	"E1":    41.2035,
-	"F1":    43.6536,
-	"F#1":   46.2493,
-	"G1":    48.9995,
-	"G#1":   51.9130,
-	"A1":    55,
-	"A#1":   58.2705,
-	"B1":    61.7354,
-	"C2":    65.4064,
-	"C#2":   69.2957,
-	"D2":    73.4162,
-	"D#2":   77.7817,
-	"E2":    82.4069,
-	"F2":    87.3071,
-	"F#2":   92.4986,
-	"G2":    97.9989,
-	"G#2":  103.826,
-	"A2":   110,
-	"A#2":  116.541,
-	"B2":   123.471,
-	"C3":   130.813,
-	"C#3":  138.591,
-	"D3":   146.832,
-	"D#3":  155.563,
-	"E3":   164.814,
-	"F3":   174.614,
-	"F#3":  184.997,
-	"G3":   195.998,
-	"G#3":  207.652,
-	"A3":   220,
-	"A#3":  233.082,
-	"B3":   246.942,
-	"C4":   261.626,
-	"C#4":  277.183,
-	"D4":   293.665,
-	"D#4":  311.127,
-	"E4":   329.628,
-	"F4":   349.228,
-	"F#4":  369.994,
-	"G4":   391.995,
-	"G#4":  415.305,
-	"A4":   440,
-	"A#4":  466.164,
-	"B4":   493.883,
-	"C5":   523.251,
-	"C#5":  554.365,
-	"D5":   587.33,
-	"D#5":  622.254,
-	"F#5":  739.989,
-	"E5":   659.255,
-	"F5":   698.456,
-	"G5":   783.991,
-	"G#5":  830.609,
-	"A5":   880,
-	"A#5":  932.328,
-	"B5":   987.767,
-	"C6":  1046.5,
-	"C#6": 1108.73,
-	"D6":  1174.66,
-	"D#6": 1244.51,
-	"E6":  1318.51,
-	"F6":  1396.91,
-	"F#6": 1479.98,
-	"G6":  1567.98,
-	"G#6": 1661.22,
-	"A6":  1760,
-	"A#6": 1864.66,
-	"B6":  1975.53,
-	"C7":  2093,
-	"C#7": 2217.46,
-	"D7":  2349.32,
-	"D#7": 2489.02,
-	"E7":  2637.02,
-	"F7":  2793.83,
-	"F#7": 2959.96,
-	"G7":  3135.96,
-	"G#7": 3322.44,
-	"A7":  3520,
-	"A#7": 3729.31,
-	"B7":  3951.07,
-	"C8":  4186.01
-};
+gswaSynth.midiKeyToHz = ( new Array( 12 ) ).concat( [
+	//
+	  // 27.5,
+	  // 29.1353,
+	  // 30.8677,
+
+	//
+	  32.7032, // C1 24
+	  34.6479,
+	  36.7081,
+	  38.8909,
+	  41.2035,
+	  43.6536,
+	  46.2493,
+	  48.9995,
+	  51.9130,
+	  55,
+	  58.2705,
+	  61.7354,
+
+	//
+	  65.4064,
+	  69.2957,
+	  73.4162,
+	  77.7817,
+	  82.4069,
+	  87.3071,
+	  92.4986,
+	  97.9989,
+	 103.826,
+	 110,
+	 116.541,
+	 123.471,
+
+	//
+	 130.813,
+	 138.591,
+	 146.832,
+	 155.563,
+	 164.814,
+	 174.614,
+	 184.997,
+	 195.998,
+	 207.652,
+	 220,
+	 233.082,
+	 246.942,
+
+	//
+	 261.626,
+	 277.183,
+	 293.665,
+	 311.127,
+	 329.628,
+	 349.228,
+	 369.994,
+	 391.995,
+	 415.305,
+	 440,
+	 466.164,
+	 493.883,
+
+	//
+	 523.251,
+	 554.365,
+	 587.33,
+	 622.254,
+	 659.255,
+	 698.456,
+	 739.989,
+	 783.991,
+	 830.609,
+	 880,
+	 932.328,
+	 987.767,
+
+	//
+	1046.5,
+	1108.73,
+	1174.66,
+	1244.51,
+	1318.51,
+	1396.91,
+	1479.98,
+	1567.98,
+	1661.22,
+	1760,
+	1864.66,
+	1975.53,
+
+	//
+	2093,
+	2217.46,
+	2349.32,
+	2489.02,
+	2637.02,
+	2793.83,
+	2959.96,
+	3135.96,
+	3322.44,
+	3520,
+	3729.31,
+	3951.07,
+
+	//
+	4186.01,
+] );
