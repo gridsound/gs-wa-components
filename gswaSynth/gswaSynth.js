@@ -66,8 +66,8 @@ gswaSynth.prototype = {
 			if ( arguments.length > 3 ) {
 				n._duration = duration;
 				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, .012 ); // tmp
-				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + duration - .015, .015 ); // tmp
-				n.stop( when + duration );
+				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + duration, .015 ); // tmp
+				n.stop( when + duration + .015 ); // tmp
 			}
 		} );
 	},
