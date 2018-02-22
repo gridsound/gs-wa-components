@@ -31,14 +31,16 @@ gswaSynth.prototype = {
 	},
 	liveMidiKeyStart( midiKey ) {
 		if ( !this._liveKeyPressed[ midiKey ] ) {
-			var node, arrNodes = [];
+			var node, arrNodes = [],
+				currTime = this.ctx.currentTime;
 
 			this._liveKeyPressed[ midiKey ] = arrNodes;
+			arrNodes._currTime = currTime;
 			Object.values( this.data.oscillators ).forEach( osc => {
 				node = this._oscCreateNode( osc, midiKey );
 				arrNodes.push( node );
-				node._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), 0, .012 ); // tmp
-				node.start( 0 );
+				node._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), currTime, .012 ); // tmp
+				node.start( currTime );
 			} );
 		}
 	},
@@ -47,10 +49,13 @@ gswaSynth.prototype = {
 			currTime = this.ctx.currentTime;
 
 		if ( arrNodes ) {
-			arrNodes.forEach( n => {
-				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), 0, .015 ); // tmp
-				n.stop( currTime + .015 );
-			} );
+			arrNodes.forEach( arrNodes._currTime + .0121 >= currTime // tmp
+				? n => n.stop()
+				: n => {
+					// n._gainEnvNode.gain.cancelAndHoldAtTime( 0 ); // <-- do not work on Firefox yet..
+					n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), currTime, .015 ); // tmp
+					n.stop( currTime + .015 );
+				} );
 			delete this._liveKeyPressed[ midiKey ];
 		}
 	},
