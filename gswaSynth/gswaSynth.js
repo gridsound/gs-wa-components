@@ -1,193 +1,167 @@
 "use strict";
 
-window.gswaSynth = function() {
-	this._currId = 0;
-	this._liveKeyPressed = {};
-	this.data = {
-		oscillators: {}
-	};
-};
+class gswaSynth {
+	constructor() {
+		this.data = this._proxyCreate();
+		this._nodes = {};
+		this._startedKeys = {};
+	}
 
-gswaSynth.nativeTypes = [ "sine", "triangle", "sawtooth", "square" ];
-
-gswaSynth.prototype = {
+	// Context, dis/connect
+	// ........................................................................
 	setContext( ctx ) {
-		this.stop();
+		const oscs = this.data.oscillators;
+
+		this.stopAllKeys();
 		this.disconnect();
 		this.ctx = ctx;
-		Object.values( this.data.oscillators ).forEach( osc => {
-			this._oscCreateMainNodes( osc, osc );
-		} );
-	},
-	connect( nodeDest ) {
-		this.connectedTo = nodeDest;
-		Object.values( this.data.oscillators )
-			.forEach( osc => osc._gain.connect( nodeDest ) );
-	},
+		Object.keys( oscs ).forEach( this._oscsDel );
+		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
+	}
+	connect( dest ) {
+		Object.values( this._nodes ).forEach( obj => obj.gain.connect( dest ) );
+		this.connectedTo = dest;
+	}
 	disconnect() {
+		Object.values( this._nodes ).forEach( obj => obj.gain.disconnect() );
 		this.connectedTo = null;
-		Object.values( this.data.oscillators )
-			.forEach( osc => osc._gain.disconnect() );
-	},
-	liveMidiKeyStart( midiKey ) {
-		if ( !this._liveKeyPressed[ midiKey ] ) {
-			var node, arrNodes = [],
-				currTime = this.ctx.currentTime;
+	}
 
-			this._liveKeyPressed[ midiKey ] = arrNodes;
-			arrNodes._currTime = currTime;
-			Object.values( this.data.oscillators ).forEach( osc => {
-				node = this._oscCreateNode( osc, midiKey );
-				arrNodes.push( node );
-				node._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), currTime, .012 ); // tmp
-				node.start( currTime );
-			} );
+	// Start/stop keys
+	// ........................................................................
+	stopAllKeys() {
+		Object.keys( this._startedKeys ).forEach( this.stopKey, this );
+	}
+	stopKey( id ) {
+		const key = this._startedKeys[ id ];
+
+		if ( key ) {
+			Object.values( key.oscs ).forEach( node => node.stop() );
+			delete this._startedKeys[ id ];
 		}
-	},
-	liveMidiKeyStop( midiKey ) {
-		var arrNodes = this._liveKeyPressed[ midiKey ],
-			currTime = this.ctx.currentTime;
+	}
+	startKey( midi, when, off, dur ) {
+		const id = ++gswaSynth._startedMaxId,
+			oscs = {},
+			key = { midi, oscs, when, off, dur };
 
-		if ( arrNodes ) {
-			arrNodes.forEach( arrNodes._currTime + .0121 >= currTime // tmp
-				? n => n.stop()
-				: n => {
-					// n._gainEnvNode.gain.cancelAndHoldAtTime( 0 ); // <-- do not work on Firefox yet..
-					n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), currTime, .015 ); // tmp
-					n.stop( currTime + .015 );
-				} );
-			delete this._liveKeyPressed[ midiKey ];
-		}
-	},
-	liveKeyStopAll() {
-		Object.keys( this._liveKeyPressed ).forEach( this.liveMidiKeyStop, this );
-	},
-	start( key, when, offset, duration ) {
-		Object.values( this.data.oscillators ).forEach( osc => {
-			var n = this._oscCreateNode( osc, key );
-
-			n._when = when;
-			n.start( when || 0 );
-			if ( arguments.length > 3 ) {
-				n._duration = duration;
-				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, .012 ); // tmp
-				n._gainEnvNode.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + duration, .015 ); // tmp
-				n.stop( when + duration + .015 ); // tmp
-			}
+		Object.keys( this.data.oscillators ).forEach( oscId => {
+			oscs[ oscId ] = this._createOscNode( key, oscId );
 		} );
-	},
-	stop() {
-		Object.values( this.data.oscillators ).forEach( osc => {
-			Object.values( osc._nodeStack ).forEach( n => n.stop() );
-		} );
-	},
-	change( obj ) {
-		var oscs = this.data.oscillators;
+		this._startedKeys[ id ] = key;
+		return id;
+	}
 
-		if ( obj.oscillators ) {
-			Object.entries( obj.oscillators ).forEach( ( [ id, obj ] ) => {
-				obj ? oscs[ id ]
-					? this._oscUpdate( id, obj )
-					: this._oscCreate( id, obj )
-					: this._oscDelete( id );
-			} );
-			Object.values( this._liveKeyPressed ).forEach( keypressed => {
-				keypressed.forEach( node => {
-					if ( "type" in obj ) { this._nodeSetType( node, obj.type ); }
-					if ( "detune" in obj ) { node.detune.value = obj.detune; }
-				} );
-			} );
+	// createOscNode
+	_createOscNode( key, oscId ) {
+		const node = this.ctx.createOscillator(),
+			osc = this.data.oscillators[ oscId ];
+
+		this._nodeOscSetType( node, osc.type );
+		node.detune.value = osc.detune;
+		node.frequency.value = gswaSynth.midiKeyToHz[ key.midi ];
+		node.connect( this._nodes[ oscId ].pan );
+		node.start( key.when );
+		if ( Number.isFinite( key.dur ) ) {
+			node.stop( key.when + key.dur );
 		}
-	},
-
-	// private:
-	_nodeSetType( node, type ) {
+		return node;
+	}
+	_nodeOscSetType( node, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
 			node.type = type;
 		} else {
-			var wave = gswaPeriodicWaves[ type ];
+			const wave = gswaPeriodicWaves[ type ];
 
 			node.setPeriodicWave( this.ctx.createPeriodicWave( wave.real, wave.imag ) );
 		}
-	},
-	_oscCreateNode( osc, key ) {
-		var node = this.ctx.createOscillator(),
-			gainEnvNode = this.ctx.createGain();
-
-		this._nodeSetType( node, osc.type );
-		node.detune.value = osc.detune;
-		if ( !gswaSynth.midiKeyToHz[ key ] ) {
-			lg(key, gswaSynth.midiKeyToHz[ key ])
-		}
-		node.frequency.value = gswaSynth.midiKeyToHz[ key ];
-		node.onended = this._oscDeleteNode.bind( this, osc, this._currId );
-		gainEnvNode.gain.value = 0;
-		node.connect( gainEnvNode );
-		gainEnvNode.connect( osc._pan );
-		node._gainEnvNode = gainEnvNode;
-		node._key = key;
-		osc._nodeStack[ this._currId ] = node;
-		++this._currId;
-		++osc._nodeStackLength;
-		return node;
-	},
-	_oscDeleteNode( osc, id ) {
-		delete osc._nodeStack[ id ];
-		--osc._nodeStackLength;
-	},
-	_oscCreate( id, obj ) {
-		var newNode,
-			oscs = this.data.oscillators,
-			oscFirst = Object.values( oscs )[ 0 ],
-			osc = Object.assign( {
-				_nodeStack: {},
-				_nodeStackLength: 0
-			}, obj );
-
-		this._oscCreateMainNodes( osc, obj );
-		osc._gain.connect( this.connectedTo );
-		oscs[ id ] = osc;
-		if ( oscFirst && oscFirst._nodeStackLength > 0 ) {
-			Object.values( oscFirst._nodeStack ).forEach( node => {
-				newNode = this._oscCreateNode( osc, node._key );
-				newNode._when = node._when;
-				newNode.start( node._when );
-				if ( typeof node._duration === "number" ) {
-					newNode._duration = node._duration;
-					newNode.stop( node._when + node._duration );
-				} else {
-					this._liveKeyPressed[ node._key ].push( newNode );
-				}
-			} );
-		}
-	},
-	_oscUpdate( id, obj ) {
-		var osc = this.data.oscillators[ id ];
-
-		Object.assign( osc, obj );
-		if ( "gain" in obj ) { osc._gain.gain.value = obj.gain; }
-		if ( "pan" in obj ) { osc._pan.pan.value = obj.pan; }
-		Object.values( osc._nodeStack ).forEach( node => {
-			if ( "type" in obj ) { this._nodeSetType( node, obj.type ); }
-			if ( "detune" in obj ) { node.detune.value = obj.detune; }
-		} );
-	},
-	_oscDelete( id ) {
-		var oscs = this.data.oscillators;
-
-		Object.values( oscs[ id ]._nodeStack ).forEach( node => {
-			node.stop();
-		} );
-		delete oscs[ id ];
-	},
-	_oscCreateMainNodes( osc, obj ) {
-		osc._gain = this.ctx.createGain();
-		osc._pan = this.ctx.createStereoPanner();
-		osc._pan.pan.value = obj.pan;
-		osc._gain.gain.value = obj.gain;
-		osc._pan.connect( osc._gain );
 	}
-};
+	_oscsAdd( id, osc ) {
+		const gain = this.ctx.createGain(),
+			pan = this.ctx.createStereoPanner();
+
+		this._nodes[ id ] = { gain, pan };
+		pan.pan.value = osc.pan;
+		gain.gain.value = osc.gain;
+		pan.connect( gain );
+		if ( this.connectedTo ) {
+			gain.connect( this.connectedTo );
+		}
+		Object.values( this._startedKeys ).forEach(
+			key => key.oscs[ id ] = this._createOscNode( key, id ) );
+	}
+	_oscsDel( id ) {
+		const obj = this._nodes[ id ];
+
+		obj.pan.disconnect();
+		obj.gain.disconnect();
+		Object.values( this._startedKeys ).forEach( key => {
+			key.oscs[ id ].stop();
+			delete key.oscs[ id ];
+		} );
+		delete this._nodes[ id ];
+	}
+	_oscsChangeProp( id, prop, val ) {
+		switch ( prop ) {
+			case "pan": this._nodes[ id ].pan.pan.value = val; break;
+			case "gain": this._nodes[ id ].gain.gain.value = val; break;
+			case "type":
+			case "detune":
+				Object.values( this._startedKeys )
+					.forEach( prop === "detune"
+						? key => key.oscs[ id ].detune.value = val
+						: key => this._nodeOscSetType( key.oscs[ id ], val ) );
+		}
+	}
+
+	// Data proxy
+	// ........................................................................
+	_proxyCreate() {
+		return Object.freeze( {
+			oscillators: new Proxy( {}, {
+				set: this._proxyAddOsc.bind( this ),
+				deleteProperty: this._proxyDelOsc.bind( this )
+			} )
+		} );
+	}
+	_proxyDelOsc( target, oscId ) {
+		delete target[ oscId ];
+		if ( this.ctx ) {
+			this._oscsDel( oscId );
+		}
+		return true;
+	}
+	_proxyAddOsc( target, oscId, osc ) {
+		if ( oscId in target && this.ctx ) {
+			this._oscsDel( oscId );
+		}
+		osc = Object.assign( Object.seal( {
+			order: 0,
+			type: "sine",
+			detune: 0,
+			pan: 0,
+			gain: 1
+		} ), osc );
+		target[ oscId ] = new Proxy( osc, {
+			set: this._proxySetOscProp.bind( this, oscId )
+		} );
+		if ( this.ctx ) {
+			this._oscsAdd( oscId, osc );
+		}
+		return true;
+	}
+	_proxySetOscProp( oscId, target, prop, val ) {
+		target[ prop ] = val;
+		if ( this.ctx ) {
+			this._oscsChangeProp( oscId, prop, val );
+		}
+		return true;
+	}
+}
+
+gswaSynth._startedMaxId = 0;
+
+gswaSynth.nativeTypes = [ "sine", "triangle", "sawtooth", "square" ];
 
 gswaSynth.midiKeyToHz = ( new Array( 12 ) ).concat( [
 	//
