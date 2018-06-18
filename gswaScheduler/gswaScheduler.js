@@ -23,7 +23,7 @@ class gswaScheduler {
 		if ( this.bpm !== bpm ) {
 			const ratio = this.bpm / bpm,
 				started = this.started,
-				currTime = started && this.getCurrentOffset()
+				currTime = started && this.getCurrentOffset();
 
 			this.bpm = bpm;
 			this.bps = bpm / 60;
@@ -111,7 +111,6 @@ class gswaScheduler {
 		}
 		this.started = true;
 		this._startWhen = Math.max( currTime, when );
-		this._startWhenDiff = this._startWhen - currTime;
 		this._startOff = off;
 		this._startDur = dur;
 		this._setTimeoutEnded();
@@ -171,9 +170,6 @@ class gswaScheduler {
 
 	// Block functions
 	// ........................................................................
-	_bWhn( o ) { return o.when / this.bps; }
-	_bOff( o ) { return o.offset / this.bps; }
-	_bDur( o ) { return o.duration / this.bps; }
 	_blockStop( id ) {
 		const allSchedule = this._dataScheduled,
 			blcSchedule = this._dataScheduledPerBlock[ id ];
@@ -188,22 +184,22 @@ class gswaScheduler {
 	_blockSchedule( id ) {
 		if ( this.started ) {
 			const currTime = this.currentTime(),
-				currTimeEnd = currTime + 1;
-			let blcSchedule = this._dataScheduledPerBlock[ id ],
-				until = Math.max( currTime, blcSchedule.scheduledUntil || 0 );
+				currTimeEnd = currTime + 1,
+				blcSchedule = this._dataScheduledPerBlock[ id ];
+			let until = Math.max( currTime, blcSchedule.scheduledUntil || 0 );
 
 			if ( until < currTimeEnd ) {
 				const offEnd = this._getOffsetEnd(),
-					block = this.data[ id ],
-					bWhn = this._bWhn( block ),
-					bOff = this._bOff( block ),
-					bDur = this._bDur( block );
+					blc = this.data[ id ],
+					bWhn = blc.when / this.bps,
+					bOff = blc.offset / this.bps,
+					bDur = blc.duration / this.bps;
 
 				do {
-					const from = this.getFutureOffsetAt( until );
-					let to = Math.min( from + 1, offEnd );
+					const from = this.getFutureOffsetAt( until ),
+						to = Math.min( from + 1, offEnd );
 
-					until += this._blockStart( until, from, to, offEnd, id, block, bWhn, bOff, bDur );
+					until += this._blockStart( until, from, to, offEnd, id, blc, bWhn, bOff, bDur );
 				} while ( this.looping && until < currTimeEnd );
 				blcSchedule.scheduledUntil = until;
 			}
@@ -246,8 +242,8 @@ class gswaScheduler {
 		if ( this._lastBlockId === id ) {
 			this._findLastBlock();
 		} else {
-			const block = this.data[ id ],
-				whenEnd = this._bWhn( block ) + this._bDur( block );
+			const blc = this.data[ id ],
+				whenEnd = ( blc.when + blc.duration ) / this.bps;
 
 			if ( whenEnd > this.duration ) {
 				this._lastBlockId = id;
@@ -289,23 +285,22 @@ class gswaScheduler {
 		return true;
 	}
 	_proxySetBlock( target, id, block ) {
-		if ( id in target ) {
-			if ( this.started ) {
-				this._blockStop( id );
-			}
-		} else {
+		if ( id in target || !block ) {
+			this._proxyDelBlock( target, id );
+		}
+		if ( block ) {
 			this._dataScheduledPerBlock[ id ] = {
 				started: {},
 				scheduledUntil: 0
 			};
+			target[ id ] = new Proxy(
+				Object.assign( { when: 0, offset: 0, duration: 0 }, block ), {
+					set: this._proxySetBlockProp.bind( this, id ),
+					deleteProperty: this._proxyDelBlockProp.bind( this, id )
+				} );
+			this._isLastBlock( id );
+			this._blockSchedule( id );
 		}
-		target[ id ] = new Proxy(
-			Object.assign( { when: 0, offset: 0, duration: 0 }, block ), {
-				set: this._proxySetBlockProp.bind( this, id ),
-				deleteProperty: this._proxyDelBlockProp.bind( this, id )
-			} );
-		this._isLastBlock( id );
-		this._blockSchedule( id );
 		return true;
 	}
 	_proxyDelBlockProp( id, target, prop ) {
