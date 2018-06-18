@@ -15,7 +15,7 @@ class gswaSynth {
 		this.stopAllKeys();
 		this.disconnect();
 		this.ctx = ctx;
-		Object.keys( oscs ).forEach( this._oscsDel );
+		Object.keys( oscs ).forEach( this._oscsDel, this );
 		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
 	}
 	connect( dest ) {
