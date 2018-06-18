@@ -98,22 +98,29 @@ class gswaScheduler {
 
 	// Start / stop
 	// ........................................................................
-	startBeat( when, off = 0, dur = this.duration * this.bps ) {
-		return this.start( when,
-			off / this.bps,
-			dur / this.bps );
+	startBeat( when, off = 0, dur ) {
+		if ( Number.isFinite( dur ) ) {
+			dur /= this.bps;
+		}
+		return this.start( when, off / this.bps, dur );
 	}
-	start( when, off = 0, dur = this.duration ) {
+	start( when, off = 0, dur ) {
 		const currTime = this.currentTime();
 
 		if ( this.started ) {
 			this.stop();
 		}
+		this._startFixedDur = Number.isFinite( dur );
+		if ( !this._startFixedDur ) {
+			dur = this.duration - off;
+		}
 		this.started = true;
 		this._startWhen = Math.max( currTime, when );
 		this._startOff = off;
 		this._startDur = dur;
-		this._setTimeoutEnded();
+		if ( !this.looping ) {
+			this._timeoutIdEnded = setTimeout( this.onended.bind( this ), dur * 1000 );
+		}
 		if ( this.duration > 0 ) {
 			this._streamloopOn();
 		}
@@ -126,18 +133,23 @@ class gswaScheduler {
 			Object.keys( this.data ).forEach( this._blockStop, this );
 		}
 	}
-	_setTimeoutEnded() {
-		if ( this.started ) {
-			clearTimeout( this._timeoutIdEnded );
-			if ( !this.looping ) {
-				this._timeoutIdEnded = setTimeout( () => {
-					this.onended();
-				}, ( ( this.duration || 0 ) + 1 ) * 1000 );
-			}
-		}
-	}
 	_getOffsetEnd() {
 		return this.looping ? this.loopB : this._startOff + this._startDur;
+	}
+	_updateDuration( dur ) {
+		if ( dur !== this.duration ) {
+			this.duration = dur;
+			if ( this.started && !this._startFixedDur ) {
+				this._startDur = dur;
+			}
+			if ( this.looping || !this._startFixedDur ) {
+				clearTimeout( this._timeoutIdEnded );
+			}
+			if ( this.started && !this.looping ) {
+				this._timeoutIdEnded = setTimeout( this.onended.bind( this ),
+					( dur - this._startOff - this.currentTime() + this._startWhen ) * 1000 );
+			}
+		}
 	}
 
 	// Stream loop
@@ -157,6 +169,7 @@ class gswaScheduler {
 	_streamloop() {
 		const allSchedule = this._dataScheduled,
 			currTime = this.currentTime();
+		let stillSomethingToPlay;
 
 		Object.entries( allSchedule ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
@@ -165,7 +178,14 @@ class gswaScheduler {
 				delete allSchedule[ id ];
 			}
 		} );
-		Object.keys( this.data ).forEach( this._blockSchedule, this );
+		Object.keys( this.data ).forEach( id => {
+			if ( this._blockSchedule( id ) ) {
+				stillSomethingToPlay = true;
+			}
+		}, this );
+		if ( !stillSomethingToPlay ) {
+			this._streamloopOff();
+		}
 	}
 
 	// Block functions
@@ -203,6 +223,7 @@ class gswaScheduler {
 				} while ( this.looping && until < currTimeEnd );
 				blcSchedule.scheduledUntil = until;
 			}
+			return this.looping || blcSchedule.scheduledUntil <= this._startWhen + this._startDur;
 		}
 	}
 	_blockStart( when, from, to, offEnd, blockId, block, bWhn, bOff, bDur ) {
@@ -247,22 +268,21 @@ class gswaScheduler {
 
 			if ( whenEnd > this.duration ) {
 				this._lastBlockId = id;
-				this.duration = whenEnd;
-				this._setTimeoutEnded();
+				this._updateDuration( whenEnd );
 			}
 		}
 	}
 	_findLastBlock() {
-		this.duration = Object.entries( this.data ).reduce( ( maxEnd, [ id, block ] ) => {
-			const whenEnd = this._bWhn( block ) + this._bDur( block );
+		this._updateDuration( Object.entries( this.data )
+			.reduce( ( max, [ id, blc ] ) => {
+				const whenEnd = ( blc.when + blc.duration ) / this.bps;
 
-			if ( whenEnd > maxEnd ) {
-				this._lastBlockId = id;
-				return whenEnd;
-			}
-			return maxEnd;
-		}, 0 );
-		this._setTimeoutEnded();
+				if ( whenEnd > max ) {
+					this._lastBlockId = id;
+					return whenEnd;
+				}
+				return max;
+			}, 0 ) );
 	}
 
 	// Data proxy
