@@ -246,7 +246,7 @@ class gswaScheduler {
 				bWhn = startWhen;
 			}
 			if ( bDur > .000001 ) {
-				const id = ++gswaScheduler._startedMaxId;
+				const id = ++gswaScheduler._startedMaxId + "";
 
 				this._dataScheduledPerBlock[ blockId ].started[ id ] =
 				this._dataScheduled[ id ] = {
