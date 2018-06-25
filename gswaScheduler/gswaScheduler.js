@@ -15,6 +15,7 @@ class gswaScheduler {
 		this._dataScheduledPerBlock = {};
 		this._streamloop = this._streamloop.bind( this );
 		this.setBPM( 60 );
+		this.enableStreaming();
 	}
 
 	// BPM
@@ -98,6 +99,9 @@ class gswaScheduler {
 
 	// Start / stop
 	// ........................................................................
+	enableStreaming( b = true ) {
+		this.isStreaming = b;
+	}
 	startBeat( when, off = 0, dur ) {
 		if ( Number.isFinite( dur ) ) {
 			dur /= this.bps;
@@ -118,11 +122,13 @@ class gswaScheduler {
 		this._startWhen = Math.max( currTime, when );
 		this._startOff = off;
 		this._startDur = dur;
-		if ( !this.looping ) {
+		if ( this.isStreaming && !this.looping ) {
 			this._timeoutIdEnded = setTimeout( this.onended.bind( this ), dur * 1000 );
 		}
 		if ( this.duration > 0 ) {
-			this._streamloopOn();
+			this.isStreaming
+				? this._streamloopOn()
+				: this._fullStart();
 		}
 	}
 	stop() {
@@ -145,11 +151,27 @@ class gswaScheduler {
 			if ( this.looping || !this._startFixedDur ) {
 				clearTimeout( this._timeoutIdEnded );
 			}
-			if ( this.started && !this.looping ) {
+			if ( this.started && this.isStreaming && !this.looping ) {
 				this._timeoutIdEnded = setTimeout( this.onended.bind( this ),
 					( dur - this._startOff - this.currentTime() + this._startWhen ) * 1000 );
 			}
 		}
+	}
+
+	// Full start
+	// ........................................................................
+	_fullStart() {
+		const when = this._startWhen,
+			from = this._startOff,
+			to = this._startDur,
+			bps = this.bps;
+
+		Object.entries( this.data ).forEach( ( [ blockId, block ] ) => {
+			this._blockStart( when, from, to, to, blockId, block,
+				block.when / bps,
+				block.offset / bps,
+				block.duration / bps );
+		} );
 	}
 
 	// Stream loop
@@ -182,7 +204,7 @@ class gswaScheduler {
 			if ( this._blockSchedule( id ) ) {
 				stillSomethingToPlay = true;
 			}
-		}, this );
+		} );
 		if ( !stillSomethingToPlay ) {
 			this._streamloopOff();
 		}
