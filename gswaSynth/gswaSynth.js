@@ -36,8 +36,10 @@ class gswaSynth {
 		const key = this._startedKeys[ id ];
 
 		if ( key ) {
-			Object.values( key.oscs ).forEach( node => node.stop() );
+			Object.values( key.oscs ).forEach( this._destroyOscNode, this );
 			delete this._startedKeys[ id ];
+		} else {
+			console.error( "gswaSynth: stopKey id invalid", id );
 		}
 	}
 	startKey( midi, when, off, dur ) {
@@ -53,19 +55,39 @@ class gswaSynth {
 	}
 
 	// createOscNode
-	_createOscNode( key, oscId ) {
+	_createOscNode( { midi, when, off, dur }, oscId ) {
 		const node = this.ctx.createOscillator(),
+			nodeEnvGain = this.ctx.createGain(),
 			osc = this.data.oscillators[ oscId ];
+		const attDur = .02,
+			relDur = .02;
 
 		this._nodeOscSetType( node, osc.type );
 		node.detune.value = osc.detune;
-		node.frequency.value = gswaSynth.midiKeyToHz[ key.midi ];
-		node.connect( this._nodes[ oscId ].pan );
-		node.start( key.when );
-		if ( Number.isFinite( key.dur ) ) {
-			node.stop( key.when + key.dur );
+		node.frequency.value = gswaSynth.midiKeyToHz[ midi ];
+
+		node._nodeEnvGain = nodeEnvGain;
+		node.connect( nodeEnvGain );
+		// nodeEnvGain.gain.value = 0;
+		nodeEnvGain.connect( this._nodes[ oscId ].pan );
+		// if ( off < attDur ) {
+		// 	nodeEnvGain.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, attDur - off );
+		// }
+
+		node.start( when );
+		if ( Number.isFinite( dur ) ) {
+			node.stop( when + dur );
+			if ( off + 1 ) {
+				// Math.max( 0, attDur - off )
+				// nodeEnvGain.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + dur - relDur, relDur );
+			}
 		}
 		return node;
+	}
+	_destroyOscNode( node ) {
+		node.stop();
+		node.disconnect();
+		node._nodeEnvGain.disconnect();
 	}
 	_nodeOscSetType( node, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
@@ -96,7 +118,7 @@ class gswaSynth {
 		obj.pan.disconnect();
 		obj.gain.disconnect();
 		Object.values( this._startedKeys ).forEach( key => {
-			key.oscs[ id ].stop();
+			this._destroyOscNode( key.oscs[ id ] );
 			delete key.oscs[ id ];
 		} );
 		delete this._nodes[ id ];
