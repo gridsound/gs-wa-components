@@ -24,13 +24,18 @@ class gswaScheduler {
 		if ( this.bpm !== bpm ) {
 			const ratio = this.bpm / bpm,
 				started = this.started,
-				currTime = started && this.getCurrentOffset();
+				currTime = started && this.getCurrentOffset() * ratio;
 
 			this.bpm = bpm;
 			this.bps = bpm / 60;
 			this.duration *= ratio;
-			if ( started ) {
-				this.setCurrentOffset( currTime * ratio );
+			if ( this.looping ) {
+				this.loopA *= ratio;
+				this.loopB *= ratio;
+				this.loopDuration = this.loopB - this.loopA;
+				this.setCurrentOffset( this.loopB > currTime ? currTime : this.loopA );
+			} else {
+				this.setCurrentOffset( currTime );
 			}
 		}
 	}
@@ -47,11 +52,8 @@ class gswaScheduler {
 		return this.setLoop( a / this.bps, b / this.bps );
 	}
 	setLoop( a, b ) {
-		let off;
+		const off = this.started && this.getCurrentOffset();
 
-		if ( this.started ) {
-			off = this.getCurrentOffset();
-		}
 		this.looping = true;
 		this.loopA = Math.min( a, b );
 		this.loopB = Math.max( a, b );
