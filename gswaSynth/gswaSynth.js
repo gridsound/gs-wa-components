@@ -93,9 +93,9 @@ class gswaSynth {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
 			node.type = type;
 		} else {
-			const wave = gswaPeriodicWaves[ type ];
+			const w = gswaPeriodicWaves.get( type );
 
-			node.setPeriodicWave( this.ctx.createPeriodicWave( wave.real, wave.imag ) );
+			node.setPeriodicWave( this.ctx.createPeriodicWave( w.real, w.imag ) );
 		}
 	}
 	_oscsAdd( id, osc ) {
