@@ -3,8 +3,8 @@
 class gswaSynth {
 	constructor() {
 		this.data = this._proxyCreate();
-		this._nodes = {};
-		this._startedKeys = {};
+		this._nodes = new Map();
+		this._startedKeys = new Map();
 	}
 
 	// Context, dis/connect
@@ -19,38 +19,37 @@ class gswaSynth {
 		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
 	}
 	connect( dest ) {
-		Object.values( this._nodes ).forEach( obj => obj.gain.connect( dest ) );
+		this._nodes.forEach( obj => obj.gain.connect( dest ) );
 		this.connectedTo = dest;
 	}
 	disconnect() {
-		Object.values( this._nodes ).forEach( obj => obj.gain.disconnect() );
+		this._nodes.forEach( obj => obj.gain.disconnect() );
 		this.connectedTo = null;
 	}
 
 	// Start/stop keys
 	// ........................................................................
 	stopAllKeys() {
-		Object.keys( this._startedKeys ).forEach( this.stopKey, this );
+		this._startedKeys.forEach( ( key, id ) => this.stopKey( id ) );
 	}
 	stopKey( id ) {
-		const key = this._startedKeys[ id ];
+		const key = this._startedKeys.get( id );
 
 		if ( key ) {
-			Object.values( key.oscs ).forEach( this._destroyOscNode, this );
-			delete this._startedKeys[ id ];
+			key.oscs.forEach( this._destroyOscNode, this );
+			this._startedKeys.delete( id );
 		} else {
 			console.error( "gswaSynth: stopKey id invalid", id );
 		}
 	}
 	startKey( midi, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId,
-			oscs = {},
+			oscs = new Map(),
 			key = { midi, oscs, when, off, dur };
 
-		Object.keys( this.data.oscillators ).forEach( oscId => {
-			oscs[ oscId ] = this._createOscNode( key, oscId );
-		} );
-		this._startedKeys[ id ] = key;
+		Object.keys( this.data.oscillators )
+			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
+		this._startedKeys.set( id, key );
 		return id;
 	}
 
@@ -102,37 +101,35 @@ class gswaSynth {
 		const gain = this.ctx.createGain(),
 			pan = this.ctx.createStereoPanner();
 
-		this._nodes[ id ] = { gain, pan };
+		this._nodes.set( id, { gain, pan } );
 		pan.pan.value = osc.pan;
 		gain.gain.value = osc.gain;
 		pan.connect( gain );
 		if ( this.connectedTo ) {
 			gain.connect( this.connectedTo );
 		}
-		Object.values( this._startedKeys ).forEach(
-			key => key.oscs[ id ] = this._createOscNode( key, id ) );
+		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
 	}
 	_oscsDel( id ) {
-		const obj = this._nodes[ id ];
+		const obj = this._nodes.get( id );
 
 		obj.pan.disconnect();
 		obj.gain.disconnect();
-		Object.values( this._startedKeys ).forEach( key => {
-			this._destroyOscNode( key.oscs[ id ] );
-			delete key.oscs[ id ];
+		this._startedKeys.forEach( key => {
+			this._destroyOscNode( key.oscs.get( id ) );
+			key.oscs.delete( id );
 		} );
-		delete this._nodes[ id ];
+		this._nodes.delete( id );
 	}
 	_oscsChangeProp( id, prop, val ) {
 		switch ( prop ) {
-			case "pan": this._nodes[ id ].pan.pan.value = val; break;
-			case "gain": this._nodes[ id ].gain.gain.value = val; break;
+			case "pan": this._nodes.get( id ).pan.pan.value = val; break;
+			case "gain": this._nodes.get( id ).gain.gain.value = val; break;
 			case "type":
 			case "detune":
-				Object.values( this._startedKeys )
-					.forEach( prop === "detune"
-						? key => key.oscs[ id ].detune.value = val
-						: key => this._nodeOscSetType( key.oscs[ id ], val ) );
+				this._startedKeys.forEach( prop === "detune"
+					? key => key.oscs.get( id ).detune.value = val
+					: key => this._nodeOscSetType( key.oscs.get( id ), val ) );
 		}
 	}
 
