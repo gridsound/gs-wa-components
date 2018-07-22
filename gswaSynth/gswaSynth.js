@@ -18,6 +18,9 @@ class gswaSynth {
 		Object.keys( oscs ).forEach( this._oscsDel, this );
 		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
 	}
+	setBPM( bpm ) {
+		this._bps = bpm / 60;
+	}
 	connect( dest ) {
 		this._nodes.forEach( obj => obj.gain.connect( dest ) );
 		this.connectedTo = dest;
