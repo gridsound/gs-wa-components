@@ -2,9 +2,9 @@
 
 class gswaSynth {
 	constructor() {
-		this.data = this._proxyCreate();
 		this._nodes = new Map();
 		this._startedKeys = new Map();
+		this.data = this._proxyCreate();
 	}
 
 	// Context, dis/connect
@@ -53,40 +53,47 @@ class gswaSynth {
 		return id;
 	}
 
+	// default gain envelope
+	_scheduleNodeEnvs( { when, off, dur }, node ) {
+		const gain = node._envGainNode.gain,
+			attDur = .01,
+			relDur = .01;
+
+		gain.cancelScheduledValues( 0 );
+		if ( off < .0001 ) {
+			gain.setValueAtTime( 0, when );
+			gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, attDur );
+		} else {
+			gain.setValueAtTime( 1, when );
+		}
+		if ( Number.isFinite( dur ) && dur - attDur - off >= relDur ) {
+			gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + dur - relDur - off, relDur );
+		}
+	}
+
 	// createOscNode
-	_createOscNode( { midi, when, off, dur }, oscId ) {
+	_createOscNode( key, oscId ) {
 		const node = this.ctx.createOscillator(),
-			nodeEnvGain = this.ctx.createGain(),
+			gain = this.ctx.createGain(),
 			osc = this.data.oscillators[ oscId ];
-		const attDur = .02,
-			relDur = .02;
 
 		this._nodeOscSetType( node, osc.type );
 		node.detune.value = osc.detune;
-		node.frequency.value = gswaSynth.midiKeyToHz[ midi ];
-
-		node._nodeEnvGain = nodeEnvGain;
-		node.connect( nodeEnvGain );
-		// nodeEnvGain.gain.value = 0;
-		nodeEnvGain.connect( this._nodes[ oscId ].pan );
-		// if ( off < attDur ) {
-		// 	nodeEnvGain.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, attDur - off );
-		// }
-
-		node.start( when );
-		if ( Number.isFinite( dur ) ) {
-			node.stop( when + dur );
-			if ( off + 1 ) {
-				// Math.max( 0, attDur - off )
-				// nodeEnvGain.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + dur - relDur, relDur );
-			}
+		node.frequency.value = gswaSynth.midiKeyToHz[ key.midi ];
+		node._envGainNode = gain;
+		node.connect( gain );
+		gain.connect( this._nodes.get( oscId ).pan );
+		this._scheduleNodeEnvs( key, node );
+		node.start( key.when );
+		if ( Number.isFinite( key.dur ) ) {
+			node.stop( key.when + key.dur );
 		}
 		return node;
 	}
 	_destroyOscNode( node ) {
 		node.stop();
 		node.disconnect();
-		node._nodeEnvGain.disconnect();
+		node._envGainNode.disconnect();
 	}
 	_nodeOscSetType( node, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
@@ -159,7 +166,7 @@ class gswaSynth {
 			type: "sine",
 			detune: 0,
 			pan: 0,
-			gain: 1
+			gain: 1,
 		} ), osc );
 		target[ oscId ] = new Proxy( osc, {
 			set: this._proxySetOscProp.bind( this, oscId )
