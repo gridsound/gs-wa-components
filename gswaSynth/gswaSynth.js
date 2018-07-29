@@ -45,10 +45,10 @@ class gswaSynth {
 			console.error( "gswaSynth: stopKey id invalid", id );
 		}
 	}
-	startKey( midi, when, off, dur ) {
+	startKey( midi, when, off, dur, gain, pan ) {
 		const id = ++gswaSynth._startedMaxId,
 			oscs = new Map(),
-			key = { midi, oscs, when, off, dur };
+			key = { midi, oscs, when, off, dur, gain, pan };
 
 		Object.keys( this.data.oscillators )
 			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
@@ -57,46 +57,51 @@ class gswaSynth {
 	}
 
 	// default gain envelope
-	_scheduleNodeEnvs( { when, off, dur }, node ) {
-		const gain = node._envGainNode.gain,
+	_scheduleOscNodeGain( { when, off, dur, gain }, gainNode ) {
+		const par = gainNode.gain,
 			attDur = .01,
 			relDur = .01;
 
-		gain.cancelScheduledValues( 0 );
+		par.cancelScheduledValues( 0 );
 		if ( off < .0001 ) {
-			gain.setValueAtTime( 0, when );
-			gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, attDur );
+			par.setValueAtTime( 0, when );
+			par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attDur );
 		} else {
-			gain.setValueAtTime( 1, when );
+			par.setValueAtTime( gain, when );
 		}
 		if ( Number.isFinite( dur ) && dur - attDur - off >= relDur ) {
-			gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + dur - relDur - off, relDur );
+			par.setValueCurveAtTime( new Float32Array( [ gain, 0 ] ), when + dur - relDur - off, relDur );
 		}
 	}
 
 	// createOscNode
 	_createOscNode( key, oscId ) {
 		const node = this.ctx.createOscillator(),
-			gain = this.ctx.createGain(),
-			osc = this.data.oscillators[ oscId ];
+			gainNode = this.ctx.createGain(),
+			panNode = this.ctx.createStereoPanner(),
+			osc = this.data.oscillators[ oscId ],
+			{ when, dur, midi } = key;
 
 		this._nodeOscSetType( node, osc.type );
+		node._panNode = panNode;
+		node._gainNode = gainNode;
 		node.detune.value = osc.detune;
-		node.frequency.value = gswaSynth.midiKeyToHz[ key.midi ];
-		node._envGainNode = gain;
-		node.connect( gain );
-		gain.connect( this._nodes.get( oscId ).pan );
-		this._scheduleNodeEnvs( key, node );
-		node.start( key.when );
-		if ( Number.isFinite( key.dur ) ) {
-			node.stop( key.when + key.dur );
+		node.frequency.value = gswaSynth.midiKeyToHz[ midi ];
+		node.connect( panNode );
+		panNode.connect( gainNode );
+		gainNode.connect( this._nodes.get( oscId ).pan );
+		panNode.pan.setValueAtTime( key.pan, when );
+		this._scheduleOscNodeGain( key, gainNode );
+		node.start( when );
+		if ( Number.isFinite( dur ) ) {
+			node.stop( when + dur );
 		}
 		return node;
 	}
 	_destroyOscNode( node ) {
 		node.stop();
 		node.disconnect();
-		node._envGainNode.disconnect();
+		node._gainNode.disconnect();
 	}
 	_nodeOscSetType( node, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
