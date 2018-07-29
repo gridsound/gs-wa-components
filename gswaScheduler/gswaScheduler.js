@@ -169,7 +169,7 @@ class gswaScheduler {
 			bps = this.bps;
 
 		Object.entries( this.data ).forEach( ( [ blockId, block ] ) => {
-			this._blockStart( when, from, to, to, blockId, block,
+			this._blockStart( when, from, to, to, +blockId, block,
 				block.when / bps,
 				block.offset / bps,
 				block.duration / bps );
@@ -197,6 +197,7 @@ class gswaScheduler {
 
 		Object.entries( allSchedule ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
+				id = +id;
 				this.ondatastop( id, obj.block );
 				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
 				delete allSchedule[ id ];
@@ -219,6 +220,7 @@ class gswaScheduler {
 			blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.entries( blcSchedule.started ).forEach( ( [ id, obj ] ) => {
+			id = +id;
 			delete allSchedule[ id ];
 			delete blcSchedule.started[ id ];
 			this.ondatastop( id, obj.block );
@@ -270,7 +272,7 @@ class gswaScheduler {
 				bWhn = startWhen;
 			}
 			if ( bDur > .000001 ) {
-				const id = ++gswaScheduler._startedMaxId + "";
+				const id = ++gswaScheduler._startedMaxId;
 
 				this._dataScheduledPerBlock[ blockId ].started[ id ] =
 				this._dataScheduled[ id ] = {
@@ -302,7 +304,7 @@ class gswaScheduler {
 				const whenEnd = ( blc.when + blc.duration ) / this.bps;
 
 				if ( whenEnd > max ) {
-					this._lastBlockId = id;
+					this._lastBlockId = +id;
 					return whenEnd;
 				}
 				return max;
