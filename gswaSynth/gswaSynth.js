@@ -69,8 +69,8 @@ class gswaSynth {
 		} else {
 			par.setValueAtTime( gain, when );
 		}
-		if ( Number.isFinite( dur ) && dur - attDur - off >= relDur ) {
-			par.setValueCurveAtTime( new Float32Array( [ gain, 0 ] ), when + dur - relDur - off, relDur );
+		if ( Number.isFinite( dur ) && dur - attDur >= relDur ) {
+			par.setValueCurveAtTime( new Float32Array( [ gain, 0 ] ), when + dur - relDur, relDur );
 		}
 	}
 
