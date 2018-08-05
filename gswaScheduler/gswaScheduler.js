@@ -138,7 +138,7 @@ class gswaScheduler {
 			delete this.started;
 			clearTimeout( this._timeoutIdEnded );
 			this._streamloopOff();
-			Object.keys( this.data ).forEach( this._blockStop, this );
+			Object.keys( this._dataScheduledPerBlock ).forEach( this._blockStop, this );
 		}
 	}
 	_getOffsetEnd() {
