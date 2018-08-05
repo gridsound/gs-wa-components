@@ -320,14 +320,18 @@ class gswaScheduler {
 		} );
 	}
 	_proxyDelBlock( target, id ) {
-		delete target[ id ];
-		if ( this.started ) {
-			this._blockStop( id );
+		if ( !( id in target ) ) {
+			console.warn( "gswaScheduler: data delete unknown id", id );
+		} else {
+			delete target[ id ];
+			if ( this.started ) {
+				this._blockStop( id );
+			}
+			if ( this._lastBlockId === id ) {
+				this._findLastBlock();
+			}
+			delete this._dataScheduledPerBlock[ id ];
 		}
-		if ( this._lastBlockId === id ) {
-			this._findLastBlock();
-		}
-		delete this._dataScheduledPerBlock[ id ];
 		return true;
 	}
 	_proxySetBlock( target, id, block ) {
@@ -337,7 +341,7 @@ class gswaScheduler {
 		if ( block ) {
 			this._dataScheduledPerBlock[ id ] = {
 				started: {},
-				scheduledUntil: 0
+				scheduledUntil: 0,
 			};
 			target[ id ] = new Proxy(
 				Object.assign( { when: 0, offset: 0, duration: 0 }, block ), {
