@@ -165,7 +165,7 @@ class gswaScheduler {
 	_fullStart() {
 		const when = this._startWhen,
 			from = this._startOff,
-			to = this._startDur,
+			to = from + this._startDur,
 			bps = this.bps;
 
 		Object.entries( this.data ).forEach( ( [ blockId, block ] ) => {
