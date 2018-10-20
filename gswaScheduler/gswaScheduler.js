@@ -14,7 +14,6 @@ class gswaScheduler {
 		this._dataScheduled = {};
 		this._dataScheduledPerBlock = {};
 		this._streamloop = this._streamloop.bind( this );
-		this.setBPM( 60 );
 		this.enableStreaming();
 	}
 
