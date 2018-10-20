@@ -8,6 +8,7 @@ class gswaScheduler {
 		this.currentTime = () => {};
 		this.bpm = 60;
 		this.bps = 1;
+		this._startOff =
 		this.duration =
 		this.dataLen = 0;
 		this.data = this._proxyCreate();
@@ -22,8 +23,7 @@ class gswaScheduler {
 	setBPM( bpm ) {
 		if ( this.bpm !== bpm ) {
 			const ratio = this.bpm / bpm,
-				started = this.started,
-				currTime = started && this.getCurrentOffset() * ratio;
+				currTime = this.getCurrentOffset() * ratio;
 
 			this.bpm = bpm;
 			this.bps = bpm / 60;
@@ -76,6 +76,7 @@ class gswaScheduler {
 		this.setCurrentOffset( off / this.bps );
 	}
 	setCurrentOffset( off ) {
+		this._startOff = off;
 		this.started && this.start( 0, off );
 	}
 	getCurrentOffsetBeat() {
@@ -134,6 +135,7 @@ class gswaScheduler {
 	}
 	stop() {
 		if ( this.started ) {
+			this._startOff = this.getCurrentOffset();
 			delete this.started;
 			clearTimeout( this._timeoutIdEnded );
 			this._streamloopOff();
