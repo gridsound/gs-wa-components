@@ -43,6 +43,7 @@ class gswaScheduler {
 	// ........................................................................
 	empty() {
 		Object.keys( this.data ).forEach( id => delete this.data[ id ] );
+		this.clearLoop();
 	}
 
 	// Loop
