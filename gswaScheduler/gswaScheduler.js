@@ -193,16 +193,16 @@ class gswaScheduler {
 		}
 	}
 	_streamloop() {
-		const allSchedule = this._dataScheduled,
+		const dataScheduled = this._dataScheduled,
 			currTime = this.currentTime();
 		let stillSomethingToPlay;
 
-		Object.entries( allSchedule ).forEach( ( [ id, obj ] ) => {
+		Object.entries( dataScheduled ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
 				id = +id;
 				this.ondatastop( id );
 				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
-				delete allSchedule[ id ];
+				delete dataScheduled[ id ];
 			}
 		} );
 		Object.keys( this.data ).forEach( id => {
@@ -218,12 +218,12 @@ class gswaScheduler {
 	// Block functions
 	// ........................................................................
 	_blockStop( id ) {
-		const allSchedule = this._dataScheduled,
+		const dataScheduled = this._dataScheduled,
 			blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.entries( blcSchedule.started ).forEach( ( [ id, obj ] ) => {
 			id = +id;
-			delete allSchedule[ id ];
+			delete dataScheduled[ id ];
 			delete blcSchedule.started[ id ];
 			this.ondatastop( id );
 		} );
@@ -348,7 +348,7 @@ class gswaScheduler {
 			target[ id ] = new Proxy(
 				Object.assign( { when: 0, offset: 0, duration: 0 }, block ), {
 					set: this._proxySetBlockProp.bind( this, id ),
-					deleteProperty: this._proxyDelBlockProp.bind( this, id )
+					deleteProperty: this._proxyDelBlockProp.bind( this, id ),
 				} );
 			this._isLastBlock( id );
 			this._blockSchedule( id );
@@ -364,7 +364,7 @@ class gswaScheduler {
 		} else {
 			target[ prop ] = val;
 		}
-		if ( gswaScheduler._blockAttributes.indexOf( prop ) > -1 ) {
+		if ( prop === "when" || prop === "offset" || prop === "duration" ) {
 			this._isLastBlock( id );
 		}
 		if ( this.started ) {
@@ -376,4 +376,3 @@ class gswaScheduler {
 }
 
 gswaScheduler._startedMaxId = 0;
-gswaScheduler._blockAttributes = [ "when", "offset", "duration" ];
