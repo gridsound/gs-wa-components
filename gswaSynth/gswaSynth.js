@@ -45,11 +45,38 @@ class gswaSynth {
 			console.error( "gswaSynth: stopKey id invalid", id );
 		}
 	}
-	startKey( midi, when, off, dur, gain, pan ) {
+	startKey( blocks, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId,
 			oscs = new Map(),
-			key = { midi, oscs, when, off, dur, gain, pan };
+			blcsLen = blocks.length,
+			blc0 = blocks[ 0 ][ 1 ],
+			blc0when = blc0.when,
+			bps = this._bps,
+			key = {
+				oscs, when, off, dur,
+				midi: blc0.key,
+				gain: blc0.gain,
+				pan: blc0.pan,
+			};
 
+		if ( blcsLen > 1 ) {
+			key.variations = [];
+			blocks.reduce( ( prev, [ id, blc ] ) => {
+				if ( prev ) {
+					const prevWhen = prev.when - blc0when,
+						when = ( prevWhen + prev.duration ) / bps;
+
+					key.variations.push( {
+						when,
+						duration: ( blc.when - blc0when ) / bps - when,
+						midi: [ prev.key, blc.key ],
+						gain: [ prev.gain, blc.gain ],
+						pan: [ prev.pan, blc.pan ],
+					} );
+				}
+				return blc;
+			}, null );
+		}
 		Object.keys( this.data.oscillators )
 			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
 		this._startedKeys.set( id, key );
@@ -57,20 +84,43 @@ class gswaSynth {
 	}
 
 	// default gain envelope
-	_scheduleOscNodeGain( { when, off, dur, gain }, gainNode ) {
-		const par = gainNode.gain,
-			attDur = .01,
-			relDur = .01;
+	_scheduleOscNodeGain( key, par ) {
+		const attDur = .01,
+			relDur = .01,
+			{ when, dur, gain } = key;
 
 		par.cancelScheduledValues( 0 );
-		if ( off < .0001 ) {
+		if ( key.off < .0001 ) {
 			par.setValueAtTime( 0, when );
 			par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attDur );
 		} else {
 			par.setValueAtTime( gain, when );
 		}
 		if ( Number.isFinite( dur ) && dur - attDur >= relDur ) {
-			par.setValueCurveAtTime( new Float32Array( [ gain, 0 ] ), when + dur - relDur, relDur );
+			const va = key.variations,
+				gainEnd = !va
+					? gain
+					: va[ va.length - 1 ].gain[ 1 ];
+
+			par.setValueCurveAtTime( new Float32Array( [ gainEnd, 0 ] ), when + dur - relDur, relDur );
+		}
+	}
+
+	// keys linked, variations
+	_scheduleVariations( key, freq, gain, pan ) {
+		if ( key.variations ) {
+			key.variations.forEach( va => {
+				const when = key.when + va.when,
+					dur = va.duration,
+					freqArr = new Float32Array( [
+						gswaSynth.midiKeyToHz[ va.midi[ 0 ] ],
+						gswaSynth.midiKeyToHz[ va.midi[ 1 ] ]
+					] );
+
+				freq.setValueCurveAtTime( freqArr, when, dur );
+				gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
+				pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+			} );
 		}
 	}
 
@@ -91,7 +141,8 @@ class gswaSynth {
 		panNode.connect( gainNode );
 		gainNode.connect( this._nodes.get( oscId ).pan );
 		panNode.pan.setValueAtTime( key.pan, when );
-		this._scheduleOscNodeGain( key, gainNode );
+		this._scheduleOscNodeGain( key, gainNode.gain );
+		this._scheduleVariations( key, node.frequency, gainNode.gain, panNode.pan );
 		node.start( when );
 		if ( Number.isFinite( dur ) ) {
 			node.stop( when + dur );
