@@ -200,7 +200,7 @@ class gswaScheduler {
 		Object.entries( allSchedule ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
 				id = +id;
-				this.ondatastop( id, obj.block );
+				this.ondatastop( id );
 				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
 				delete allSchedule[ id ];
 			}
@@ -225,7 +225,7 @@ class gswaScheduler {
 			id = +id;
 			delete allSchedule[ id ];
 			delete blcSchedule.started[ id ];
-			this.ondatastop( id, obj.block );
+			this.ondatastop( id );
 		} );
 		blcSchedule.scheduledUntil = 0;
 	}
