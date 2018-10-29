@@ -167,14 +167,10 @@ class gswaScheduler {
 	_fullStart() {
 		const when = this._startWhen,
 			from = this._startOff,
-			to = from + this._startDur,
-			bps = this.bps;
+			to = from + this._startDur;
 
 		Object.entries( this.data ).forEach( ( [ blockId, block ] ) => {
-			this._blockStart( when, from, to, to, +blockId, block,
-				block.when / bps,
-				block.offset / bps,
-				block.duration / bps );
+			this._blockStart( when, from, to, to, +blockId, block );
 		} );
 	}
 
@@ -238,51 +234,67 @@ class gswaScheduler {
 
 			if ( until < currTimeEnd ) {
 				const offEnd = this._getOffsetEnd(),
-					blc = this.data[ id ],
-					bWhn = blc.when / this.bps,
-					bOff = blc.offset / this.bps,
-					bDur = blc.duration / this.bps;
+					blc = this.data[ id ];
 
 				do {
 					const from = this.getFutureOffsetAt( until ),
 						to = Math.min( from + 1, offEnd );
 
-					until += this._blockStart( until, from, to, offEnd, id, blc, bWhn, bOff, bDur );
+					until += this._blockStart( until, from, to, offEnd, id, blc );
 				} while ( this.looping && until < currTimeEnd );
 				blcSchedule.scheduledUntil = until;
 			}
 			return this.looping || blcSchedule.scheduledUntil <= this._startWhen + this._startDur;
 		}
 	}
-	_blockStart( when, from, to, offEnd, blockId, block, bWhn, bOff, bDur ) {
-		if ( from < bWhn + bDur && bWhn < to ) {
-			const startWhen = this._startWhen;
+	_blockStart( when, from, to, offEnd, blockId, block ) {
+		if ( !block.prev ) {
+			const bps = this.bps,
+				blcs = [
+					[ blockId, block ],
+				];
+			let bWhn = block.when / bps,
+				bOff = block.offset / bps,
+				bDur = 0;
 
-			to = offEnd;
-			if ( bWhn + bDur > to ) {
-				bDur -= bWhn + bDur - to;
+			for ( let blc = block; blc; ) {
+				bDur = blc.when / bps - bWhn + blc.duration / bps;
+				if ( blc.next ) {
+					blc = this.data[ blc.next ];
+					blcs.push( [ blc.next, blc ] );
+				} else {
+					break;
+				}
 			}
-			if ( bWhn < from ) {
-				bOff += from - bWhn;
-				bDur -= from - bWhn;
-				bWhn = from;
-			}
-			bWhn = when + bWhn - from;
-			if ( bWhn < startWhen ) {
-				bOff += startWhen - bWhn;
-				bDur -= startWhen - bWhn;
-				bWhn = startWhen;
-			}
-			if ( bDur > .000001 ) {
-				const id = ++gswaScheduler._startedMaxId;
+			if ( from < bWhn + bDur && bWhn < to ) {
+				const startWhen = this._startWhen;
 
-				this._dataScheduledPerBlock[ blockId ].started[ id ] =
-				this._dataScheduled[ id ] = {
-					block,
-					blockId,
-					whenEnd: bWhn + bDur
-				};
-				this.ondatastart( id, block, bWhn, bOff, bDur );
+				if ( bWhn + bDur > offEnd ) {
+					bDur -= bWhn + bDur - offEnd;
+				}
+				if ( bWhn < from ) {
+					bOff += from - bWhn;
+					bDur -= from - bWhn;
+					bWhn = from;
+				}
+				bWhn = when + bWhn - from;
+				if ( bWhn < startWhen ) {
+					bOff += startWhen - bWhn;
+					bDur -= startWhen - bWhn;
+					bWhn = startWhen;
+				}
+				if ( bDur > .000001 ) {
+					const id = ++gswaScheduler._startedMaxId;
+
+					this._dataScheduledPerBlock[ blockId ].started[ id ] =
+					this._dataScheduled[ id ] = {
+						block,
+						blockId,
+						whenEnd: bWhn + bDur,
+					};
+					this.ondatastart( id, blcs, bWhn, bOff, bDur );
+				}
+				return offEnd - from;
 			}
 		}
 		return to - from;
