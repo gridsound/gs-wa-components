@@ -376,13 +376,15 @@ class gswaScheduler {
 		} else {
 			target[ prop ] = val;
 		}
-		if ( prop === "when" || prop === "offset" || prop === "duration" ) {
-			this._isLastBlock( id );
+		if ( prop !== "selected" ) {
+			if ( prop === "when" || prop === "offset" || prop === "duration" ) {
+				this._isLastBlock( id );
+			}
+			if ( this.started ) {
+				this._blockStop( id );
+			}
+			this._blockSchedule( id );
 		}
-		if ( this.started ) {
-			this._blockStop( id );
-		}
-		this._blockSchedule( id );
 		return true;
 	}
 }
