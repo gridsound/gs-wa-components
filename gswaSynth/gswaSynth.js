@@ -110,16 +110,18 @@ class gswaSynth {
 	_scheduleVariations( key, freq, gain, pan ) {
 		if ( key.variations ) {
 			key.variations.forEach( va => {
-				const when = key.when + va.when,
+				const when = key.when - key.off + va.when,
 					dur = va.duration,
 					freqArr = new Float32Array( [
 						gswaSynth.midiKeyToHz[ va.midi[ 0 ] ],
 						gswaSynth.midiKeyToHz[ va.midi[ 1 ] ]
 					] );
 
-				freq.setValueCurveAtTime( freqArr, when, dur );
-				gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
-				pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				if ( when > this.ctx.currentTime ) {
+					freq.setValueCurveAtTime( freqArr, when, dur );
+					gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
+					pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				}
 			} );
 		}
 	}
