@@ -85,24 +85,29 @@ class gswaSynth {
 
 	// default gain envelope
 	_scheduleOscNodeGain( key, par ) {
-		const attDur = .01,
+		const va = key.variations,
+			attDur = .01,
 			relDur = .01,
 			{ when, dur, gain } = key;
 
 		par.cancelScheduledValues( 0 );
-		if ( key.off < .0001 ) {
-			par.setValueAtTime( 0, when );
-			par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attDur );
-		} else {
-			par.setValueAtTime( gain, when );
+		if ( !va || va[ 0 ].when > key.off ) {
+			if ( key.off < .0001 ) {
+				par.setValueAtTime( 0, when );
+				par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attDur );
+			} else {
+				par.setValueAtTime( gain, when );
+			}
 		}
 		if ( Number.isFinite( dur ) && dur - attDur >= relDur ) {
-			const va = key.variations,
-				gainEnd = !va
-					? gain
-					: va[ va.length - 1 ].gain[ 1 ];
+			const vaLast = va && va[ va.length - 1 ],
+				relWhen = when + dur - relDur;
 
-			par.setValueCurveAtTime( new Float32Array( [ gainEnd, 0 ] ), when + dur - relDur, relDur );
+			if ( !vaLast || when - key.off + vaLast.when + vaLast.duration < relWhen ) {
+				const gainEnd = vaLast ? vaLast.gain[ 1 ] : gain;
+
+				par.setValueCurveAtTime( new Float32Array( [ gainEnd, 0 ] ), relWhen, relDur );
+			}
 		}
 	}
 
@@ -132,22 +137,22 @@ class gswaSynth {
 			gainNode = this.ctx.createGain(),
 			panNode = this.ctx.createStereoPanner(),
 			osc = this.data.oscillators[ oscId ],
-			{ when, dur, midi } = key;
+			atTime = key.when - key.off;
 
 		this._nodeOscSetType( node, osc.type );
 		node._panNode = panNode;
 		node._gainNode = gainNode;
-		node.detune.value = osc.detune;
-		node.frequency.value = gswaSynth.midiKeyToHz[ midi ];
 		node.connect( panNode );
 		panNode.connect( gainNode );
 		gainNode.connect( this._nodes.get( oscId ).pan );
-		panNode.pan.setValueAtTime( key.pan, when );
+		node.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
+		node.detune.setValueAtTime( osc.detune, atTime );
+		panNode.pan.setValueAtTime( key.pan, atTime );
 		this._scheduleOscNodeGain( key, gainNode.gain );
 		this._scheduleVariations( key, node.frequency, gainNode.gain, panNode.pan );
-		node.start( when );
-		if ( Number.isFinite( dur ) ) {
-			node.stop( when + dur );
+		node.start( key.when );
+		if ( Number.isFinite( key.dur ) ) {
+			node.stop( key.when + key.dur );
 		}
 		return node;
 	}
