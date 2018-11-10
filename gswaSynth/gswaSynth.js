@@ -86,8 +86,8 @@ class gswaSynth {
 	// default gain envelope
 	_scheduleOscNodeGain( key, par ) {
 		const va = key.variations,
-			attDur = .01,
-			relDur = .01,
+			attDur = .002,
+			relDur = .002,
 			{ when, dur, gain } = key;
 
 		par.cancelScheduledValues( 0 );
