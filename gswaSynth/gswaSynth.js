@@ -122,7 +122,7 @@ class gswaSynth {
 						gswaSynth.midiKeyToHz[ va.midi[ 1 ] ]
 					] );
 
-				if ( when > this.ctx.currentTime ) {
+				if ( when > this.ctx.currentTime && dur > 0 ) {
 					freq.setValueCurveAtTime( freqArr, when, dur );
 					gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
 					pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
