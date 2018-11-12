@@ -128,11 +128,9 @@ class gswaScheduler {
 		if ( this.isStreaming && !this.looping ) {
 			this._timeoutIdEnded = setTimeout( this.onended.bind( this ), dur * 1000 );
 		}
-		if ( this.duration > 0 ) {
-			this.isStreaming
-				? this._streamloopOn()
-				: this._fullStart();
-		}
+		this.isStreaming
+			? this._streamloopOn()
+			: this._fullStart();
 	}
 	stop() {
 		if ( this.started ) {
@@ -195,18 +193,17 @@ class gswaScheduler {
 
 		Object.entries( dataScheduled ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
-				id = +id;
-				this.ondatastop( id );
-				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
 				delete dataScheduled[ id ];
+				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
+				this.ondatastop( +id );
 			}
 		} );
 		Object.keys( this.data ).forEach( id => {
-			if ( this._blockSchedule( id ) ) {
+			if ( this._blockSchedule( +id ) ) {
 				stillSomethingToPlay = true;
 			}
 		} );
-		if ( !stillSomethingToPlay ) {
+		if ( !this.looping && !stillSomethingToPlay ) {
 			this._streamloopOff();
 		}
 	}
@@ -218,10 +215,9 @@ class gswaScheduler {
 			blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.entries( blcSchedule.started ).forEach( ( [ id, obj ] ) => {
-			id = +id;
 			delete dataScheduled[ id ];
 			delete blcSchedule.started[ id ];
-			this.ondatastop( id );
+			this.ondatastop( +id );
 		} );
 		blcSchedule.scheduledUntil = 0;
 	}
@@ -244,7 +240,7 @@ class gswaScheduler {
 				} while ( this.looping && until < currTimeEnd );
 				blcSchedule.scheduledUntil = until;
 			}
-			return this.looping || blcSchedule.scheduledUntil <= this._startWhen + this._startDur;
+			return blcSchedule.scheduledUntil <= this._startWhen + this._startDur;
 		}
 	}
 	_blockStart( when, from, to, offEnd, blockId, block ) {
@@ -328,7 +324,9 @@ class gswaScheduler {
 			deleteProperty: this._proxyDelBlock.bind( this )
 		} );
 	}
-	_proxyDelBlock( target, id ) {
+	_proxyDelBlock( target, blockId ) {
+		const id = +blockId;
+
 		if ( !( id in target ) ) {
 			console.warn( "gswaScheduler: data delete unknown id", id );
 		} else {
@@ -343,7 +341,9 @@ class gswaScheduler {
 		}
 		return true;
 	}
-	_proxySetBlock( target, id, block ) {
+	_proxySetBlock( target, blockId, block ) {
+		const id = +blockId;
+
 		if ( id in target || !block ) {
 			this._proxyDelBlock( target, id );
 		}
@@ -353,7 +353,11 @@ class gswaScheduler {
 				scheduledUntil: 0,
 			};
 			target[ id ] = new Proxy(
-				Object.assign( { when: 0, offset: 0, duration: 0 }, block ), {
+				Object.assign( {
+					when: 0,
+					offset: 0,
+					duration: 0,
+				}, block ), {
 					set: this._proxySetBlockProp.bind( this, id ),
 					deleteProperty: this._proxyDelBlockProp.bind( this, id ),
 				} );
