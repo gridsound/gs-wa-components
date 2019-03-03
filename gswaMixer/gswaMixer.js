@@ -61,6 +61,8 @@ class gswaMixer {
 
 		analyserL.fftSize =
 		analyserR.fftSize = this._fftSize;
+		analyserL.smoothingTimeConstant =
+		analyserR.smoothingTimeConstant = 0;
 		input.connect( pan.getInput() );
 		pan.connect( gain );
 		gain.connect( output );
