@@ -3,6 +3,9 @@
 class gswaMixer {
 	constructor() {
 		this._chans = {};
+		this._fftSize = 128;
+		this.audioDataL = new Uint8Array( 64 );
+		this.audioDataR = new Uint8Array( 64 );
 		this.data = this._proxInit();
 	}
 
@@ -38,23 +41,45 @@ class gswaMixer {
 	getChanInput( id ) {
 		return this._chans[ id ].input;
 	}
+	fillAudioData( chanId ) {
+		const nodes = this._chans[ chanId ];
+
+		nodes.analyserL.getByteFrequencyData( this.audioDataL );
+		nodes.analyserR.getByteFrequencyData( this.audioDataR );
+	}
 
 	// chan:
 	_addChan( id, obj ) {
-		const pan = this.ctx.createStereoPanner(),
-			input = this.ctx.createGain(),
-			output = this.ctx.createGain();
+		const ctx = this.ctx,
+			pan = new gswaStereoPanner( ctx ),
+			gain = ctx.createGain(),
+			input = ctx.createGain(),
+			output = ctx.createGain(),
+			splitter = ctx.createChannelSplitter( 2 ),
+			analyserL = ctx.createAnalyser(),
+			analyserR = ctx.createAnalyser();
 
-		input.connect( pan );
-		pan.connect( output );
-		this._chans[ id ] = { pan, input, output };
+		analyserL.fftSize =
+		analyserR.fftSize = this._fftSize;
+		input.connect( pan.getInput() );
+		pan.connect( gain );
+		gain.connect( output );
+		gain.connect( splitter );
+		splitter.connect( analyserL, 0 );
+		splitter.connect( analyserR, 1 );
+		this._chans[ id ] = {
+			input, pan, gain, output, splitter, analyserL, analyserR,
+			analyserData: new Uint8Array( analyser.frequencyBinCount )
+		};
 	}
 	_deleteChan( id ) {
 		const nodes = this._chans[ id ];
 
 		nodes.pan.disconnect();
+		nodes.gain.disconnect();
 		nodes.input.disconnect();
 		nodes.output.disconnect();
+		nodes.splitter.disconnect();
 		delete this._chans[ id ];
 	}
 	_updateChan( id, prop, val ) {
@@ -66,10 +91,10 @@ class gswaMixer {
 				nodes.pan.pan.setValueAtTime( val, now );
 				break;
 			case "gain":
-				nodes.input.gain.setValueAtTime( val, now );
+				nodes.gain.gain.setValueAtTime( val, now );
 				break;
 			case "toggle":
-				nodes.input.gain.setValueAtTime( val ? this.data[ id ].gain : 0, now );
+				nodes.gain.gain.setValueAtTime( val ? this.data[ id ].gain : 0, now );
 				break;
 			case "dest":
 				nodes.output.disconnect();
