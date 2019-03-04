@@ -47,6 +47,9 @@ class gswaMixer {
 		nodes.analyserL.getByteFrequencyData( this.audioDataL );
 		nodes.analyserR.getByteFrequencyData( this.audioDataR );
 	}
+	liveUpdateChan( chanId, prop, val ) {
+		this._updateChan( chanId, prop, val );
+	}
 
 	// chan:
 	_addChan( id, obj ) {
