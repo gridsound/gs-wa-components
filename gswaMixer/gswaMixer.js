@@ -103,7 +103,9 @@ class gswaMixer {
 				break;
 			case "dest":
 				nodes.output.disconnect();
-				nodes.output.connect( this._chans[ val ].input );
+				if ( val in this.data ) {
+					nodes.output.connect( this._chans[ val ].input );
+				}
 				break;
 		}
 	}
@@ -148,6 +150,11 @@ class gswaMixer {
 		if ( obj.dest ) {
 			chan.dest = obj.dest;
 		}
+		Object.values( this.data ).forEach( chan => {
+			if ( chan.dest === id ) {
+				chan.dest = id;
+			}
+		} );
 		return true;
 	}
 	_proxUpdateChan( id, tar, prop, val ) {
