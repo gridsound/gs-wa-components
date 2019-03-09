@@ -93,7 +93,7 @@ class gswaMixer {
 
 		switch ( prop ) {
 			case "pan":
-				nodes.pan.pan.setValueAtTime( val, now );
+				nodes.pan.setValueAtTime( val, now );
 				break;
 			case "gain":
 				nodes.gain.gain.setValueAtTime( val, now );
