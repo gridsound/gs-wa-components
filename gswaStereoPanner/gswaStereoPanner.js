@@ -6,14 +6,10 @@ class gswaStereoPanner {
 		this._left = ctx.createGain();
 		this._right = ctx.createGain();
 		this._merger = ctx.createChannelMerger( 2 );
-
 		this._splitter.connect( this._left, 0 );
 		this._splitter.connect( this._right, 1 );
 		this._left.connect( this._merger, 0, 0 );
 		this._right.connect( this._merger, 0, 1 );
-
-		this.pan.getValue = this.pan.getValue.bind( this );
-		this.pan.setValueAtTime = this.pan.setValueAtTime.bind( this );
 	}
 
 	connect() {
@@ -25,13 +21,11 @@ class gswaStereoPanner {
 	getInput() {
 		return this._splitter;
 	}
-	pan = {
-		getValue() {
-			return this._right.gain.value - this._left.gain.value;
-		},
-		setValueAtTime( value, when ) {
-			this._left.gain.setValueAtTime( Math.min( 1 - value, 1 ), when );
-			this._right.gain.setValueAtTime( Math.min( 1 + value, 1 ), when );
-		}
+	getValue() {
+		return this._right.gain.value - this._left.gain.value;
+	}
+	setValueAtTime( value, when ) {
+		this._left.gain.setValueAtTime( Math.min( 1 - value, 1 ), when );
+		this._right.gain.setValueAtTime( Math.min( 1 + value, 1 ), when );
 	}
 }
