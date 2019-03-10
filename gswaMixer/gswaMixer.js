@@ -27,6 +27,18 @@ class gswaMixer {
 			};
 		}
 	}
+	clear() {
+		const d = this.data;
+
+		Object.keys( d ).forEach( id => {
+			if ( id !== "main" ) {
+				delete d[ id ];
+			}
+		} );
+		d.main.pan = 0;
+		d.main.gain = 1;
+		d.main.toggle = true;
+	}
 	connect( dest ) {
 		this.disconnect();
 		this._chans.main.output.connect( dest );
