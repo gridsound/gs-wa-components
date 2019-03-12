@@ -10,15 +10,16 @@ class gswaMixer {
 	}
 
 	setContext( ctx ) {
-		const dataEnt = Object.entries( this.data );
+		const data = this.data,
+			dataEnt = Object.entries( data );
 
 		this.disconnect();
 		this.ctx = ctx;
 		if ( dataEnt.length ) {
-			dataEnt.forEach( kv => this._deleteChan( kv[ 0 ] ) );
-			dataEnt.forEach( kv => this._addChan( kv[ 0 ], kv[ 1 ] ) );
+			dataEnt.forEach( kv => delete data[ kv[ 0 ] ] );
+			dataEnt.forEach( kv => data[ kv[ 0 ] ] = kv[ 1 ] );
 		} else {
-			this.data.main = {
+			data.main = {
 				order: 0,
 				toggle: true,
 				name: "",
