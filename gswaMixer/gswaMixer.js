@@ -87,7 +87,7 @@ class gswaMixer {
 		splitter.connect( analyserR, 1 );
 		this._chans[ id ] = {
 			input, pan, gain, output, splitter, analyserL, analyserR,
-			analyserData: new Uint8Array( analyser.frequencyBinCount )
+			analyserData: new Uint8Array( analyserL.frequencyBinCount )
 		};
 	}
 	_deleteChan( id ) {
