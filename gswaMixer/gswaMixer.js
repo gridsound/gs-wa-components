@@ -65,7 +65,7 @@ class gswaMixer {
 	}
 
 	// chan:
-	_addChan( id, obj ) {
+	_addChan( id ) {
 		const ctx = this.ctx,
 			pan = new gswaStereoPanner( ctx ),
 			gain = ctx.createGain(),
@@ -154,7 +154,7 @@ class gswaMixer {
 			chan = new Proxy( Object.seal( tarchan ), { set: updateChan } );
 
 		tar[ id ] = chan;
-		this._addChan( id, chan );
+		this._addChan( id );
 		chan.pan = obj.pan;
 		chan.gain = obj.gain;
 		chan.name = obj.name;
