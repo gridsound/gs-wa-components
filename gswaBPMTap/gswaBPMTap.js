@@ -32,4 +32,4 @@ const gswaBPMTap = {
 		}
 		return 0;
 	},
-}
+};
