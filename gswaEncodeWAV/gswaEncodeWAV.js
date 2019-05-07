@@ -53,15 +53,15 @@ class gswaEncodeWAV {
 		}
 	}
 	static _bufToInt16( data, offset, samples ) {
-		for ( let i = 0; i < samples.length; ++i, offset += 2 ) {
+		for ( let i = 0; i < samples.length; ++i ) {
 			const s = Math.max( -1, Math.min( samples[ i ], 1 ) );
 
-			data.setInt16( offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true );
+			data.setInt16( offset + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true );
 		}
 	}
 	static _bufToFloat32( data, offset, samples ) {
-		for ( let i = 0; i < samples.length; ++i, offset += 4 ) {
-			data.setFloat32( offset, samples[ i ], true );
+		for ( let i = 0; i < samples.length; ++i ) {
+			data.setFloat32( offset + i * 4, samples[ i ], true );
 		}
 	}
 }
