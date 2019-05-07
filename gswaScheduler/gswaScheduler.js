@@ -214,7 +214,7 @@ class gswaScheduler {
 		const dataScheduled = this._dataScheduled,
 			blcSchedule = this._dataScheduledPerBlock[ id ];
 
-		Object.entries( blcSchedule.started ).forEach( ( [ id, obj ] ) => {
+		Object.keys( blcSchedule.started ).forEach( id => {
 			delete dataScheduled[ id ];
 			delete blcSchedule.started[ id ];
 			this.ondatastop( +id );
