@@ -33,7 +33,7 @@ class gswaSynth {
 	// Start/stop keys
 	// ........................................................................
 	stopAllKeys() {
-		this._startedKeys.forEach( ( key, id ) => this.stopKey( id ) );
+		this._startedKeys.forEach( ( _key, id ) => this.stopKey( id ) );
 	}
 	stopKey( id ) {
 		const key = this._startedKeys.get( id );
@@ -61,7 +61,7 @@ class gswaSynth {
 
 		if ( blcsLen > 1 ) {
 			key.variations = [];
-			blocks.reduce( ( prev, [ id, blc ] ) => {
+			blocks.reduce( ( prev, [ , blc ] ) => {
 				if ( prev ) {
 					const prevWhen = prev.when - blc0when,
 						when = ( prevWhen + prev.duration ) / bps;
