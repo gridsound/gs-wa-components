@@ -106,10 +106,10 @@ class gswaScheduler {
 		this.isStreaming = b;
 	}
 	startBeat( when, off = 0, dur ) {
-		if ( Number.isFinite( dur ) ) {
-			dur /= this.bps;
-		}
-		return this.start( when, off / this.bps, dur );
+		return this.start( when, off / this.bps,
+			Number.isFinite( dur )
+				? dur / this.bps
+				: dur );
 	}
 	start( when, off = 0, dur ) {
 		const currTime = this.currentTime();
@@ -117,16 +117,17 @@ class gswaScheduler {
 		if ( this.started ) {
 			this.stop();
 		}
-		this._startFixedDur = Number.isFinite( dur );
-		if ( !this._startFixedDur ) {
-			dur = this.duration - off;
-		}
 		this.started = true;
+		this._startFixedDur = Number.isFinite( dur );
 		this._startWhen = Math.max( currTime, when );
 		this._startOff = off;
-		this._startDur = dur;
+		this._startDur = this._startFixedDur
+			? dur
+			: this.duration - off;
 		if ( this.isStreaming && !this.looping ) {
-			this._timeoutIdEnded = setTimeout( this.onended.bind( this ), dur * 1000 );
+			this._timeoutIdEnded = setTimeout(
+				this.onended.bind( this ),
+				this._startDur * 1000 );
 		}
 		this.isStreaming
 			? this._streamloopOn()
