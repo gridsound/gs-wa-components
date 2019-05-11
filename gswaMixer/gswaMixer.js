@@ -141,17 +141,28 @@ class gswaMixer {
 		}
 		return true;
 	}
-	__proxAddChan( tar, id, obj ) {
-		const tarchan = {
-				order: 0,
+	_proxUpdateChan( id, tar, prop, val ) {
+		tar[ prop ] = val;
+		this._updateChan( id, prop, val );
+		return true;
+	}
+	__proxNewChan( id ) {
+		const ch = {
 				toggle: true,
+				order: 0,
 				name: "",
-				pan: 0,
 				gain: 0,
-			},
-			_ = id !== "main" ? ( tarchan.dest = "main" ) : null,
-			updateChan = this._proxUpdateChan.bind( this, id ),
-			chan = new Proxy( Object.seal( tarchan ), { set: updateChan } );
+				pan: 0,
+			};
+
+		if ( id !== "main" ) {
+			ch.dest = "main";
+		}
+		return Object.seal( ch );
+	}
+	__proxAddChan( tar, id, obj ) {
+		const updateChan = this._proxUpdateChan.bind( this, id ),
+			chan = new Proxy( Object.seal( this.__proxNewChan( id ) ), { set: updateChan } );
 
 		tar[ id ] = chan;
 		this._addChan( id );
@@ -168,11 +179,6 @@ class gswaMixer {
 				chan.dest = id;
 			}
 		} );
-		return true;
-	}
-	_proxUpdateChan( id, tar, prop, val ) {
-		tar[ prop ] = val;
-		this._updateChan( id, prop, val );
 		return true;
 	}
 }
