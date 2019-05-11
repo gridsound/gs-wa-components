@@ -216,34 +216,36 @@ class gswaSynth {
 			} )
 		} );
 	}
-	_proxyDelOsc( target, oscId ) {
-		delete target[ oscId ];
+	_proxyDelOsc( tar, oscId ) {
+		delete tar[ oscId ];
 		if ( this.ctx ) {
 			this._oscsDel( oscId );
 		}
 		return true;
 	}
-	_proxyAddOsc( target, oscId, osc ) {
-		if ( oscId in target && this.ctx ) {
+	_proxyAddOsc( tar, oscId, oscObj ) {
+		const oscTar = Object.assign( Object.seal( {
+				order: 0,
+				type: "sine",
+				detune: 0,
+				pan: 0,
+				gain: 1,
+			} ), oscObj ),
+			osc = new Proxy( oscTar, {
+				set: this._proxySetOscProp.bind( this, oscId )
+			} );
+
+		if ( oscId in tar && this.ctx ) {
 			this._oscsDel( oscId );
 		}
-		osc = Object.assign( Object.seal( {
-			order: 0,
-			type: "sine",
-			detune: 0,
-			pan: 0,
-			gain: 1,
-		} ), osc );
-		target[ oscId ] = new Proxy( osc, {
-			set: this._proxySetOscProp.bind( this, oscId )
-		} );
+		tar[ oscId ] = osc;
 		if ( this.ctx ) {
 			this._oscsAdd( oscId, osc );
 		}
 		return true;
 	}
-	_proxySetOscProp( oscId, target, prop, val ) {
-		target[ prop ] = val;
+	_proxySetOscProp( oscId, tar, prop, val ) {
+		tar[ prop ] = val;
 		if ( this.ctx ) {
 			this._oscsChangeProp( oscId, prop, val );
 		}
