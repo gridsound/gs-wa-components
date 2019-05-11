@@ -12,11 +12,11 @@ class gswaStereoPanner {
 		this._right.connect( this._merger, 0, 1 );
 	}
 
-	connect() {
-		return this._merger.connect.apply( this._merger, arguments );
+	connect( ...args ) {
+		return this._merger.connect.apply( this._merger, args );
 	}
-	disconnect() {
-		return this._merger.disconnect.apply( this._merger, arguments );
+	disconnect( ...args ) {
+		return this._merger.disconnect.apply( this._merger, args );
 	}
 	getInput() {
 		return this._splitter;
