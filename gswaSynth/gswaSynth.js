@@ -15,6 +15,7 @@ class gswaSynth {
 		this.stopAllKeys();
 		this.disconnect();
 		this.ctx = ctx;
+		this.nyquist = ctx.sampleRate / 2;
 		Object.keys( oscs ).forEach( this._oscsDel, this );
 		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
 	}
@@ -60,6 +61,8 @@ class gswaSynth {
 				pan: blc0.pan,
 				midi: blc0.key,
 				gain: blc0.gain,
+				lowpass: blc0.lowpass,
+				highpass: blc0.highpass,
 			};
 
 		if ( blcsLen > 1 ) {
@@ -75,6 +78,14 @@ class gswaSynth {
 						pan: [ prev.pan, blc.pan ],
 						midi: [ prev.key, blc.key ],
 						gain: [ prev.gain, blc.gain ],
+						lowpass: [
+							this._calcLowpass( prev.lowpass ),
+							this._calcLowpass( blc.lowpass ),
+						],
+						highpass: [
+							this._calcHighpass( prev.highpass ),
+							this._calcHighpass( blc.highpass ),
+						],
 					} );
 				}
 				return blc;
@@ -84,6 +95,19 @@ class gswaSynth {
 			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
 		this._startedKeys.set( id, key );
 		return id;
+	}
+
+	// private:
+	_calcLowpass( val ) {
+		return this._calcExp( val, this.nyquist, 2 );
+	}
+	_calcHighpass( val ) {
+		return this._calcExp( 1 - val, this.nyquist, 3 );
+	}
+	_calcExp( x, total, exp ) {
+		return exp === 0
+			? x
+			: Math.expm1( x ) ** exp / ( ( Math.E - 1 ) ** exp ) * total;
 	}
 
 	// default gain envelope
@@ -130,6 +154,8 @@ class gswaSynth {
 					node.frequency.setValueCurveAtTime( freqArr, when, dur );
 					node._panNode.pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 					node._gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
+					node._lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
+					node._highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
 				}
 			} );
 		}
@@ -140,18 +166,28 @@ class gswaSynth {
 		const node = this.ctx.createOscillator(),
 			panNode = this.ctx.createStereoPanner(),
 			gainNode = this.ctx.createGain(),
+			lowpassNode = this.ctx.createBiquadFilter(),
+			highpassNode = this.ctx.createBiquadFilter(),
 			osc = this.data.oscillators[ oscId ],
 			atTime = key.when - key.off;
 
 		node._panNode = panNode;
 		node._gainNode = gainNode;
+		node._lowpassNode = lowpassNode;
+		node._highpassNode = highpassNode;
+		lowpassNode.type = "lowpass";
+		highpassNode.type = "highpass";
 		this._nodeOscSetType( node, osc.type );
 		node.connect( panNode );
-		panNode.connect( gainNode );
+		panNode.connect( lowpassNode );
+		lowpassNode.connect( highpassNode );
+		highpassNode.connect( gainNode );
 		gainNode.connect( this._nodes.get( oscId ).pan );
 		node.detune.setValueAtTime( osc.detune, atTime );
 		panNode.pan.setValueAtTime( key.pan, atTime );
 		node.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
+		lowpassNode.frequency.setValueAtTime( this._calcLowpass( key.lowpass ), atTime );
+		highpassNode.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
 		this._scheduleOscNodeGain( key, node );
 		this._scheduleVariations( key, node );
 		node.start( key.when );
