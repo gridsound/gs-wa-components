@@ -40,11 +40,24 @@ class gswaSynth {
 		const key = this._startedKeys.get( id );
 
 		if ( key ) {
-			key.oscs.forEach( this._destroyOscNode, this );
-			this._startedKeys.delete( id );
+			const oscs = key.oscs;
+
+			if ( Number.isFinite( key.dur ) ) {
+				this._stopKey( id, oscs );
+			} else {
+				oscs.forEach( node => {
+					node._gainNode.gain.setValueCurveAtTime(
+						new Float32Array( [ key.gain, .1 ] ), this.ctx.currentTime + .01, .02 );
+				} );
+				setTimeout( this._stopKey.bind( this, id, oscs ), .033 * 1000 );
+			}
 		} else {
 			console.error( "gswaSynth: stopKey id invalid", id );
 		}
+	}
+	_stopKey( id, oscs ) {
+		oscs.forEach( this._destroyOscNode, this );
+		this._startedKeys.delete( id );
 	}
 	startKey( blocks, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId,
