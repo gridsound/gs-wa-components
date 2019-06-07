@@ -51,6 +51,7 @@ class gswaSynth {
 			oscs = new Map(),
 			blcsLen = blocks.length,
 			blc0 = blocks[ 0 ][ 1 ],
+			blcLast = blocks[ blcsLen - 1 ][ 1 ],
 			blc0when = blc0.when,
 			bps = this._bps,
 			key = {
@@ -63,6 +64,8 @@ class gswaSynth {
 				gain: blc0.gain,
 				lowpass: blc0.lowpass,
 				highpass: blc0.highpass,
+				attack: blc0.attack / bps || .005,
+				release: blcLast.release / bps || .005,
 			};
 
 		if ( blcsLen > 1 ) {
@@ -114,27 +117,25 @@ class gswaSynth {
 	_scheduleOscNodeGain( key, node ) {
 		const va = key.variations,
 			par = node._gainNode.gain,
-			attDur = .002,
-			relDur = .002,
-			{ when, dur, gain } = key;
+			{ when, dur, gain, attack, release } = key;
 
 		par.cancelScheduledValues( 0 );
 		if ( !va || va[ 0 ].when > key.off ) {
 			if ( key.off < .0001 ) {
 				par.setValueAtTime( 0, when );
-				par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attDur );
+				par.setValueCurveAtTime( new Float32Array( [ 0, gain ] ), when, attack );
 			} else {
 				par.setValueAtTime( gain, when );
 			}
 		}
-		if ( Number.isFinite( dur ) && dur - attDur >= relDur ) {
+		if ( Number.isFinite( dur ) && dur - attack >= release ) {
 			const vaLast = va && va[ va.length - 1 ],
-				relWhen = when + dur - relDur;
+				relWhen = when + dur - release;
 
 			if ( !vaLast || when - key.off + vaLast.when + vaLast.duration < relWhen ) {
 				const gainEnd = vaLast ? vaLast.gain[ 1 ] : gain;
 
-				par.setValueCurveAtTime( new Float32Array( [ gainEnd, 0 ] ), relWhen, relDur );
+				par.setValueCurveAtTime( new Float32Array( [ gainEnd, 0 ] ), relWhen, release );
 			}
 		}
 	}
