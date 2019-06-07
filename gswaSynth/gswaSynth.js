@@ -31,34 +31,8 @@ class gswaSynth {
 		this.connectedTo = null;
 	}
 
-	// Start/stop keys
+	// start
 	// ........................................................................
-	stopAllKeys() {
-		this._startedKeys.forEach( ( _key, id ) => this.stopKey( id ) );
-	}
-	stopKey( id ) {
-		const key = this._startedKeys.get( id );
-
-		if ( key ) {
-			const oscs = key.oscs;
-
-			if ( Number.isFinite( key.dur ) ) {
-				this._stopKey( id, oscs );
-			} else {
-				oscs.forEach( node => {
-					node._gainNode.gain.setValueCurveAtTime(
-						new Float32Array( [ key.gain, .1 ] ), this.ctx.currentTime + .01, .02 );
-				} );
-				setTimeout( this._stopKey.bind( this, id, oscs ), .033 * 1000 );
-			}
-		} else {
-			console.error( "gswaSynth: stopKey id invalid", id );
-		}
-	}
-	_stopKey( id, oscs ) {
-		oscs.forEach( this._destroyOscNode, this );
-		this._startedKeys.delete( id );
-	}
 	startKey( blocks, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId,
 			oscs = new Map(),
@@ -111,6 +85,35 @@ class gswaSynth {
 			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
 		this._startedKeys.set( id, key );
 		return id;
+	}
+
+	// stop
+	// ........................................................................
+	stopAllKeys() {
+		this._startedKeys.forEach( ( _key, id ) => this.stopKey( id ) );
+	}
+	stopKey( id ) {
+		const key = this._startedKeys.get( id );
+
+		if ( key ) {
+			const oscs = key.oscs;
+
+			if ( Number.isFinite( key.dur ) ) {
+				this._stopKey( id, oscs );
+			} else {
+				oscs.forEach( node => {
+					node._gainNode.gain.setValueCurveAtTime(
+						new Float32Array( [ key.gain, .1 ] ), this.ctx.currentTime + .01, .02 );
+				} );
+				setTimeout( this._stopKey.bind( this, id, oscs ), .033 * 1000 );
+			}
+		} else {
+			console.error( "gswaSynth: stopKey id invalid", id );
+		}
+	}
+	_stopKey( id, oscs ) {
+		oscs.forEach( this._destroyOscNode, this );
+		this._startedKeys.delete( id );
 	}
 
 	// private:
@@ -224,6 +227,8 @@ class gswaSynth {
 			node.setPeriodicWave( this.ctx.createPeriodicWave( w.real, w.imag ) );
 		}
 	}
+
+	// oscsAdd/Del/Edit
 	_oscsAdd( id, osc ) {
 		const gain = this.ctx.createGain(),
 			pan = this.ctx.createStereoPanner();
