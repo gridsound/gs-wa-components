@@ -71,9 +71,6 @@ class gswaMixer {
 		nodes.analyserL.getByteFrequencyData( this.audioDataL );
 		nodes.analyserR.getByteFrequencyData( this.audioDataR );
 	}
-	liveUpdateChan( chanId, prop, val ) {
-		this.gsdata.liveChange( chanId, prop, val );
-	}
 
 	// chan:
 	_addChan( id ) {
@@ -102,7 +99,7 @@ class gswaMixer {
 		};
 		Object.entries( this.gsdata.data ).forEach( kv => {
 			if ( kv[ 1 ].dest === id ) {
-				this._updateChan( kv[ 0 ], "dest", id );
+				this.gsdata.liveChange( kv[ 0 ], "dest", id );
 			}
 		} );
 	}
