@@ -41,8 +41,6 @@ class gswaMixer {
 		this.gsdata.change( obj );
 	}
 	clear() {
-		const d = this.data;
-
 		this.gsdata.clear();
 		this.gsdata.change( {
 			main: {
