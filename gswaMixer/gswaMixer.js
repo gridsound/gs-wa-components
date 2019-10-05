@@ -8,13 +8,15 @@ class gswaMixer {
 		this._fftSize = 128;
 		this.audioDataL = new Uint8Array( 64 );
 		this.audioDataR = new Uint8Array( 64 );
-		this.gsdata = new gsdataMixer( {
-			addChan: this._addChan.bind( this ),
-			removeChan: this._removeChan.bind( this ),
-			toggleChan: this._updateChanToggle.bind( this ),
-			redirectChan: this._updateChanDest.bind( this ),
-			changePanChan: this._updateChanPan.bind( this ),
-			changeGainChan: this._updateChanGain.bind( this ),
+		this.gsdata = new GSDataMixer( {
+			dataCallbacks: {
+				addChan: this._addChan.bind( this ),
+				removeChan: this._removeChan.bind( this ),
+				toggleChan: this._updateChanToggle.bind( this ),
+				redirectChan: this._updateChanDest.bind( this ),
+				changePanChan: this._updateChanPan.bind( this ),
+				changeGainChan: this._updateChanGain.bind( this ),
+			},
 		} );
 		Object.seal( this );
 	}
@@ -22,7 +24,7 @@ class gswaMixer {
 	setContext( ctx ) {
 		this.disconnect();
 		this.ctx = ctx;
-		if ( this.gsdata.values.get( "nbChannels" ) > 0 ) {
+		if ( this.gsdata.values.nbChannels > 0 ) {
 			this.gsdata.reset();
 		} else {
 			this.gsdata.change( {
