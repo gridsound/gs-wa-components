@@ -65,6 +65,9 @@ class gswaMixer {
 	getChanInput( id ) {
 		return this._chans[ id ].input;
 	}
+	getChanOutput( id ) {
+		return this._chans[ id ].pan.getInput();
+	}
 	fillAudioData( chanId ) {
 		const nodes = this._chans[ chanId ];
 
