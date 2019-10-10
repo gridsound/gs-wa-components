@@ -12,8 +12,8 @@ class gswaMixer {
 			dataCallbacks: {
 				addChan: this._addChan.bind( this ),
 				removeChan: this._removeChan.bind( this ),
-				toggleChan: this._updateChanToggle.bind( this ),
-				redirectChan: this._updateChanDest.bind( this ),
+				toggleChan: this._toggleChan.bind( this ),
+				redirectChan: this._redirectChan.bind( this ),
 				changePanChan: this._updateChanPan.bind( this ),
 				changeGainChan: this._updateChanGain.bind( this ),
 			},
@@ -106,20 +106,20 @@ class gswaMixer {
 			}
 		} );
 	}
+	_redirectChan( id, val ) {
+		this._chans[ id ].output.disconnect();
+		if ( val in this.gsdata.data ) {
+			this._chans[ id ].output.connect( this.getChanInput( val ) );
+		}
+	}
+	_toggleChan( id, val ) {
+		this._chans[ id ].gain.gain.setValueAtTime( val ? this.gsdata.data[ id ].gain : 0, this.ctx.currentTime );
+	}
 	_updateChanPan( id, val ) {
 		this._chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
 	}
 	_updateChanGain( id, val ) {
 		this._chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
-	}
-	_updateChanToggle( id, val ) {
-		this._chans[ id ].gain.gain.setValueAtTime( val ? this.gsdata.data[ id ].gain : 0, this.ctx.currentTime );
-	}
-	_updateChanDest( id, val ) {
-		this._chans[ id ].output.disconnect();
-		if ( val in this.gsdata.data ) {
-			this._chans[ id ].output.connect( this._chans[ val ].input );
-		}
 	}
 	_removeChan( id ) {
 		const nodes = this._chans[ id ];
