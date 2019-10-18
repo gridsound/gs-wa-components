@@ -30,6 +30,9 @@ class gswaEffects {
 	clear() {
 		this.gsdata.clear();
 	}
+	liveChangeFxProp( id, prop, val ) {
+		this._wafxs.get( id ).liveChange( prop, val );
+	}
 
 	// .........................................................................
 	_toggleFx( id, b ) {
