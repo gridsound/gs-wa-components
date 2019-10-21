@@ -10,6 +10,7 @@ class gswaFxFilter {
 		this.responseMagOut =
 		this.responsePhaseOut = null;
 		this._respSize = -1;
+		this._enable = false;
 		this.gsdata = new GSDataFxFilter( {
 			dataCallbacks: {
 				changeType: this._changeType.bind( this ),
@@ -25,13 +26,29 @@ class gswaFxFilter {
 	// .........................................................................
 	setContext( ctx ) {
 		if ( this.ctx ) {
+			this.input.disconnect();
+			this.output.disconnect();
 			this._filter.disconnect();
 		}
 		this.ctx = ctx;
-		this.input =
-		this.output =
+		this.input = ctx.createGain();
+		this.output = ctx.createGain();
 		this._filter = ctx.createBiquadFilter();
 		this.gsdata.recall();
+		this.toggle( this._enable );
+	}
+	toggle( b ) {
+		this._enable = b;
+		if ( this.ctx ) {
+			if ( b ) {
+				this.input.disconnect();
+				this.input.connect( this._filter );
+				this._filter.connect( this.output );
+			} else {
+				this._filter.disconnect();
+				this.input.connect( this.output );
+			}
+		}
 	}
 	change( obj ) {
 		this.gsdata.change( obj );
