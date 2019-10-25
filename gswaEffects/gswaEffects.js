@@ -8,9 +8,11 @@ class gswaEffects {
 		this._wafxs = new Map();
 		this.gsdata = new GSDataEffects( {
 			dataCallbacks: {
-				toggleFx: this._toggleFx.bind( this ),
+				addFx: this._addFx.bind( this ),
 				removeFx: this._removeFx.bind( this ),
-				changeFxData: this._changeFxData.bind( this ),
+				connectFxTo: this._connectFxTo.bind( this ),
+				toggleFx: ( id, b ) => this._wafxs.get( id ).toggle( b ),
+				changeFxData: ( id, data ) => this._wafxs.get( id ).change( data ),
 			},
 		} );
 		Object.seal( this );
@@ -35,32 +37,28 @@ class gswaEffects {
 	}
 
 	// .........................................................................
-	_toggleFx( id, b ) {
-		if ( !b ) {
-			this._removeFx( id );
-		} else if ( !this._wafxs.has( id ) ) {
-			this._addFx( id, this.gsdata.data[ id ] );
-		}
-	}
 	_addFx( id, fx ) {
-		const wafx = new ( gswaEffects.fxsMap.get( fx.type ) )(),
-			chanIn = this._getChanInput( fx.dest ),
-			chanOut = this._getChanOutput( fx.dest );
+		const wafx = new ( gswaEffects.fxsMap.get( fx.type ) )();
 
 		this._wafxs.set( id, wafx );
 		wafx.setContext( this.ctx );
-		chanIn.disconnect(); // still work to do here
-		chanIn.connect( wafx.input );
-		wafx.output.connect( chanOut );
 	}
-	_changeFxData( id, fxData ) {
-		this._wafxs.get( id ).change( fxData );
-	}
-	_removeFx( id ) {
+	_removeFx( id, prevId, nextId ) {
 		const wafx = this._wafxs.get( id );
 
 		wafx.output.disconnect();
 		this._wafxs.delete( id );
+	}
+	_connectFxTo( chanId, fxId, nextFxId ) {
+		const dest = nextFxId
+				? this._wafxs.get( nextFxId ).input
+				: this._getChanOutput( chanId ),
+			node = fxId
+				? this._wafxs.get( fxId ).output
+				: this._getChanInput( chanId );
+
+		node.disconnect();
+		node.connect( dest );
 	}
 }
 
