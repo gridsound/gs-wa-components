@@ -21,7 +21,7 @@ class gswaEffects {
 	// .........................................................................
 	setContext( ctx ) {
 		this.ctx = ctx;
-		this._wafxs.forEach( fx => fx.setContext( ctx ) );
+		this.gsdata.reset();
 	}
 	setBPM( bpm ) {
 		this._wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) );
