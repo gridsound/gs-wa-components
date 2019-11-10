@@ -34,7 +34,7 @@ class gswaSynth {
 	// start
 	// ........................................................................
 	startKey( blocks, when, off, dur ) {
-		const id = ++gswaSynth._startedMaxId,
+		const id = ++gswaSynth._startedMaxId.value,
 			oscs = new Map(),
 			blcsLen = blocks.length,
 			blc0 = blocks[ 0 ][ 1 ],
@@ -312,5 +312,8 @@ class gswaSynth {
 	}
 }
 
-gswaSynth._startedMaxId = 0;
-gswaSynth.nativeTypes = [ "sine", "triangle", "sawtooth", "square" ];
+gswaSynth._startedMaxId = Object.seal( { value: 0 } );
+gswaSynth.nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] );
+gswaSynth.midiKeyToHz = [];
+
+Object.freeze( gswaSynth );

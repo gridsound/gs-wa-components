@@ -4,7 +4,20 @@
 This midi array start from 0, this means C#3's frequency is gswaSynth.midiKeyToHz[ 12 * 3 + 1 ].
 */
 
-gswaSynth.midiKeyToHz = ( new Array( 12 ) ).concat( [
+gswaSynth.midiKeyToHz.push(
+	   0, // [0] -> C0 (unused)
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+	   0,
+
 	  32.7032, // [12] -> C1
 	  34.6479,
 	  36.7081,
@@ -97,4 +110,6 @@ gswaSynth.midiKeyToHz = ( new Array( 12 ) ).concat( [
 	3951.07,
 
 	4186.01, // [96] -> C8
-] );
+);
+
+Object.freeze( gswaSynth.midiKeyToHz );
