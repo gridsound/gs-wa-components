@@ -13,11 +13,11 @@ class gswaFxFilter {
 		this._enable = false;
 		this.gsdata = new GSDataFxFilter( {
 			dataCallbacks: {
-				changeType: this._changeType.bind( this ),
-				changeQ: this._changeProp.bind( this, "Q" ),
-				changeGain: this._changeProp.bind( this, "gain" ),
-				changeDetune: this._changeProp.bind( this, "detune" ),
-				changeFrequency: this._changeProp.bind( this, "frequency" ),
+				type: this._changeType.bind( this ),
+				Q: this._changeProp.bind( this, "Q" ),
+				gain: this._changeProp.bind( this, "gain" ),
+				detune: this._changeProp.bind( this, "detune" ),
+				frequency: this._changeProp.bind( this, "frequency" ),
 			},
 		} );
 		Object.seal( this );
