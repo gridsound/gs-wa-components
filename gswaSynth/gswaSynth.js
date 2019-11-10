@@ -2,9 +2,14 @@
 
 class gswaSynth {
 	constructor() {
+		this._bps = 1;
+		this.ctx =
+		this.connectedTo = null;
+		this.nyquist = 24000;
 		this._nodes = new Map();
 		this._startedKeys = new Map();
 		this.data = this._proxyCreate();
+		Object.seal( this );
 	}
 
 	// Context, dis/connect
