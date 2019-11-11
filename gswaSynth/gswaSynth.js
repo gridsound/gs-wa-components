@@ -2,30 +2,39 @@
 
 class gswaSynth {
 	constructor() {
+		const gsdata = new GSDataSynth( {
+				dataCallbacks: {
+					addOsc: this._addOsc.bind( this ),
+					removeOsc: this._removeOsc.bind( this ),
+					updateOsc: this._updateOsc.bind( this ),
+					// updateLFO: this._xxxxxx.bind( this ),
+				},
+			} );
+
 		this._bps = 1;
+		this.gsdata = gsdata;
 		this.ctx =
 		this.connectedTo = null;
 		this.nyquist = 24000;
 		this._nodes = new Map();
 		this._startedKeys = new Map();
-		this.data = this._proxyCreate();
 		Object.seal( this );
 	}
 
 	// Context, dis/connect
-	// ........................................................................
+	// .........................................................................
 	setContext( ctx ) {
-		const oscs = this.data.oscillators;
-
 		this.stopAllKeys();
 		this.disconnect();
 		this.ctx = ctx;
 		this.nyquist = ctx.sampleRate / 2;
-		Object.keys( oscs ).forEach( this._oscsDel, this );
-		Object.entries( oscs ).forEach( ( [ id, osc ] ) => this._oscsAdd( id, osc ) );
+		this.gsdata.recall();
 	}
 	setBPM( bpm ) {
 		this._bps = bpm / 60;
+	}
+	change( obj ) {
+		this.gsdata.change( obj );
 	}
 	connect( dest ) {
 		this._nodes.forEach( obj => obj.gain.connect( dest ) );
@@ -36,8 +45,50 @@ class gswaSynth {
 		this.connectedTo = null;
 	}
 
+	// add/remove/update oscs
+	// .........................................................................
+	_removeOsc( id ) {
+		const obj = this._nodes.get( id );
+
+		obj.pan.disconnect();
+		obj.gain.disconnect();
+		this._startedKeys.forEach( key => {
+			this._destroyOscNode( key.oscs.get( id ) );
+			key.oscs.delete( id );
+		} );
+		this._nodes.delete( id );
+	}
+	_addOsc( id, osc ) {
+		const gain = this.ctx.createGain(),
+			pan = this.ctx.createStereoPanner();
+
+		this._nodes.set( id, { gain, pan } );
+		pan.pan.value = osc.pan;
+		gain.gain.value = osc.gain;
+		pan.connect( gain );
+		if ( this.connectedTo ) {
+			gain.connect( this.connectedTo );
+		}
+		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
+	}
+	_updateOsc( id, osc ) {
+		for ( const prop in osc ) {
+			const val = osc[ prop ];
+
+			switch ( prop ) {
+				case "pan": this._nodes.get( id ).pan.pan.value = val; break;
+				case "gain": this._nodes.get( id ).gain.gain.value = val; break;
+				case "type":
+				case "detune":
+					this._startedKeys.forEach( prop === "detune"
+						? key => key.oscs.get( id ).detune.value = val
+						: key => this._nodeOscSetType( key.oscs.get( id ), val ) );
+			}
+		}
+	}
+
 	// start
-	// ........................................................................
+	// .........................................................................
 	startKey( blocks, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId.value,
 			oscs = new Map(),
@@ -86,14 +137,14 @@ class gswaSynth {
 				return blc;
 			}, null );
 		}
-		Object.keys( this.data.oscillators )
+		Object.keys( this.gsdata.data.oscillators )
 			.forEach( oscId => oscs.set( oscId, this._createOscNode( key, oscId ) ) );
 		this._startedKeys.set( id, key );
 		return id;
 	}
 
 	// stop
-	// ........................................................................
+	// .........................................................................
 	stopAllKeys() {
 		this._startedKeys.forEach( ( _key, id ) => this.stopKey( id ) );
 	}
@@ -190,7 +241,7 @@ class gswaSynth {
 			gainNode = this.ctx.createGain(),
 			lowpassNode = this.ctx.createBiquadFilter(),
 			highpassNode = this.ctx.createBiquadFilter(),
-			osc = this.data.oscillators[ oscId ],
+			osc = this.gsdata.data.oscillators[ oscId ],
 			atTime = key.when - key.off;
 
 		node._panNode = panNode;
@@ -231,89 +282,6 @@ class gswaSynth {
 
 			node.setPeriodicWave( this.ctx.createPeriodicWave( w.real, w.imag ) );
 		}
-	}
-
-	// oscsAdd/Del/Edit
-	_oscsAdd( id, osc ) {
-		const gain = this.ctx.createGain(),
-			pan = this.ctx.createStereoPanner();
-
-		this._nodes.set( id, { gain, pan } );
-		pan.pan.value = osc.pan;
-		gain.gain.value = osc.gain;
-		pan.connect( gain );
-		if ( this.connectedTo ) {
-			gain.connect( this.connectedTo );
-		}
-		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
-	}
-	_oscsDel( id ) {
-		const obj = this._nodes.get( id );
-
-		obj.pan.disconnect();
-		obj.gain.disconnect();
-		this._startedKeys.forEach( key => {
-			this._destroyOscNode( key.oscs.get( id ) );
-			key.oscs.delete( id );
-		} );
-		this._nodes.delete( id );
-	}
-	_oscsChangeProp( id, prop, val ) {
-		switch ( prop ) {
-			case "pan": this._nodes.get( id ).pan.pan.value = val; break;
-			case "gain": this._nodes.get( id ).gain.gain.value = val; break;
-			case "type":
-			case "detune":
-				this._startedKeys.forEach( prop === "detune"
-					? key => key.oscs.get( id ).detune.value = val
-					: key => this._nodeOscSetType( key.oscs.get( id ), val ) );
-		}
-	}
-
-	// Data proxy
-	// ........................................................................
-	_proxyCreate() {
-		return Object.freeze( {
-			oscillators: new Proxy( {}, {
-				set: this._proxyAddOsc.bind( this ),
-				deleteProperty: this._proxyDelOsc.bind( this )
-			} )
-		} );
-	}
-	_proxyDelOsc( tar, oscId ) {
-		delete tar[ oscId ];
-		if ( this.ctx ) {
-			this._oscsDel( oscId );
-		}
-		return true;
-	}
-	_proxyAddOsc( tar, oscId, oscObj ) {
-		const oscTar = Object.assign( Object.seal( {
-				order: 0,
-				type: "sine",
-				detune: 0,
-				pan: 0,
-				gain: 1,
-			} ), oscObj ),
-			osc = new Proxy( oscTar, {
-				set: this._proxySetOscProp.bind( this, oscId )
-			} );
-
-		if ( oscId in tar && this.ctx ) {
-			this._oscsDel( oscId );
-		}
-		tar[ oscId ] = osc;
-		if ( this.ctx ) {
-			this._oscsAdd( oscId, osc );
-		}
-		return true;
-	}
-	_proxySetOscProp( oscId, tar, prop, val ) {
-		tar[ prop ] = val;
-		if ( this.ctx ) {
-			this._oscsChangeProp( oscId, prop, val );
-		}
-		return true;
 	}
 }
 
