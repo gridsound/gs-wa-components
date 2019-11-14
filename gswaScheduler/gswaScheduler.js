@@ -8,14 +8,25 @@ class gswaScheduler {
 		this.currentTime = () => {};
 		this.bpm = 60;
 		this.bps = 1;
-		this._startOff =
+		this.started = false;
 		this.duration =
-		this.dataLen = 0;
+		this._startDur =
+		this._startOff =
+		this._startWhen =
+		this._startFixedDur = 0;
+		this._timeoutIdEnded = null;
 		this.data = this._proxyCreate();
 		this._dataScheduled = {};
 		this._dataScheduledPerBlock = {};
+		this._lastBlockId = null;
+		this.loopA =
+		this.loopB = null;
+		this.looping = false;
+		this.loopDuration = 0;
+		this.isStreaming = true;
 		this._streamloop = this._streamloop.bind( this );
-		this.enableStreaming();
+		this._streamloopId = null;
+		Object.seal( this );
 	}
 
 	// BPM
@@ -66,7 +77,7 @@ class gswaScheduler {
 		if ( this.looping ) {
 			const off = this.getCurrentOffset();
 
-			delete this.looping;
+			this.looping = false;
 			this.setCurrentOffset( off );
 		}
 	}
@@ -136,7 +147,7 @@ class gswaScheduler {
 	stop() {
 		if ( this.started ) {
 			this._startOff = this.getCurrentOffset();
-			delete this.started;
+			this.started = false;
 			clearTimeout( this._timeoutIdEnded );
 			this._streamloopOff();
 			Object.keys( this._dataScheduledPerBlock ).forEach( this._blockStop, this );
@@ -184,7 +195,7 @@ class gswaScheduler {
 	_streamloopOff() {
 		if ( this._streamloopId ) {
 			clearInterval( this._streamloopId );
-			delete this._streamloopId;
+			this._streamloopId = null;
 		}
 	}
 	_streamloop() {
@@ -276,7 +287,7 @@ class gswaScheduler {
 					bWhn = startWhen;
 				}
 				if ( bDur > .000001 ) {
-					const id = ++gswaScheduler._startedMaxId;
+					const id = ++gswaScheduler._startedMaxId.value;
 
 					this._dataScheduledPerBlock[ blockId ].started[ id ] =
 					this._dataScheduled[ id ] = {
@@ -389,4 +400,6 @@ class gswaScheduler {
 	}
 }
 
-gswaScheduler._startedMaxId = 0;
+gswaScheduler._startedMaxId = Object.seal( { value: 0 } );
+
+Object.freeze( gswaScheduler );
