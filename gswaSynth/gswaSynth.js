@@ -7,7 +7,7 @@ class gswaSynth {
 					addOsc: this._addOsc.bind( this ),
 					removeOsc: this._removeOsc.bind( this ),
 					updateOsc: this._updateOsc.bind( this ),
-					// updateLFO: this._xxxxxx.bind( this ),
+					updateLFO: this._updateLFO.bind( this ),
 				},
 			} );
 
@@ -71,9 +71,9 @@ class gswaSynth {
 		}
 		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
 	}
-	_updateOsc( id, osc ) {
-		for ( const prop in osc ) {
-			const val = osc[ prop ];
+	_updateOsc( id, obj ) {
+		for ( const prop in obj ) {
+			const val = obj[ prop ];
 
 			switch ( prop ) {
 				case "pan": this._nodes.get( id ).pan.pan.value = val; break;
@@ -85,6 +85,14 @@ class gswaSynth {
 						: key => this._nodeOscSetType( key.oscs.get( id ), val ) );
 			}
 		}
+	}
+	_updateLFO( obj ) {
+		const nobj = Object.assign( {}, obj );
+
+		if ( "delay" in obj ) { nobj.delay /= this._bps; }
+		if ( "attack" in obj ) { nobj.attack /= this._bps; }
+		if ( "speed" in obj ) { nobj.speed *= this._bps; }
+		this._startedKeys.forEach( k => k.oscs.forEach( node => node._waLFO.change( nobj ) ) );
 	}
 
 	// start
@@ -236,14 +244,19 @@ class gswaSynth {
 
 	// createOscNode
 	_createOscNode( key, oscId ) {
-		const node = this.ctx.createOscillator(),
-			panNode = this.ctx.createStereoPanner(),
-			gainNode = this.ctx.createGain(),
-			lowpassNode = this.ctx.createBiquadFilter(),
-			highpassNode = this.ctx.createBiquadFilter(),
+		const ctx = this.ctx,
+			lfo = this.gsdata.data.lfo,
 			osc = this.gsdata.data.oscillators[ oscId ],
-			atTime = key.when - key.off;
+			finite = Number.isFinite( key.dur ),
+			atTime = key.when - key.off,
+			waLFO = new gswaLFO( ctx ),
+			node = ctx.createOscillator(),
+			panNode = ctx.createStereoPanner(),
+			gainNode = ctx.createGain(),
+			lowpassNode = ctx.createBiquadFilter(),
+			highpassNode = ctx.createBiquadFilter();
 
+		node._waLFO = waLFO;
 		node._panNode = panNode;
 		node._gainNode = gainNode;
 		node._lowpassNode = lowpassNode;
@@ -251,11 +264,13 @@ class gswaSynth {
 		lowpassNode.type = "lowpass";
 		highpassNode.type = "highpass";
 		this._nodeOscSetType( node, osc.type );
-		node.connect( panNode );
-		panNode.connect( lowpassNode );
-		lowpassNode.connect( highpassNode );
-		highpassNode.connect( gainNode );
-		gainNode.connect( this._nodes.get( oscId ).pan );
+		node
+			.connect( waLFO.node )
+			.connect( panNode )
+			.connect( lowpassNode )
+			.connect( highpassNode )
+			.connect( gainNode )
+			.connect( this._nodes.get( oscId ).pan );
 		node.detune.setValueAtTime( osc.detune, atTime );
 		panNode.pan.setValueAtTime( key.pan, atTime );
 		node.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
@@ -264,7 +279,18 @@ class gswaSynth {
 		this._scheduleOscNodeGain( key, node );
 		this._scheduleVariations( key, node );
 		node.start( key.when );
-		if ( Number.isFinite( key.dur ) ) {
+		waLFO.start( {
+			toggle: lfo.toggle,
+			when: key.when,
+			whenStop: finite ? key.when + key.dur : 0,
+			offset: key.offset,
+			type: lfo.type,
+			delay: lfo.delay / this._bps,
+			attack: lfo.attack / this._bps,
+			speed: lfo.speed * this._bps,
+			amp: lfo.amp,
+		} );
+		if ( finite ) {
 			node.stop( key.when + key.dur );
 		}
 		return node;
@@ -272,6 +298,7 @@ class gswaSynth {
 	_destroyOscNode( node ) {
 		node.stop();
 		node.disconnect();
+		node._waLFO.destroy();
 		node._gainNode.disconnect();
 	}
 	_nodeOscSetType( node, type ) {
