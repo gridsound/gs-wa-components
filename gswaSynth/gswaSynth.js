@@ -81,8 +81,8 @@ class gswaSynth {
 				case "type":
 				case "detune":
 					this._startedKeys.forEach( prop === "detune"
-						? key => key.oscs.get( id ).detune.value = val
-						: key => this._nodeOscSetType( key.oscs.get( id ), val ) );
+						? key => key.oscs.get( id ).keyOsc.detune.value = val
+						: key => this._nodeOscSetType( key.oscs.get( id ).keyOsc, val ) );
 			}
 		}
 	}
@@ -92,7 +92,7 @@ class gswaSynth {
 		if ( "delay" in obj ) { nobj.delay /= this._bps; }
 		if ( "attack" in obj ) { nobj.attack /= this._bps; }
 		if ( "speed" in obj ) { nobj.speed *= this._bps; }
-		this._startedKeys.forEach( k => k.oscs.forEach( node => node._waLFO.change( nobj ) ) );
+		this._startedKeys.forEach( k => k.oscs.forEach( nodes => nodes.keyLFO.change( nobj ) ) );
 	}
 
 	// start
@@ -165,8 +165,8 @@ class gswaSynth {
 			if ( Number.isFinite( key.dur ) ) {
 				this._stopKey( id, oscs );
 			} else {
-				oscs.forEach( node => {
-					node._gainNode.gain.setValueCurveAtTime(
+				oscs.forEach( nodes => {
+					nodes.keyGain.gain.setValueCurveAtTime(
 						new Float32Array( [ key.gain, .1 ] ), this.ctx.currentTime + .01, .02 );
 				} );
 				setTimeout( this._stopKey.bind( this, id, oscs ), .033 * 1000 );
@@ -194,9 +194,9 @@ class gswaSynth {
 	}
 
 	// default gain envelope
-	_scheduleOscNodeGain( key, node ) {
+	_scheduleOscNodeGain( key, nodes ) {
 		const va = key.variations,
-			par = node._gainNode.gain,
+			par = nodes.keyGain.gain,
 			{ when, dur, gain, attack, release } = key;
 
 		par.cancelScheduledValues( 0 );
@@ -221,7 +221,7 @@ class gswaSynth {
 	}
 
 	// keys linked, variations
-	_scheduleVariations( key, node ) {
+	_scheduleVariations( key, nodes ) {
 		if ( key.variations ) {
 			key.variations.forEach( va => {
 				const when = key.when - key.off + va.when,
@@ -232,11 +232,11 @@ class gswaSynth {
 					] );
 
 				if ( when > this.ctx.currentTime && dur > 0 ) {
-					node.frequency.setValueCurveAtTime( freqArr, when, dur );
-					node._panNode.pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
-					node._gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
-					node._lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
-					node._highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
+					nodes.keyOsc.frequency.setValueCurveAtTime( freqArr, when, dur );
+					nodes.keyPan.pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+					nodes.keyGain.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
+					nodes.keyLowpass.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
+					nodes.keyHighpass.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
 				}
 			} );
 		}
@@ -249,37 +249,40 @@ class gswaSynth {
 			osc = this.gsdata.data.oscillators[ oscId ],
 			finite = Number.isFinite( key.dur ),
 			atTime = key.when - key.off,
-			waLFO = new gswaLFO( ctx ),
-			node = ctx.createOscillator(),
-			panNode = ctx.createStereoPanner(),
-			gainNode = ctx.createGain(),
-			lowpassNode = ctx.createBiquadFilter(),
-			highpassNode = ctx.createBiquadFilter();
+			keyLFO = new gswaLFO( ctx ),
+			keyOsc = ctx.createOscillator(),
+			keyPan = ctx.createStereoPanner(),
+			keyGain = ctx.createGain(),
+			keyLowpass = ctx.createBiquadFilter(),
+			keyHighpass = ctx.createBiquadFilter(),
+			nodes = Object.freeze( {
+				keyOsc,
+				keyLFO,
+				keyPan,
+				keyGain,
+				keyLowpass,
+				keyHighpass,
+			} );
 
-		node._waLFO = waLFO;
-		node._panNode = panNode;
-		node._gainNode = gainNode;
-		node._lowpassNode = lowpassNode;
-		node._highpassNode = highpassNode;
-		lowpassNode.type = "lowpass";
-		highpassNode.type = "highpass";
-		this._nodeOscSetType( node, osc.type );
-		node
-			.connect( waLFO.node )
-			.connect( panNode )
-			.connect( lowpassNode )
-			.connect( highpassNode )
-			.connect( gainNode )
+		this._nodeOscSetType( keyOsc, osc.type );
+		keyOsc.detune.setValueAtTime( osc.detune, atTime );
+		keyPan.pan.setValueAtTime( key.pan, atTime );
+		keyOsc.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
+		keyLowpass.frequency.setValueAtTime( this._calcLowpass( key.lowpass ), atTime );
+		keyHighpass.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
+		keyLowpass.type = "lowpass";
+		keyHighpass.type = "highpass";
+		this._scheduleOscNodeGain( key, nodes );
+		this._scheduleVariations( key, nodes );
+		keyOsc
+			.connect( keyLFO.node )
+			.connect( keyPan )
+			.connect( keyLowpass )
+			.connect( keyHighpass )
+			.connect( keyGain )
 			.connect( this._nodes.get( oscId ).pan );
-		node.detune.setValueAtTime( osc.detune, atTime );
-		panNode.pan.setValueAtTime( key.pan, atTime );
-		node.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
-		lowpassNode.frequency.setValueAtTime( this._calcLowpass( key.lowpass ), atTime );
-		highpassNode.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
-		this._scheduleOscNodeGain( key, node );
-		this._scheduleVariations( key, node );
-		node.start( key.when );
-		waLFO.start( {
+		keyOsc.start( key.when );
+		keyLFO.start( {
 			toggle: lfo.toggle,
 			when: key.when,
 			whenStop: finite ? key.when + key.dur : 0,
@@ -291,23 +294,23 @@ class gswaSynth {
 			amp: lfo.amp,
 		} );
 		if ( finite ) {
-			node.stop( key.when + key.dur );
+			keyOsc.stop( key.when + key.dur );
 		}
-		return node;
+		return nodes;
 	}
-	_destroyOscNode( node ) {
-		node.stop();
-		node.disconnect();
-		node._waLFO.destroy();
-		node._gainNode.disconnect();
+	_destroyOscNode( nodes ) {
+		nodes.keyOsc.stop();
+		nodes.keyOsc.disconnect();
+		nodes.keyLFO.destroy();
+		nodes.keyGain.disconnect();
 	}
-	_nodeOscSetType( node, type ) {
+	_nodeOscSetType( oscNode, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
-			node.type = type;
+			oscNode.type = type;
 		} else {
 			const w = gswaPeriodicWaves.get( type );
 
-			node.setPeriodicWave( this.ctx.createPeriodicWave( w.real, w.imag ) );
+			oscNode.setPeriodicWave( this.ctx.createPeriodicWave( w.real, w.imag ) );
 		}
 	}
 }
