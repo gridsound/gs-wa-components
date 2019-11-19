@@ -112,7 +112,7 @@ class gswaLFO {
 			atTime = d.when + d.delay - d.offset;
 
 		if ( now <= atTime && d.attack > 0 ) {
-			this._ampNode.gain.setValueAtTime( 0, now );
+			this._ampNode.gain.setValueAtTime( 0, atTime );
 			this._ampNode.gain.setValueCurveAtTime( new Float32Array( [ 0, d.amp ] ), atTime, d.attack );
 		} else {
 			this._ampNode.gain.setValueAtTime( d.amp, now );
