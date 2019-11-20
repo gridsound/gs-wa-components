@@ -14,7 +14,7 @@ class gswaSynth {
 		this._bps = 1;
 		this.gsdata = gsdata;
 		this.ctx =
-		this.connectedTo = null;
+		this.output = null;
 		this.nyquist = 24000;
 		this._nodes = new Map();
 		this._startedKeys = new Map();
@@ -25,9 +25,9 @@ class gswaSynth {
 	// .........................................................................
 	setContext( ctx ) {
 		this.stopAllKeys();
-		this.disconnect();
 		this.ctx = ctx;
 		this.nyquist = ctx.sampleRate / 2;
+		this.output = ctx.createGain();
 		this.gsdata.recall();
 	}
 	setBPM( bpm ) {
@@ -35,14 +35,6 @@ class gswaSynth {
 	}
 	change( obj ) {
 		this.gsdata.change( obj );
-	}
-	connect( dest ) {
-		this._nodes.forEach( obj => obj.gain.connect( dest ) );
-		this.connectedTo = dest;
-	}
-	disconnect() {
-		this._nodes.forEach( obj => obj.gain.disconnect() );
-		this.connectedTo = null;
 	}
 
 	// add/remove/update oscs
@@ -66,9 +58,7 @@ class gswaSynth {
 		pan.pan.value = osc.pan;
 		gain.gain.value = osc.gain;
 		pan.connect( gain );
-		if ( this.connectedTo ) {
-			gain.connect( this.connectedTo );
-		}
+		gain.connect( this.output );
 		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
 	}
 	_updateOsc( id, obj ) {
