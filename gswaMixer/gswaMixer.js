@@ -5,9 +5,9 @@ class gswaMixer {
 		this.ctx =
 		this.connectedTo = null;
 		this._chans = {};
-		this._fftSize = 128;
-		this.audioDataL = new Uint8Array( 64 );
-		this.audioDataR = new Uint8Array( 64 );
+		this._fftSize = 4096;
+		this.audioDataL = new Uint8Array( this._fftSize / 2 );
+		this.audioDataR = new Uint8Array( this._fftSize / 2 );
 		this.gsdata = new GSDataMixer( {
 			dataCallbacks: {
 				addChan: this._addChan.bind( this ),
