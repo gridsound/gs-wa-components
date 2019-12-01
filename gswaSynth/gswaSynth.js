@@ -71,7 +71,7 @@ class gswaSynth {
 				case "type":
 				case "detune":
 					this._startedKeys.forEach( prop === "detune"
-						? key => key.oscs.get( id ).keyOsc.detune.value = val
+						? key => key.oscs.get( id ).keyOsc.detune.value = val * 100
 						: key => this._nodeOscSetType( key.oscs.get( id ).keyOsc, val ) );
 			}
 		}
@@ -255,7 +255,7 @@ class gswaSynth {
 			} );
 
 		this._nodeOscSetType( keyOsc, osc.type );
-		keyOsc.detune.setValueAtTime( osc.detune, atTime );
+		keyOsc.detune.setValueAtTime( osc.detune * 100, atTime );
 		keyPan.pan.setValueAtTime( key.pan, atTime );
 		keyOsc.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
 		keyLowpass.frequency.setValueAtTime( this._calcLowpass( key.lowpass ), atTime );
