@@ -6,8 +6,8 @@ class gswaSynth {
 				dataCallbacks: {
 					addOsc: this._addOsc.bind( this ),
 					removeOsc: this._removeOsc.bind( this ),
-					updateOsc: this._updateOsc.bind( this ),
-					updateLFO: this._updateLFO.bind( this ),
+					changeOsc: this._changeOsc.bind( this ),
+					changeLFO: this._changeLFO.bind( this ),
 				},
 			} );
 
@@ -61,7 +61,7 @@ class gswaSynth {
 		gain.connect( this.output );
 		this._startedKeys.forEach( key => key.oscs.set( id, this._createOscNode( key, id ) ) );
 	}
-	_updateOsc( id, obj ) {
+	_changeOsc( id, obj ) {
 		for ( const prop in obj ) {
 			const val = obj[ prop ];
 
@@ -76,7 +76,7 @@ class gswaSynth {
 			}
 		}
 	}
-	_updateLFO( obj ) {
+	_changeLFO( obj ) {
 		const nobj = Object.assign( {}, obj );
 
 		if ( "delay" in obj ) { nobj.delay /= this._bps; }
