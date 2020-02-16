@@ -23,13 +23,15 @@ class gswaDrumrows {
 	setContext( ctx ) {
 		this.stopAllDrums();
 		this.ctx = ctx;
-		this.gsdata.recall();
 	}
 	setBPM( bpm ) {
 		this._bps = bpm / 60;
 	}
 	change( obj ) {
 		this.gsdata.change( obj );
+	}
+	clear() {
+		this.gsdata.clear();
 	}
 	getPatternDurationByRowId( rowId ) {
 		const d = this.gsdata.data;
