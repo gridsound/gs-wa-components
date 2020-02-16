@@ -71,10 +71,12 @@ class gswaDrumrows {
 	stopDrum( id ) {
 		const nodes = this._startedDrums.get( id );
 
-		this._startedDrums.delete( id );
-		if ( nodes.absn ) {
-			nodes.absn.stop();
-			nodes.gain.disconnect();
+		if ( nodes ) {
+			this._startedDrums.delete( id );
+			if ( nodes.absn ) {
+				nodes.absn.stop();
+				nodes.gain.disconnect();
+			}
 		}
 	}
 
