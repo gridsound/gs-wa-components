@@ -17,7 +17,7 @@ class gswaDrumsScheduler {
 		this._drumrows = drumrows;
 	}
 	change( obj ) {
-		const cpy = DAWCore.utils.deepCopy( obj );
+		const cpy = GSUtils.deepCopy( obj );
 
 		Object.values( cpy ).forEach( drum => {
 			const when = drum && drum.when;
@@ -27,7 +27,7 @@ class gswaDrumsScheduler {
 				drum.duration = this._drumrows.getPatternDurationByRowId( drum.row );
 			}
 		} );
-		DAWCore.utils.diffAssign( this.scheduler.data, cpy );
+		GSUtils.diffAssign( this.scheduler.data, cpy );
 	}
 	start( when, off, dur ) {
 		this.scheduler.start( when, off, dur );
