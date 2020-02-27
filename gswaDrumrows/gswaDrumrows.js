@@ -96,13 +96,24 @@ class gswaDrumrows {
 
 		switch ( prop ) {
 			case "toggle":
-				this._startedDrums.forEach( nodes => {
-					if ( nodes.rowId === id && nodes.absn ) {
-						nodes.gain.gain.setValueAtTime( val ? row.gain : 0, this.ctx.currentTime );
-					}
+				this.__changeDrumrow( id, nodes => {
+					nodes.gain.gain.setValueAtTime( val ? row.gain : 0, this.ctx.currentTime );
+				} );
+				break;
+			case "dest":
+				this.__changeDrumrow( id, nodes => {
+					nodes.gain.disconnect();
+					nodes.gain.connect( this.getChannelInput( val ) );
 				} );
 				break;
 		}
+	}
+	__changeDrumrow( rowId, fn ) {
+		this._startedDrums.forEach( nodes => {
+			if ( nodes.rowId === rowId && nodes.absn ) {
+				fn( nodes );
+			}
+		} );
 	}
 }
 
