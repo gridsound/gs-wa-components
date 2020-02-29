@@ -7,6 +7,7 @@ class gswaDrumsScheduler {
 		this._startedDrums = new Map();
 		Object.seal( this );
 
+		this.scheduler.setMode( "drums" );
 		this.scheduler.currentTime = () => ctx.currentTime;
 		this.scheduler.ondatastart = this._onstartDrum.bind( this );
 		this.scheduler.ondatastop = this._onstopDrum.bind( this );
@@ -20,9 +21,7 @@ class gswaDrumsScheduler {
 		const cpy = GSUtils.deepCopy( obj );
 
 		Object.values( cpy ).forEach( drum => {
-			const when = drum && drum.when;
-
-			if ( when !== undefined ) {
+			if ( drum && drum.when !== undefined ) {
 				drum.offset = 0;
 				drum.duration = this._drumrows.getPatternDurationByRowId( drum.row );
 			}
