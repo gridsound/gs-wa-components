@@ -8,6 +8,7 @@ class gswaEffects {
 		this._wafxs = new Map();
 		this.gsdata = new GSDataEffects( {
 			dataCallbacks: {
+				changeBPM: bpm => this._wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) ),
 				addEffect: this._addEffect.bind( this ),
 				removeEffect: this._removeEffect.bind( this ),
 				changeEffect: this._changeEffect.bind( this ),
@@ -22,9 +23,6 @@ class gswaEffects {
 	setContext( ctx ) {
 		this.ctx = ctx;
 		this.gsdata.reset();
-	}
-	setBPM( bpm ) {
-		this._wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) );
 	}
 	change( obj ) {
 		this.gsdata.change( obj );
