@@ -26,7 +26,14 @@ class gswaScheduler {
 		this.isStreaming = true;
 		this._streamloop = this._streamloop.bind( this );
 		this._streamloopId = null;
+		this._mode = null;
 		Object.seal( this );
+	}
+
+	// Modes // 1.
+	// ........................................................................
+	setMode( mode ) {
+		this._mode = mode;
 	}
 
 	// BPM
@@ -272,7 +279,7 @@ class gswaScheduler {
 			if ( from < bWhn + bDur && bWhn < to ) {
 				const startWhen = this._startWhen;
 
-				if ( bWhn + bDur > offEnd ) {
+				if ( this._mode !== "drums" && bWhn + bDur > offEnd ) {
 					bDur -= bWhn + bDur - offEnd;
 				}
 				if ( bWhn < from ) {
@@ -403,3 +410,8 @@ class gswaScheduler {
 gswaScheduler._startedMaxId = Object.seal( { value: 0 } );
 
 Object.freeze( gswaScheduler );
+
+/*
+1. setMode() is optionnal and will react only for the value "drums".
+   In the "drums" mode the started block are not cutted by the loop.
+*/
