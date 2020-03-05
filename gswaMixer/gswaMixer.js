@@ -28,11 +28,13 @@ class gswaMixer {
 			this.gsdata.reset();
 		} else {
 			this.gsdata.change( {
-				main: {
-					toggle: true,
-					name: "main",
-					gain: 1,
-					pan: 0,
+				channels: {
+					main: {
+						toggle: true,
+						name: "main",
+						gain: 1,
+						pan: 0,
+					},
 				},
 			} );
 		}
@@ -43,11 +45,13 @@ class gswaMixer {
 	clear() {
 		this.gsdata.clear();
 		this.gsdata.change( {
-			main: {
-				toggle: true,
-				name: "main",
-				gain: 1,
-				pan: 0,
+			channels: {
+				main: {
+					toggle: true,
+					name: "main",
+					gain: 1,
+					pan: 0,
+				},
 			},
 		} );
 	}
