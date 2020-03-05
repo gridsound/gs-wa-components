@@ -212,8 +212,12 @@ class gswaScheduler {
 
 		Object.entries( dataScheduled ).forEach( ( [ id, obj ] ) => {
 			if ( obj.whenEnd < currTime ) {
+				const blcSchedule = this._dataScheduledPerBlock[ obj.blockId ];
+
 				delete dataScheduled[ id ];
-				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
+				if ( blcSchedule ) {
+					delete blcSchedule.started[ id ];
+				}
 				this.ondatastop( +id );
 			}
 		} );
@@ -231,12 +235,15 @@ class gswaScheduler {
 	// ........................................................................
 	_blockStop( id ) {
 		const dataScheduled = this._dataScheduled,
-			blcSchedule = this._dataScheduledPerBlock[ id ];
+			blcSchedule = this._dataScheduledPerBlock[ id ],
+			now = this.currentTime();
 
 		Object.keys( blcSchedule.started ).forEach( id => {
-			delete dataScheduled[ id ];
-			delete blcSchedule.started[ id ];
-			this.ondatastop( +id );
+			if ( this._mode !== "drums" || dataScheduled[ id ].when > now ) {
+				this.ondatastop( +id );
+				delete dataScheduled[ id ];
+				delete blcSchedule.started[ id ];
+			}
 		} );
 		blcSchedule.scheduledUntil = 0;
 	}
@@ -277,9 +284,10 @@ class gswaScheduler {
 				blc = id != null ? this.data[ id ] : null;
 			}
 			if ( from < bWhn + bDur && bWhn < to ) {
-				const startWhen = this._startWhen;
+				const startWhen = this._startWhen,
+					bDurOri = bDur;
 
-				if ( this._mode !== "drums" && bWhn + bDur > offEnd ) {
+				if ( bWhn + bDur > offEnd ) {
 					bDur -= bWhn + bDur - offEnd;
 				}
 				if ( bWhn < from ) {
@@ -294,15 +302,17 @@ class gswaScheduler {
 					bWhn = startWhen;
 				}
 				if ( bDur > .000001 ) {
-					const id = ++gswaScheduler._startedMaxId.value;
+					const id = ++gswaScheduler._startedMaxId.value,
+						bDur2 = this._mode === "drums" ? bDurOri : bDur;
 
 					this._dataScheduledPerBlock[ blockId ].started[ id ] =
 					this._dataScheduled[ id ] = {
 						block,
 						blockId,
-						whenEnd: bWhn + bDur,
+						when: bWhn,
+						whenEnd: bWhn + bDur2,
 					};
-					this.ondatastart( id, blcs, bWhn, bOff, bDur );
+					this.ondatastart( id, blcs, bWhn, bOff, bDur2 );
 				}
 				return offEnd - from;
 			}
