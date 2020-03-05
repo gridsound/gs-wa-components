@@ -2,16 +2,18 @@
 
 class gswaDrumsScheduler {
 	constructor( ctx ) {
-		this.scheduler = new gswaScheduler();
+		const sch = new gswaScheduler();
+
+		this.scheduler = sch;
 		this._drumrows = null;
 		this._startedDrums = new Map();
 		Object.seal( this );
 
-		this.scheduler.setMode( "drums" );
-		this.scheduler.currentTime = () => ctx.currentTime;
-		this.scheduler.ondatastart = this._onstartDrum.bind( this );
-		this.scheduler.ondatastop = this._onstopDrum.bind( this );
-		this.scheduler.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
+		sch.setMode( "drums" );
+		sch.currentTime = () => ctx.currentTime;
+		sch.ondatastart = this._onstartDrum.bind( this );
+		sch.ondatastop = this._onstopDrum.bind( this );
+		sch.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
 	}
 
 	setDrumrows( drumrows ) {
