@@ -324,22 +324,22 @@ class gswaScheduler {
 			this._findLastBlock();
 		} else {
 			const blc = this.data[ id ],
-				whenEnd = ( blc.when + blc.duration ) / this.bps;
+				whnEnd = ( blc.when + blc.duration ) / this.bps;
 
-			if ( whenEnd > this.duration ) {
+			if ( whnEnd > this.duration ) {
 				this._lastBlockId = id;
-				this._updateDuration( whenEnd );
+				this._updateDuration( whnEnd );
 			}
 		}
 	}
 	_findLastBlock() {
 		this._updateDuration( Object.entries( this.data )
 			.reduce( ( max, [ id, blc ] ) => {
-				const whenEnd = ( blc.when + blc.duration ) / this.bps;
+				const whnEnd = ( blc.when + blc.duration ) / this.bps;
 
-				if ( whenEnd > max ) {
+				if ( whnEnd > max ) {
 					this._lastBlockId = +id;
-					return whenEnd;
+					return whnEnd;
 				}
 				return max;
 			}, 0 ) );
