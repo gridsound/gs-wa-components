@@ -26,14 +26,7 @@ class gswaScheduler {
 		this.isStreaming = true;
 		this._streamloop = this._streamloop.bind( this );
 		this._streamloopId = null;
-		this._mode = null;
 		Object.seal( this );
-	}
-
-	// Modes // 1.
-	// ........................................................................
-	setMode( mode ) {
-		this._mode = mode;
 	}
 
 	// BPM
@@ -151,13 +144,17 @@ class gswaScheduler {
 			? this._streamloopOn()
 			: this._fullStart();
 	}
-	stop() {
+	softStop() {
+		this.stop( "soft" );
+	}
+	stop( mode ) {
 		if ( this.started ) {
 			this._startOff = this.getCurrentOffset();
 			this.started = false;
 			clearTimeout( this._timeoutIdEnded );
 			this._streamloopOff();
-			Object.keys( this._dataScheduledPerBlock ).forEach( this._blockStop, this );
+			Object.keys( this._dataScheduledPerBlock )
+				.forEach( id => this._blockStop( id, mode ) );
 		}
 	}
 	_getOffsetEnd() {
@@ -233,13 +230,13 @@ class gswaScheduler {
 
 	// Block functions
 	// ........................................................................
-	_blockStop( id ) {
+	_blockStop( id, mode ) {
 		const dataScheduled = this._dataScheduled,
 			blcSchedule = this._dataScheduledPerBlock[ id ],
 			now = this.currentTime();
 
 		Object.keys( blcSchedule.started ).forEach( id => {
-			if ( this._mode !== "drums" || dataScheduled[ id ].when > now ) {
+			if ( mode !== "soft" || dataScheduled[ id ].when > now ) {
 				this.ondatastop( +id );
 				delete dataScheduled[ id ];
 				delete blcSchedule.started[ id ];
@@ -275,17 +272,18 @@ class gswaScheduler {
 				blcs = [];
 			let bWhn = block.when / bps,
 				bOff = block.offset / bps,
-				bDur = 0;
+				bDur = 0,
+				bRel = 0;
 
 			for ( let id = blockId, blc = block; blc; ) {
 				blcs.push( [ id, blc ] );
+				bRel = blc.release / bps;
 				bDur = blc.when / bps - bWhn + blc.duration / bps;
 				id = blc.next;
 				blc = id != null ? this.data[ id ] : null;
 			}
-			if ( from < bWhn + bDur && bWhn < to ) {
-				const startWhen = this._startWhen,
-					bDurOri = bDur;
+			if ( from <= bWhn + bDur && bWhn < to ) {
+				const startWhen = this._startWhen;
 
 				if ( bWhn + bDur > offEnd ) {
 					bDur -= bWhn + bDur - offEnd;
@@ -301,18 +299,17 @@ class gswaScheduler {
 					bDur -= startWhen - bWhn;
 					bWhn = startWhen;
 				}
-				if ( bDur > .000001 ) {
-					const id = ++gswaScheduler._startedMaxId.value,
-						bDur2 = this._mode === "drums" ? bDurOri : bDur;
+				if ( bDur + bRel > .000001 ) {
+					const id = ++gswaScheduler._startedMaxId.value;
 
 					this._dataScheduledPerBlock[ blockId ].started[ id ] =
 					this._dataScheduled[ id ] = {
 						block,
 						blockId,
 						when: bWhn,
-						whenEnd: bWhn + bDur2,
+						whenEnd: bWhn + bDur + bRel,
 					};
-					this.ondatastart( id, blcs, bWhn, bOff, bDur2 );
+					this.ondatastart( id, blcs, bWhn, bOff, bDur, bRel );
 				}
 				return offEnd - from;
 			}
@@ -386,6 +383,7 @@ class gswaScheduler {
 					when: 0,
 					offset: 0,
 					duration: 0,
+					release: 0,
 				}, block ), {
 					set: this._proxySetBlockProp.bind( this, id ),
 					deleteProperty: this._proxyDelBlockProp.bind( this, id ),
@@ -420,8 +418,3 @@ class gswaScheduler {
 gswaScheduler._startedMaxId = Object.seal( { value: 0 } );
 
 Object.freeze( gswaScheduler );
-
-/*
-1. setMode() is optionnal and will react only for the value "drums".
-   In the "drums" mode the started block are not cutted by the loop.
-*/
