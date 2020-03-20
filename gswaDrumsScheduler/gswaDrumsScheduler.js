@@ -23,7 +23,7 @@ class gswaDrumsScheduler {
 
 		Object.values( cpy ).forEach( drum => {
 			if ( drum && "when" in drum ) { // 1.
-				drum.release = this._drumrows.getPatternDurationByRowId( drum.row );
+				drum.duration = this._drumrows.getPatternDurationByRowId( drum.row );
 			}
 		} );
 		GSUtils.diffAssign( this.scheduler.data, cpy );
@@ -32,12 +32,12 @@ class gswaDrumsScheduler {
 		this.scheduler.start( when, off, dur );
 	}
 	stop() {
-		this.scheduler.softStop();
+		this.scheduler.stop();
 	}
 
-	_onstartDrum( startedId, [ drum ], when, off, _dur, rel ) {
+	_onstartDrum( startedId, [ drum ], when, off, _dur ) {
 		this._startedDrums.set( startedId,
-			this._drumrows.startDrum( drum[ 1 ], when, off, rel ) );
+			this._drumrows.startDrum( drum[ 1 ], when, off, drum[ 1 ].duration ) );
 	}
 	_onstopDrum( startedId ) {
 		this._drumrows.stopDrum( this._startedDrums.get( startedId ) );
