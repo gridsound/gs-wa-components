@@ -43,25 +43,27 @@ class gswaDrumrows {
 	// start/stop
 	// .........................................................................
 	startLiveDrum( rowId ) {
-		return this._startDrum( rowId, this.ctx.currentTime, 0, null );
+		return this._startDrum( rowId, this.ctx.currentTime, 0, null, true );
 	}
 	stopLiveDrum( rowId ) {
 		this._startedDrums.forEach( ( nodes, id ) => {
+			// if ( nodes.live && nodes.rowId === rowId ) {
 			if ( nodes.rowId === rowId ) {
-				this.stopDrum( id );
+				this.stopDrum( id, "-f" );
 			}
 		} );
 	}
 	startDrum( drum, when, off, dur ) {
-		return this._startDrum( drum.row, when, off, dur );
+		return this._startDrum( drum.row, when, off, dur, false );
 	}
-	_startDrum( rowId, when, off, dur ) {
-		const id = ++gswaDrumrows._startedMaxId.value,
-			data = this.gsdata.data,
+	_startDrum( rowId, when, off, durUser, live ) {
+		const data = this.gsdata.data,
 			row = data.drumrows[ rowId ],
 			pat = data.patterns[ row.pattern ],
 			buffer = this.getAudioBuffer( pat.buffer ),
-			nodes = { rowId };
+			dur = durUser !== null ? durUser : buffer ? buffer.duration : 0,
+			id = ++gswaDrumrows._startedMaxId.value,
+			nodes = { rowId, live, when, dur };
 
 		if ( buffer ) {
 			const absn = this.ctx.createBufferSource(),
@@ -73,7 +75,7 @@ class gswaDrumrows {
 			absn.buffer = buffer;
 			gain.gain.setValueAtTime( row.toggle ? row.gain : 0, this.ctx.currentTime );
 			absn.connect( gain ).connect( dest );
-			absn.start( when, off, dur !== null ? dur : buffer.duration );
+			absn.start( when, off, dur );
 			if ( this.onstartdrum ) {
 				const timeoutMs = ( when - this.ctx.currentTime ) * 1000;
 
@@ -81,21 +83,32 @@ class gswaDrumrows {
 			}
 		}
 		this._startedDrums.set( id, nodes );
+		this._startedDrums.forEach( ( nodes, id ) => {
+			if ( nodes && nodes.when + nodes.dur <= this.ctx.currentTime ) {
+				this._stopDrum( id, nodes );
+			}
+		} );
 		return id;
 	}
 	stopAllDrums() {
-		this._startedDrums.forEach( ( _nodes, id ) => this.stopDrum( id ) );
+		this._startedDrums.forEach( ( _nodes, id ) => this.stopDrum( id, "-f" ) );
 	}
-	stopDrum( id ) {
+	stopDrum( id, force ) {
 		const nodes = this._startedDrums.get( id );
 
-		if ( nodes ) {
-			this._startedDrums.delete( id );
-			clearTimeout( nodes.startDrumTimeoutId );
-			if ( nodes.absn ) {
-				nodes.absn.stop();
-				nodes.gain.disconnect();
-			}
+		if ( nodes && ( force === "-f" ||
+			nodes.when + nodes.dur <= this.ctx.currentTime ||
+			nodes.when >= this.ctx.currentTime
+		) ) {
+			this._stopDrum( id, nodes );
+		}
+	}
+	_stopDrum( id, nodes ) {
+		this._startedDrums.delete( id );
+		clearTimeout( nodes.startDrumTimeoutId );
+		if ( nodes.absn ) {
+			nodes.absn.stop();
+			nodes.gain.disconnect();
 		}
 	}
 
@@ -106,7 +119,7 @@ class gswaDrumrows {
 	_removeDrumrow( id ) {
 		this._startedDrums.forEach( ( nodes, startedId ) => {
 			if ( nodes.rowId === id ) {
-				this.stopDrum( startedId );
+				this.stopDrum( startedId, "-f" );
 			}
 		} );
 	}
