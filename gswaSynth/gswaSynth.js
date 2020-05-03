@@ -77,7 +77,7 @@ class gswaSynth {
 		}
 	}
 	_changeLFO( obj ) {
-		const nobj = Object.assign( {}, obj );
+		const nobj = { ...obj };
 
 		if ( "delay" in obj ) { nobj.delay /= this._bps; }
 		if ( "attack" in obj ) { nobj.attack /= this._bps; }
