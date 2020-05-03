@@ -7,9 +7,9 @@
 [
 	// natives:
 	[ "sine",     { imag: Array.from( { length: 2048 }, ( _, n ) => n === 1 ? 1 : 0 ) } ],
-	[ "triangle", { imag: Array.from( { length: 2048 }, ( _, n ) => 8 * Math.sin( n * Math.PI / 2 ) / Math.pow( n * Math.PI, 2 ) ) } ],
-	[ "sawtooth", { imag: Array.from( { length: 2048 }, ( _, n ) => 2 / ( n * Math.PI ) * Math.pow( -1, n + 1 ) ) } ],
-	[ "square",   { imag: Array.from( { length: 2048 }, ( _, n ) => 2 / ( n * Math.PI ) * ( 1 - Math.pow( -1, n ) ) ) } ],
+	[ "triangle", { imag: Array.from( { length: 2048 }, ( _, n ) => 8 * Math.sin( n * Math.PI / 2 ) / ( n * Math.PI ) ** 2 ) } ],
+	[ "sawtooth", { imag: Array.from( { length: 2048 }, ( _, n ) => 2 / ( n * Math.PI ) * ( -1 ) ** ( n + 1 ) ) } ],
+	[ "square",   { imag: Array.from( { length: 2048 }, ( _, n ) => 2 / ( n * Math.PI ) * ( 1 - ( -1 ) ** n ) ) } ],
 
 	// customs simple:
 	[ "bass",     { real: [ 0, .5154639175257731, 1, .8144329896907216, .20618556701030927, .020618556701030927 ] } ],
