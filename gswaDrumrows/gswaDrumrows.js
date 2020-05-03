@@ -4,7 +4,7 @@ class gswaDrumrows {
 	constructor() {
 		const gsdata = new GSDataDrumrows( {
 				dataCallbacks: {
-					addDrumrow: this._addDrumrow.bind( this ),
+					addDrumrow() {},
 					removeDrumrow: this._removeDrumrow.bind( this ),
 					changeDrumrow: this._changeDrumrow.bind( this ),
 				},
@@ -114,8 +114,6 @@ class gswaDrumrows {
 
 	// add/remove/update
 	// .........................................................................
-	_addDrumrow( id, obj ) {
-	}
 	_removeDrumrow( id ) {
 		this._startedDrums.forEach( ( nodes, startedId ) => {
 			if ( nodes.rowId === id ) {
