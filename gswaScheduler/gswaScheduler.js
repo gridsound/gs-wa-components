@@ -223,8 +223,7 @@ class gswaScheduler {
 	// ........................................................................
 	_blockStop( id ) {
 		const dataScheduled = this._dataScheduled,
-			blcSchedule = this._dataScheduledPerBlock[ id ],
-			now = this.currentTime();
+			blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.keys( blcSchedule.started ).forEach( id => {
 			this.ondatastop( +id );
@@ -365,15 +364,15 @@ class gswaScheduler {
 				started: {},
 				scheduledUntil: 0,
 			};
-			target[ id ] = new Proxy(
-				Object.assign( {
-					when: 0,
-					offset: 0,
-					duration: 0,
-				}, block ), {
-					set: this._proxySetBlockProp.bind( this, id ),
-					deleteProperty: this._proxyDelBlockProp.bind( this, id ),
-				} );
+			target[ id ] = new Proxy( {
+				when: 0,
+				offset: 0,
+				duration: 0,
+				...block,
+			}, {
+				set: this._proxySetBlockProp.bind( this, id ),
+				deleteProperty: this._proxyDelBlockProp.bind( this, id ),
+			} );
 			this._isLastBlock( id );
 			this._blockSchedule( id );
 		}
