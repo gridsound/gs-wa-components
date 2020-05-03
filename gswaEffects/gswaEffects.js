@@ -41,7 +41,7 @@ class gswaEffects {
 		this._wafxs.set( id, wafx );
 		wafx.setContext( this.ctx );
 	}
-	_removeEffect( id, prevId, nextId ) {
+	_removeEffect( id ) {
 		const wafx = this._wafxs.get( id );
 
 		wafx.output.disconnect();
