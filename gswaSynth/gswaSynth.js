@@ -2,7 +2,7 @@
 
 class gswaSynth {
 	constructor() {
-		const gsdata = new GSDataSynth( {
+		const gsdata = new DAWCore.controllers.synth( {
 				dataCallbacks: {
 					addOsc: this._addOsc.bind( this ),
 					removeOsc: this._removeOsc.bind( this ),

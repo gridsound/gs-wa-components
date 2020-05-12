@@ -2,9 +2,9 @@
 
 class gswaDrumrows {
 	constructor() {
-		const gsdata = new GSDataDrumrows( {
+		const gsdata = new DAWCore.controllers.drumrows( {
 				dataCallbacks: {
-					addDrumrow() {},
+					addDrumrow: GSUtils.noop,
 					removeDrumrow: this._removeDrumrow.bind( this ),
 					changeDrumrow: this._changeDrumrow.bind( this ),
 				},
@@ -14,7 +14,7 @@ class gswaDrumrows {
 		this.onstartdrum = null;
 		this.gsdata = gsdata;
 		this.getAudioBuffer =
-		this.getChannelInput = () => {};
+		this.getChannelInput = GSUtils.noop;
 		this._startedDrums = new Map();
 		this._bps = 1;
 		Object.seal( this );
