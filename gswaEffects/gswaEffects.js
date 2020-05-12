@@ -6,7 +6,7 @@ class gswaEffects {
 		this._getChanInput = fns.getChanInput;
 		this._getChanOutput = fns.getChanOutput;
 		this._wafxs = new Map();
-		this.gsdata = new GSDataEffects( {
+		this.gsdata = new DAWCore.controllers.effects( {
 			dataCallbacks: {
 				changeBPM: bpm => this._wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) ),
 				addEffect: this._addEffect.bind( this ),

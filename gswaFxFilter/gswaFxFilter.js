@@ -11,7 +11,7 @@ class gswaFxFilter {
 		this.responsePhaseOut = null;
 		this._respSize = -1;
 		this._enable = false;
-		this.gsdata = new GSDataFxFilter( {
+		this.gsdata = new DAWCore.controllersFx.filter( {
 			dataCallbacks: {
 				type: this._changeType.bind( this ),
 				Q: this._changeProp.bind( this, "Q" ),
