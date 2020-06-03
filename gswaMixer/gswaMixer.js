@@ -8,14 +8,14 @@ class gswaMixer {
 		this._fftSize = 4096;
 		this.audioDataL = new Uint8Array( this._fftSize / 2 );
 		this.audioDataR = new Uint8Array( this._fftSize / 2 );
-		this.gsdata = new GSDataMixer( {
+		this._ctrlMixer = new DAWCore.controllers.mixer( {
 			dataCallbacks: {
-				addChan: this._addChan.bind( this ),
-				removeChan: this._removeChan.bind( this ),
-				toggleChan: this._toggleChan.bind( this ),
-				redirectChan: this._redirectChan.bind( this ),
-				changePanChan: this._updateChanPan.bind( this ),
-				changeGainChan: this._updateChanGain.bind( this ),
+				addChannel: this._addChan.bind( this ),
+				removeChannel: this._removeChan.bind( this ),
+				toggleChannel: this._toggleChan.bind( this ),
+				redirectChannel: this._redirectChan.bind( this ),
+				changePanChannel: this._updateChanPan.bind( this ),
+				changeGainChannel: this._updateChanGain.bind( this ),
 			},
 		} );
 		Object.seal( this );
@@ -24,10 +24,10 @@ class gswaMixer {
 	setContext( ctx ) {
 		this.disconnect();
 		this.ctx = ctx;
-		if ( this.gsdata.values.nbChannels > 0 ) {
-			this.gsdata.reset();
+		if ( "main" in this._ctrlMixer.data.channels ) {
+			this._ctrlMixer.recall();
 		} else {
-			this.gsdata.change( {
+			this._ctrlMixer.change( {
 				channels: {
 					main: {
 						toggle: true,
@@ -40,11 +40,11 @@ class gswaMixer {
 		}
 	}
 	change( obj ) {
-		this.gsdata.change( obj );
+		this._ctrlMixer.change( obj );
 	}
 	clear() {
-		this.gsdata.clear();
-		this.gsdata.change( {
+		this._ctrlMixer.clear();
+		this._ctrlMixer.change( {
 			channels: {
 				main: {
 					toggle: true,
@@ -104,20 +104,20 @@ class gswaMixer {
 			input, pan, gain, output, splitter, analyserL, analyserR,
 			analyserData: new Uint8Array( analyserL.frequencyBinCount )
 		};
-		Object.entries( this.gsdata.data ).forEach( kv => {
+		Object.entries( this._ctrlMixer.data.channels ).forEach( kv => {
 			if ( kv[ 1 ].dest === id ) {
-				this.gsdata.liveChange( kv[ 0 ], "dest", id );
+				this._redirectChan( kv[ 0 ], id );
 			}
 		} );
 	}
 	_redirectChan( id, val ) {
 		this._chans[ id ].output.disconnect();
-		if ( val in this.gsdata.data ) {
+		if ( val in this._ctrlMixer.data.channels ) {
 			this._chans[ id ].output.connect( this.getChanInput( val ) );
 		}
 	}
 	_toggleChan( id, val ) {
-		this._chans[ id ].gain.gain.setValueAtTime( val ? this.gsdata.data[ id ].gain : 0, this.ctx.currentTime );
+		this._chans[ id ].gain.gain.setValueAtTime( val ? this._ctrlMixer.data.channels[ id ].gain : 0, this.ctx.currentTime );
 	}
 	_updateChanPan( id, val ) {
 		this._chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
