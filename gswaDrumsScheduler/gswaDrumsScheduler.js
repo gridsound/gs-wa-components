@@ -35,9 +35,13 @@ class gswaDrumsScheduler {
 		this.scheduler.stop();
 	}
 
-	_onstartDrum( startedId, [ drum ], when, off, _dur ) {
-		this._startedDrums.set( startedId,
-			this._drumrows.startDrum( drum[ 1 ], when, off, drum[ 1 ].duration ) );
+	_onstartDrum( startedId, [ [ , drum ] ], when, off, _dur ) {
+		if ( "gain" in drum ) {
+			this._startedDrums.set( startedId,
+				this._drumrows.startDrum( drum, when, off, drum.duration ) );
+		} else {
+			this._drumrows.startDrumcut( drum, when );
+		}
 	}
 	_onstopDrum( startedId ) {
 		this._drumrows.stopDrum( this._startedDrums.get( startedId ) );
