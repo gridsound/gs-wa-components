@@ -11,7 +11,8 @@ class gswaDrumrows {
 			} );
 
 		this.ctx =
-		this.onstartdrum = null;
+		this.onstartdrum =
+		this.onstartdrumcut = null;
 		this.gsdata = gsdata;
 		this.getAudioBuffer =
 		this.getChannelInput = GSUtils.noop;
@@ -53,6 +54,24 @@ class gswaDrumrows {
 			}
 		} );
 	}
+	startDrumcut( drumcut, when ) {
+		const cutDur = .001,
+			whenCutStart = when - cutDur;
+
+		this._startedDrums.forEach( ( nodes, id ) => {
+			if ( nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
+				nodes.endAt = when;
+				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
+				nodes.absn.stop( when + cutDur );
+				if ( this.onstartdrumcut ) {
+					const fn = this.onstartdrumcut.bind( null, nodes.rowId ),
+						time = whenCutStart - this.ctx.currentTime;
+
+					nodes.startDrumcutTimeoutId = setTimeout( fn, time * 1000 );
+				}
+			}
+		} );
+	}
 	startDrum( drum, when, off, dur ) {
 		return this._startDrum( drum.row, when, off, dur, false );
 	}
@@ -63,18 +82,20 @@ class gswaDrumrows {
 			buffer = this.getAudioBuffer( pat.buffer ),
 			dur = durUser !== null ? durUser : buffer ? buffer.duration : 0,
 			id = ++gswaDrumrows._startedMaxId.value,
-			nodes = { rowId, live, when, dur };
+			nodes = { rowId, live, when, dur, endAt: when + dur };
 
 		if ( buffer ) {
 			const absn = this.ctx.createBufferSource(),
 				gain = this.ctx.createGain(),
+				gainCut = this.ctx.createGain(),
 				dest = this.getChannelInput( pat.dest );
 
 			nodes.absn = absn;
 			nodes.gain = gain;
+			nodes.gainCut = gainCut;
 			absn.buffer = buffer;
 			gain.gain.setValueAtTime( row.toggle ? row.gain : 0, this.ctx.currentTime );
-			absn.connect( gain ).connect( dest );
+			absn.connect( gain ).connect( gainCut ).connect( dest );
 			absn.start( when, off, dur );
 			if ( this.onstartdrum ) {
 				const timeoutMs = ( when - this.ctx.currentTime ) * 1000;
@@ -84,7 +105,7 @@ class gswaDrumrows {
 		}
 		this._startedDrums.set( id, nodes );
 		this._startedDrums.forEach( ( nodes, id ) => {
-			if ( nodes && nodes.when + nodes.dur <= this.ctx.currentTime ) {
+			if ( nodes.when + nodes.dur <= this.ctx.currentTime ) {
 				this._stopDrum( id, nodes );
 			}
 		} );
@@ -106,9 +127,11 @@ class gswaDrumrows {
 	_stopDrum( id, nodes ) {
 		this._startedDrums.delete( id );
 		clearTimeout( nodes.startDrumTimeoutId );
+		clearTimeout( nodes.startDrumcutTimeoutId );
 		if ( nodes.absn ) {
 			nodes.absn.stop();
 			nodes.gain.disconnect();
+			nodes.gainCut.disconnect();
 		}
 	}
 
