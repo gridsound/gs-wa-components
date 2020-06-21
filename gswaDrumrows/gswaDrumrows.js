@@ -59,7 +59,7 @@ class gswaDrumrows {
 			whenCutStart = when - cutDur;
 
 		this._startedDrums.forEach( ( nodes, id ) => {
-			if ( nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
+			if ( nodes.absn && nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
 				nodes.endAt = when;
 				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
 				nodes.absn.stop( when + cutDur );
