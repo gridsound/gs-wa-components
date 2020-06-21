@@ -15,7 +15,8 @@ class gswaScheduler {
 		this._startWhen =
 		this._startFixedDur = 0;
 		this._timeoutIdEnded = null;
-		this.data = this._proxyCreate();
+		this.data = {};
+		this._sortedData = [];
 		this._dataScheduled = {};
 		this._dataScheduledPerBlock = {};
 		this._lastBlockId = null;
@@ -26,11 +27,15 @@ class gswaScheduler {
 		this.isStreaming = true;
 		this._streamloop = this._streamloop.bind( this );
 		this._streamloopId = null;
+		this._crud = GSUtils.createUpdateDelete.bind( null, this.data,
+			this._dataAddBlock.bind( this ),
+			this._dataUpdateBlock.bind( this ),
+			this._dataDeleteBlock.bind( this ) );
 		Object.seal( this );
 	}
 
 	// BPM
-	// ........................................................................
+	// .........................................................................
 	setBPM( bpm ) {
 		if ( this.bpm !== bpm ) {
 			const ratio = this.bpm / bpm,
@@ -51,14 +56,14 @@ class gswaScheduler {
 	}
 
 	// Empty
-	// ........................................................................
+	// .........................................................................
 	empty() {
-		Object.keys( this.data ).forEach( id => delete this.data[ id ] );
+		this._sortedData.forEach( kv => this._dataDeleteBlock( kv[ 0 ] ) );
 		this.clearLoop();
 	}
 
 	// Loop
-	// ........................................................................
+	// .........................................................................
 	setLoopBeat( a, b ) {
 		return this.setLoop( a / this.bps, b / this.bps );
 	}
@@ -83,7 +88,7 @@ class gswaScheduler {
 	}
 
 	// set/getCurrentOffset
-	// ........................................................................
+	// .........................................................................
 	setCurrentOffsetBeat( off ) {
 		this.setCurrentOffset( off / this.bps );
 	}
@@ -112,7 +117,7 @@ class gswaScheduler {
 	}
 
 	// Start / stop
-	// ........................................................................
+	// .........................................................................
 	enableStreaming( b = true ) {
 		this.isStreaming = b;
 	}
@@ -173,19 +178,17 @@ class gswaScheduler {
 	}
 
 	// Full start
-	// ........................................................................
+	// .........................................................................
 	_fullStart() {
 		const when = this._startWhen,
 			from = this._startOff,
 			to = from + this._startDur;
 
-		Object.entries( this.data ).forEach( ( [ blockId, block ] ) => {
-			this._blockStart( when, from, to, to, +blockId, block );
-		} );
+		this._sortedData.forEach( kv => this._blockStart( when, from, to, to, ...kv ) );
 	}
 
 	// Stream loop
-	// ........................................................................
+	// .........................................................................
 	_streamloopOn() {
 		if ( !this._streamloopId ) {
 			this._streamloopId = setInterval( this._streamloop, 100 );
@@ -206,11 +209,11 @@ class gswaScheduler {
 			if ( obj.whenEnd < currTime ) {
 				delete this._dataScheduled[ id ];
 				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
-				this.ondatastop( +id );
+				this.ondatastop( id );
 			}
 		} );
-		Object.keys( this.data ).forEach( id => {
-			if ( this._blockSchedule( +id ) ) {
+		this._sortedData.forEach( kv => {
+			if ( this._blockSchedule( kv[ 0 ] ) ) {
 				stillSomethingToPlay = true;
 			}
 		} );
@@ -220,13 +223,13 @@ class gswaScheduler {
 	}
 
 	// Block functions
-	// ........................................................................
+	// .........................................................................
 	_blockStop( id ) {
 		const dataScheduled = this._dataScheduled,
 			blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.keys( blcSchedule.started ).forEach( id => {
-			this.ondatastop( +id );
+			this.ondatastop( id );
 			delete dataScheduled[ id ];
 			delete blcSchedule.started[ id ];
 		} );
@@ -286,7 +289,7 @@ class gswaScheduler {
 					bWhn = startWhen;
 				}
 				if ( bDur > .000001 ) {
-					const id = ++gswaScheduler._startedMaxId.value;
+					const id = `${ ++gswaScheduler._startedMaxId.value }`;
 
 					this._dataScheduledPerBlock[ blockId ].started[ id ] =
 					this._dataScheduled[ id ] = {
@@ -321,28 +324,24 @@ class gswaScheduler {
 				const whnEnd = ( blc.when + blc.duration ) / this.bps;
 
 				if ( whnEnd > max ) {
-					this._lastBlockId = +id;
+					this._lastBlockId = id;
 					return whnEnd;
 				}
 				return max;
 			}, 0 ) );
 	}
 
-	// Data proxy
-	// ........................................................................
-	_proxyCreate() {
-		return new Proxy( {}, {
-			set: this._proxySetBlock.bind( this ),
-			deleteProperty: this._proxyDelBlock.bind( this )
-		} );
+	// Data
+	// .........................................................................
+	change( obj ) {
+		this._crud( obj );
+		this._sortedData = Object.entries( this.data ).sort( ( a, b ) => a[ 1 ].when - b[ 1 ].when );
 	}
-	_proxyDelBlock( target, blockId ) {
-		const id = +blockId;
-
-		if ( !( id in target ) ) {
+	_dataDeleteBlock( id ) {
+		if ( !( id in this.data ) ) {
 			console.warn( "gswaScheduler: data delete unknown id", id );
 		} else {
-			delete target[ id ];
+			delete this.data[ id ];
 			if ( this.started ) {
 				this._blockStop( id );
 			}
@@ -351,41 +350,29 @@ class gswaScheduler {
 			}
 			delete this._dataScheduledPerBlock[ id ];
 		}
-		return true;
 	}
-	_proxySetBlock( target, blockId, block ) {
-		const id = +blockId;
-
-		if ( id in target || !block ) {
-			this._proxyDelBlock( target, id );
-		}
-		if ( block ) {
-			this._dataScheduledPerBlock[ id ] = {
-				started: {},
-				scheduledUntil: 0,
-			};
-			target[ id ] = new Proxy( {
-				when: 0,
-				offset: 0,
-				duration: 0,
-				...block,
-			}, {
-				set: this._proxySetBlockProp.bind( this, id ),
-				deleteProperty: this._proxyDelBlockProp.bind( this, id ),
-			} );
-			this._isLastBlock( id );
-			this._blockSchedule( id );
-		}
-		return true;
+	_dataAddBlock( id, obj ) {
+		this._dataScheduledPerBlock[ id ] = {
+			started: {},
+			scheduledUntil: 0,
+		};
+		this.data[ id ] = {
+			when: 0,
+			offset: 0,
+			duration: 0,
+			...obj,
+		};
+		this._isLastBlock( id );
+		this._blockSchedule( id );
 	}
-	_proxyDelBlockProp( id, target, prop ) {
-		return this._proxySetBlockProp( id, target, prop );
+	_dataUpdateBlock( id, obj ) {
+		Object.entries( obj ).forEach( kv => this._dataUpdateBlockProp( id, ...kv ) );
 	}
-	_proxySetBlockProp( id, target, prop, val ) {
+	_dataUpdateBlockProp( id, prop, val ) {
 		if ( val === undefined ) {
-			delete target[ prop ];
+			delete this.data[ id ][ prop ];
 		} else {
-			target[ prop ] = val;
+			this.data[ id ][ prop ] = val;
 		}
 		if ( prop !== "selected" ) {
 			if ( prop === "when" || prop === "offset" || prop === "duration" ) {
@@ -396,7 +383,6 @@ class gswaScheduler {
 			}
 			this._blockSchedule( id );
 		}
-		return true;
 	}
 }
 
