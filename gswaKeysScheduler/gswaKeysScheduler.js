@@ -17,7 +17,7 @@ class gswaKeysScheduler {
 		this._synth = synth;
 	}
 	change( obj ) {
-		GSUtils.diffAssign( this.scheduler.data, obj );
+		this.scheduler.change( obj );
 	}
 	start( when, off, dur ) {
 		this.scheduler.start( when, off, dur );

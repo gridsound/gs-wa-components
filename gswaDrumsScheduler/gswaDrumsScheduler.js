@@ -26,7 +26,7 @@ class gswaDrumsScheduler {
 				drum.duration = this._drumrows.getPatternDurationByRowId( drum.row );
 			}
 		} );
-		GSUtils.diffAssign( this.scheduler.data, cpy );
+		this.scheduler.change( cpy );
 	}
 	start( when, off, dur ) {
 		this.scheduler.start( when, off, dur );
