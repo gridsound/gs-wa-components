@@ -2,7 +2,7 @@
 
 class gswaDrumrows {
 	constructor() {
-		const gsdata = new DAWCore.controllers.drumrows( {
+		const ctrl = new DAWCore.controllers.drumrows( {
 				dataCallbacks: {
 					addDrumrow: GSUtils.noop,
 					removeDrumrow: this._removeDrumrow.bind( this ),
@@ -13,11 +13,11 @@ class gswaDrumrows {
 		this.ctx =
 		this.onstartdrum =
 		this.onstartdrumcut = null;
-		this.gsdata = gsdata;
 		this.getAudioBuffer =
 		this.getChannelInput = GSUtils.noop;
 		this._startedDrums = new Map();
 		this._bps = 1;
+		this._ctrl = ctrl;
 		Object.seal( this );
 	}
 
@@ -30,13 +30,13 @@ class gswaDrumrows {
 		this._bps = bpm / 60;
 	}
 	change( obj ) {
-		this.gsdata.change( obj );
+		this._ctrl.change( obj );
 	}
 	clear() {
-		this.gsdata.clear();
+		this._ctrl.clear();
 	}
 	getPatternDurationByRowId( rowId ) {
-		const d = this.gsdata.data;
+		const d = this._ctrl.data;
 
 		return d.patterns[ d.drumrows[ rowId ].pattern ].duration;
 	}
@@ -76,7 +76,7 @@ class gswaDrumrows {
 		return this._startDrum( drum.row, when, off, dur, false );
 	}
 	_startDrum( rowId, when, off, durUser, live ) {
-		const data = this.gsdata.data,
+		const data = this._ctrl.data,
 			row = data.drumrows[ rowId ],
 			pat = data.patterns[ row.pattern ],
 			buffer = this.getAudioBuffer( pat.buffer ),
@@ -86,16 +86,17 @@ class gswaDrumrows {
 
 		if ( buffer ) {
 			const absn = this.ctx.createBufferSource(),
-				gain = this.ctx.createGain(),
+				gainRow = this.ctx.createGain(),
 				gainCut = this.ctx.createGain(),
 				dest = this.getChannelInput( pat.dest );
 
 			nodes.absn = absn;
-			nodes.gain = gain;
 			nodes.gainCut = gainCut;
+			nodes.gainRow = gainRow;
 			absn.buffer = buffer;
-			gain.gain.setValueAtTime( row.toggle ? row.gain : 0, this.ctx.currentTime );
-			absn.connect( gain ).connect( gainCut ).connect( dest );
+			absn.detune.setValueAtTime( row.detune * 100, this.ctx.currentTime );
+			gainRow.gain.setValueAtTime( row.toggle ? row.gain : 0, this.ctx.currentTime );
+			absn.connect( gainCut ).connect( gainRow ).connect( dest );
 			absn.start( when, off, dur );
 			if ( this.onstartdrum ) {
 				const timeoutMs = ( when - this.ctx.currentTime ) * 1000;
@@ -130,8 +131,8 @@ class gswaDrumrows {
 		clearTimeout( nodes.startDrumcutTimeoutId );
 		if ( nodes.absn ) {
 			nodes.absn.stop();
-			nodes.gain.disconnect();
 			nodes.gainCut.disconnect();
+			nodes.gainRow.disconnect();
 		}
 	}
 
@@ -145,18 +146,28 @@ class gswaDrumrows {
 		} );
 	}
 	_changeDrumrow( id, prop, val ) {
-		const row = this.gsdata.data.drumrows[ id ];
+		const row = this._ctrl.data.drumrows[ id ];
 
 		switch ( prop ) {
 			case "toggle":
 				this.__changeDrumrow( id, nodes => {
-					nodes.gain.gain.setValueAtTime( val ? row.gain : 0, this.ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, this.ctx.currentTime );
 				} );
 				break;
 			case "dest":
 				this.__changeDrumrow( id, nodes => {
-					nodes.gain.disconnect();
-					nodes.gain.connect( this.getChannelInput( val ) );
+					nodes.gainRow.disconnect();
+					nodes.gainRow.connect( this.getChannelInput( val ) );
+				} );
+				break;
+			case "detune":
+				this.__changeDrumrow( id, nodes => {
+					nodes.absn.detune.setValueAtTime( val * 100, this.ctx.currentTime );
+				} );
+				break;
+			case "gain":
+				this.__changeDrumrow( id, nodes => {
+					nodes.gainRow.gain.setValueAtTime( val, this.ctx.currentTime );
 				} );
 				break;
 		}
