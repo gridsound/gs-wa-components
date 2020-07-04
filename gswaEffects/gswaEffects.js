@@ -60,8 +60,10 @@ class gswaEffects {
 				? this._wafxs.get( fxId ).output
 				: this._getChanInput( chanId );
 
-		node.disconnect();
-		node.connect( dest );
+		if ( node ) {
+			node.disconnect();
+			node.connect( dest );
+		}
 	}
 }
 
