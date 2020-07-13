@@ -11,7 +11,7 @@ class gswaFxFilter {
 		this.responsePhaseOut = null;
 		this._respSize = -1;
 		this._enable = false;
-		this.gsdata = new DAWCore.controllersFx.filter( {
+		this._ctrl = new DAWCore.controllersFx.filter( {
 			dataCallbacks: {
 				type: this._changeType.bind( this ),
 				Q: this._changeProp.bind( this, "Q" ),
@@ -34,7 +34,7 @@ class gswaFxFilter {
 		this.input = ctx.createGain();
 		this.output = ctx.createGain();
 		this._filter = ctx.createBiquadFilter();
-		this.gsdata.recall();
+		this._ctrl.recall();
 		this.toggle( this._enable );
 	}
 	toggle( b ) {
@@ -51,13 +51,13 @@ class gswaFxFilter {
 		}
 	}
 	change( obj ) {
-		this.gsdata.change( obj );
+		this._ctrl.change( obj );
 	}
 	liveChange( prop, val ) {
 		this._changeProp( prop, val );
 	}
 	clear() {
-		this.gsdata.clear();
+		this._ctrl.clear();
 		this._respSize = -1;
 		this.responseHzIn =
 		this.responseMagOut =
