@@ -12,6 +12,7 @@ class gswaDrumsScheduler {
 		sch.currentTime = () => ctx.currentTime;
 		sch.ondatastart = this._onstartDrum.bind( this );
 		sch.ondatastop = this._onstopDrum.bind( this );
+		sch.ondatapropchange = this._onchangeDrum.bind( this );
 		sch.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
 	}
 
@@ -46,6 +47,9 @@ class gswaDrumsScheduler {
 	_onstopDrum( startedId ) {
 		this._drumrows.stopDrum( this._startedDrums.get( startedId ) );
 		this._startedDrums.delete( startedId );
+	}
+	_onchangeDrum( startedId, prop, val ) {
+		this._drumrows.changeDrumProp( startedId, prop, val );
 	}
 }
 
