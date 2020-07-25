@@ -4,6 +4,7 @@ class gswaScheduler {
 	constructor() {
 		this.ondatastart =
 		this.ondatastop =
+		this.ondatapropchange =
 		this.onended =
 		this.currentTime = () => {};
 		this.bpm = 60;
@@ -369,19 +370,26 @@ class gswaScheduler {
 		Object.entries( obj ).forEach( kv => this._dataUpdateBlockProp( id, ...kv ) );
 	}
 	_dataUpdateBlockProp( id, prop, val ) {
+		const propTime = prop === "when" || prop === "offset" || prop === "duration",
+			propLink = prop === "prev" || prop === "next";
+
 		if ( val === undefined ) {
 			delete this.data[ id ][ prop ];
 		} else {
 			this.data[ id ][ prop ] = val;
 		}
-		if ( prop !== "selected" ) {
-			if ( prop === "when" || prop === "offset" || prop === "duration" ) {
-				this._isLastBlock( id );
-			}
-			if ( this.started ) {
+		if ( propTime ) {
+			this._isLastBlock( id );
+		}
+		if ( this.started ) {
+			if ( propTime || propLink ) {
 				this._blockStop( id );
+				this._blockSchedule( id );
+			} else {
+				Object.keys( this._dataScheduledPerBlock[ id ].started ).forEach( startedId => {
+					this.ondatapropchange( startedId, prop, val );
+				} );
 			}
-			this._blockSchedule( id );
 		}
 	}
 }
