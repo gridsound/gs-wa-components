@@ -123,7 +123,9 @@ class gswaMixer {
 		this._chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
 	}
 	_updateChanGain( id, val ) {
-		this._chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
+		if ( this._ctrlMixer.data.channels[ id ].toggle ) {
+			this._chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
+		}
 	}
 	_removeChan( id ) {
 		const nodes = this._chans[ id ];
