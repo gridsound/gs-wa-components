@@ -1,21 +1,21 @@
 "use strict";
 
 class gswaDrumsScheduler {
-	constructor( ctx ) {
-		const sch = new gswaScheduler();
-
-		this.scheduler = sch;
+	constructor() {
+		this.scheduler = new gswaScheduler();
 		this._drumrows = null;
 		this._startedDrums = new Map();
 		Object.seal( this );
 
-		sch.currentTime = () => ctx.currentTime;
-		sch.ondatastart = this._onstartDrum.bind( this );
-		sch.ondatastop = this._onstopDrum.bind( this );
-		sch.ondatapropchange = this._onchangeDrum.bind( this );
-		sch.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
+		this.scheduler.ondatastart = this._onstartDrum.bind( this );
+		this.scheduler.ondatastop = this._onstopDrum.bind( this );
+		this.scheduler.ondatapropchange = this._onchangeDrum.bind( this );
 	}
 
+	setContext( ctx ) {
+		this.scheduler.currentTime = () => ctx.currentTime;
+		this.scheduler.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
+	}
 	setDrumrows( drumrows ) {
 		this._drumrows = drumrows;
 	}
