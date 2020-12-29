@@ -1,18 +1,20 @@
 "use strict";
 
 class gswaKeysScheduler {
-	constructor( ctx ) {
+	constructor() {
 		this.scheduler = new gswaScheduler();
 		this._synth = null;
 		this._startedKeys = new Map();
 		Object.seal( this );
 
-		this.scheduler.currentTime = () => ctx.currentTime;
 		this.scheduler.ondatastart = this._onstartKey.bind( this );
 		this.scheduler.ondatastop = this._onstopKey.bind( this );
-		this.scheduler.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
 	}
 
+	setContext( ctx ) {
+		this.scheduler.currentTime = () => ctx.currentTime;
+		this.scheduler.enableStreaming( !( ctx instanceof OfflineAudioContext ) );
+	}
 	setSynth( synth ) {
 		this._synth = synth;
 	}
