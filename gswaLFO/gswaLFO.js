@@ -17,7 +17,9 @@ class gswaLFO {
 			delay: 0,
 			attack: 0,
 			amp: 0,
+			absoluteSpeed: 0,
 			speed: 0,
+			variations: [],
 		} );
 		Object.seal( this );
 	}
@@ -36,7 +38,9 @@ class gswaLFO {
 		data.delay = d.delay || 0;
 		data.attack = d.attack || 0;
 		data.amp = "amp" in d ? d.amp : 1;
-		data.speed = "speed" in d ? d.speed : 4;
+		data.speed = "speed" in d ? d.speed : 1;
+		data.absoluteSpeed = "absoluteSpeed" in d ? d.absoluteSpeed : 4;
+		data.variations = d.variations || [];
 		if ( data.toggle && !this._oscNode ) {
 			this._start();
 		}
@@ -89,7 +93,7 @@ class gswaLFO {
 		if ( "type" in obj ) {
 			this._setType();
 		}
-		if ( "speed" in obj ) {
+		if ( "absoluteSpeed" in obj ) {
 			this._oscNode.frequency.cancelScheduledValues( 0 );
 			this._setSpeed();
 		}
@@ -104,7 +108,30 @@ class gswaLFO {
 		this._oscNode.type = this.data.type;
 	}
 	_setSpeed() {
-		this._oscNode.frequency.setValueAtTime( this.data.speed, this.ctx.currentTime );
+		const d = this.data,
+			spd = d.absoluteSpeed,
+			now = this.ctx.currentTime,
+			nodeParam = this._oscNode.frequency;
+		let started = false;
+
+		d.variations.forEach( va => {
+			const when = d.when - d.offset + va.when,
+				dur = va.duration;
+
+			if ( when > now && dur > 0 ) {
+				if ( !started ) {
+					started = true;
+					nodeParam.setValueAtTime( spd * va.speed[ 0 ], now );
+				}
+				nodeParam.setValueCurveAtTime( new Float32Array( [
+					spd * va.speed[ 0 ],
+					spd * va.speed[ 1 ],
+				] ), when, dur );
+			}
+		} );
+		if ( !started ) {
+			nodeParam.setValueAtTime( spd * d.speed, now );
+		}
 	}
 	_setAmp() {
 		const d = this.data,
