@@ -69,7 +69,10 @@ class gswaSynth {
 
 		if ( "delay" in nobj ) { nobj.delay /= this._bps; }
 		if ( "attack" in nobj ) { nobj.attack /= this._bps; }
-		if ( "speed" in nobj ) { nobj.speed *= this._bps; }
+		if ( "speed" in nobj ) {
+			nobj.absoluteSpeed = nobj.speed * this._bps;
+			delete nobj.speed;
+		}
 		this._startedKeys.forEach( key => key.LFONode.change( nobj ) );
 	}
 
@@ -86,6 +89,7 @@ class gswaSynth {
 			bps = this._bps,
 			lfo = this.gsdata.data.lfo,
 			oscs = this.gsdata.data.oscillators,
+			lfoVariations = [],
 			key = Object.freeze( {
 				when,
 				off,
@@ -111,11 +115,12 @@ class gswaSynth {
 			blocks.reduce( ( prev, [ , blc ] ) => {
 				if ( prev ) {
 					const prevWhen = prev.when - blc0when,
-						when = ( prevWhen + prev.duration ) / bps;
+						when = ( prevWhen + prev.duration ) / bps,
+						duration = ( blc.when - blc0when ) / bps - when;
 
 					key.variations.push( {
 						when,
-						duration: ( blc.when - blc0when ) / bps - when,
+						duration,
 						pan: [ prev.pan, blc.pan ],
 						midi: [ prev.key, blc.key ],
 						gain: [ prev.gain, blc.gain ],
@@ -126,6 +131,14 @@ class gswaSynth {
 						highpass: [
 							this._calcHighpass( prev.highpass ),
 							this._calcHighpass( blc.highpass ),
+						],
+					} );
+					lfoVariations.push( {
+						when,
+						duration,
+						speed: [
+							prev.lfoSpeed,
+							blc.lfoSpeed,
 						],
 					} );
 				}
@@ -140,14 +153,16 @@ class gswaSynth {
 		key.highpassNode.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
 		key.LFONode.start( {
 			toggle: lfo.toggle,
-			when: key.when,
-			whenStop: Number.isFinite( key.dur ) ? key.when + key.dur : 0,
-			offset: key.offset,
+			when: when,
+			whenStop: Number.isFinite( dur ) ? when + dur : 0,
+			offset: off,
 			type: lfo.type,
-			delay: lfo.delay / this._bps,
-			attack: lfo.attack / this._bps,
-			speed: lfo.speed * this._bps,
+			delay: lfo.delay / bps,
+			attack: lfo.attack / bps,
+			absoluteSpeed: lfo.speed * bps,
+			speed: blc0.lfoSpeed,
 			amp: lfo.amp,
+			variations: lfoVariations,
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this._createOscNode( key, id ) ) );
 		this._scheduleKeyEnv( key );
