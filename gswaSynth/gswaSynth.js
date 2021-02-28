@@ -69,6 +69,10 @@ class gswaSynth {
 
 		if ( "delay" in nobj ) { nobj.delay /= this._bps; }
 		if ( "attack" in nobj ) { nobj.attack /= this._bps; }
+		if ( "amp" in nobj ) {
+			nobj.absoluteAmp = nobj.amp;
+			delete nobj.amp;
+		}
 		if ( "speed" in nobj ) {
 			nobj.absoluteSpeed = nobj.speed * this._bps;
 			delete nobj.speed;
@@ -136,10 +140,8 @@ class gswaSynth {
 					lfoVariations.push( {
 						when,
 						duration,
-						speed: [
-							prev.lfoSpeed,
-							blc.lfoSpeed,
-						],
+						amp: [ prev.lfoAmp, blc.lfoAmp ],
+						speed: [ prev.lfoSpeed, blc.lfoSpeed ],
 					} );
 				}
 				return blc;
@@ -159,9 +161,10 @@ class gswaSynth {
 			type: lfo.type,
 			delay: lfo.delay / bps,
 			attack: lfo.attack / bps,
+			absoluteAmp: lfo.amp,
 			absoluteSpeed: lfo.speed * bps,
+			amp: blc0.lfoAmp,
 			speed: blc0.lfoSpeed,
-			amp: lfo.amp,
 			variations: lfoVariations,
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this._createOscNode( key, id ) ) );
