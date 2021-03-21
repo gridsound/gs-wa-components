@@ -140,8 +140,8 @@ class gswaSynth {
 					lfoVariations.push( {
 						when,
 						duration,
-						amp: [ prev.lfoAmp, blc.lfoAmp ],
-						speed: [ prev.lfoSpeed, blc.lfoSpeed ],
+						amp: [ prev.lfoGainAmp, blc.lfoGainAmp ],
+						speed: [ prev.lfoGainSpeed, blc.lfoGainSpeed ],
 					} );
 				}
 				return blc;
@@ -163,8 +163,8 @@ class gswaSynth {
 			attack: lfo.attack / bps,
 			absoluteAmp: lfo.amp,
 			absoluteSpeed: lfo.speed * bps,
-			amp: blc0.lfoAmp,
-			speed: blc0.lfoSpeed,
+			amp: blc0.lfoGainAmp,
+			speed: blc0.lfoGainSpeed,
 			variations: lfoVariations,
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this._createOscNode( key, id ) ) );
