@@ -84,9 +84,8 @@ class gswaSynth {
 	// .........................................................................
 	startKey( blocks, when, off, dur ) {
 		const id = ++gswaSynth._startedMaxId.value,
-			blcsLen = blocks.length,
 			blc0 = blocks[ 0 ][ 1 ],
-			blcLast = blocks[ blcsLen - 1 ][ 1 ],
+			blcLast = blocks[ blocks.length - 1 ][ 1 ],
 			blc0when = blc0.when,
 			atTime = when - off,
 			ctx = this.ctx,
@@ -115,7 +114,7 @@ class gswaSynth {
 				highpassNode: ctx.createBiquadFilter(),
 			} );
 
-		if ( blcsLen > 1 ) {
+		if ( blocks.length > 1 ) {
 			blocks.reduce( ( prev, [ , blc ] ) => {
 				if ( prev ) {
 					const prevWhen = prev.when - blc0when,
@@ -140,8 +139,8 @@ class gswaSynth {
 					lfoVariations.push( {
 						when,
 						duration,
-						amp: [ prev.lfoGainAmp, blc.lfoGainAmp ],
-						speed: [ prev.lfoGainSpeed, blc.lfoGainSpeed ],
+						amp: [ prev.gainLFOAmp, blc.gainLFOAmp ],
+						speed: [ prev.gainLFOSpeed, blc.gainLFOSpeed ],
 					} );
 				}
 				return blc;
@@ -155,7 +154,7 @@ class gswaSynth {
 		key.highpassNode.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
 		key.LFONode.start( {
 			toggle: lfo.toggle,
-			when: when,
+			when,
 			whenStop: Number.isFinite( dur ) ? when + dur : 0,
 			offset: off,
 			type: lfo.type,
@@ -163,8 +162,8 @@ class gswaSynth {
 			attack: lfo.attack / bps,
 			absoluteAmp: lfo.amp,
 			absoluteSpeed: lfo.speed * bps,
-			amp: blc0.lfoGainAmp,
-			speed: blc0.lfoGainSpeed,
+			amp: blc0.gainLFOAmp,
+			speed: blc0.gainLFOSpeed,
 			variations: lfoVariations,
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this._createOscNode( key, id ) ) );
