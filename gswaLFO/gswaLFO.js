@@ -125,7 +125,7 @@ class gswaLFO {
 			absAmp = Math.abs( d.absoluteAmp );
 
 		if ( now <= atTime && d.attack > 0 ) {
-			this._ampAttNode.gain.setValueAtTime( 0, atTime );
+			this._ampAttNode.gain.setValueAtTime( 0, now );
 			this._ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, absAmp ] ), atTime, d.attack );
 		} else {
 			this._ampAttNode.gain.setValueAtTime( absAmp, now );
