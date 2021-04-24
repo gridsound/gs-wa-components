@@ -7,6 +7,7 @@ class gswaSynth {
 					addOsc: this._addOsc.bind( this ),
 					removeOsc: this._removeOsc.bind( this ),
 					changeOsc: this._changeOsc.bind( this ),
+					changeEnv: this._changeEnv.bind( this ),
 					changeLFO: this._changeLFO.bind( this ),
 				},
 			} );
@@ -64,6 +65,17 @@ class gswaSynth {
 			} );
 		} );
 	}
+	_changeEnv( obj ) {
+		this._startedKeys.forEach( key => {
+			const nobj = { ...obj };
+
+			if ( "hold" in nobj ) { nobj.hold = nobj.hold * key.gainEnvHold / this._bps; }
+			if ( "decay" in nobj ) { nobj.decay = nobj.decay * key.gainEnvDecay / this._bps; }
+			if ( "attack" in nobj ) { nobj.attack = nobj.attack * key.gainEnvAttack / this._bps; }
+			if ( "release" in nobj ) { nobj.release = nobj.release * key.gainEnvRelease / this._bps; }
+			key.gainEnvNode.start( nobj );
+		} );
+	}
 	_changeLFO( obj ) {
 		const nobj = { ...obj };
 
@@ -90,6 +102,7 @@ class gswaSynth {
 			atTime = when - off,
 			ctx = this.ctx,
 			bps = this._bps,
+			env = this.gsdata.data.env,
 			lfo = this.gsdata.data.lfo,
 			oscs = this.gsdata.data.oscillators,
 			lfoVariations = [],
@@ -106,8 +119,8 @@ class gswaSynth {
 				release: blcLast.release / bps || .005,
 				variations: [],
 				oscNodes: new Map(),
+				gainEnvNode: new gswaEnvelope( ctx ),
 				LFONode: new gswaLFO( ctx ),
-				envGainNode: ctx.createGain(),
 				gainNode: ctx.createGain(),
 				panNode: ctx.createStereoPanner(),
 				lowpassNode: ctx.createBiquadFilter(),
@@ -152,10 +165,20 @@ class gswaSynth {
 		key.gainNode.gain.setValueAtTime( key.gain, atTime );
 		key.lowpassNode.frequency.setValueAtTime( this._calcLowpass( key.lowpass ), atTime );
 		key.highpassNode.frequency.setValueAtTime( this._calcHighpass( key.highpass ), atTime );
+		key.gainEnvNode.start( {
+			toggle: env.toggle,
+			when: when - off,
+			duration: dur + off,
+			attack: env.attack / bps,
+			hold: env.hold / bps,
+			decay: env.decay / bps,
+			substain: env.substain,
+			release: env.release / bps,
+		} );
 		key.LFONode.start( {
 			toggle: lfo.toggle,
 			when,
-			whenStop: Number.isFinite( dur ) ? when + dur : 0,
+			whenStop: Number.isFinite( dur ) ? when + dur + env.release / bps : 0,
 			offset: off,
 			type: lfo.type,
 			delay: lfo.delay / bps,
@@ -167,10 +190,9 @@ class gswaSynth {
 			variations: lfoVariations,
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this._createOscNode( key, id ) ) );
-		this._scheduleKeyEnv( key );
 		this._scheduleVariations( key );
 		key.LFONode.node
-			.connect( key.envGainNode )
+			.connect( key.gainEnvNode.node )
 			.connect( key.gainNode )
 			.connect( key.panNode )
 			.connect( key.lowpassNode )
@@ -192,10 +214,8 @@ class gswaSynth {
 			if ( Number.isFinite( key.dur ) ) {
 				this._stopKey( id );
 			} else {
-				key.envGainNode.gain.cancelScheduledValues( 0 );
-				key.envGainNode.gain.setValueCurveAtTime(
-					new Float32Array( [ key.gain, 0 ] ), this.ctx.currentTime + .01, .02 );
-				setTimeout( this._stopKey.bind( this, id ), .4 * 1000 );
+				key.gainEnvNode.destroy();
+				setTimeout( this._stopKey.bind( this, id ), ( this.gsdata.data.env.release + .1 ) / this._bps * 1000 );
 			}
 		} else {
 			console.error( "gswaSynth: stopKey id invalid", id );
@@ -206,6 +226,7 @@ class gswaSynth {
 
 		key.oscNodes.forEach( this._destroyOscNode, this );
 		key.LFONode.destroy();
+		key.gainEnvNode.destroy();
 		this._startedKeys.delete( id );
 	}
 
@@ -220,21 +241,6 @@ class gswaSynth {
 		return exp === 0
 			? x
 			: Math.expm1( x ) ** exp / ( ( Math.E - 1 ) ** exp ) * total;
-	}
-
-	// default gain envelope
-	_scheduleKeyEnv( key ) {
-		const par = key.envGainNode.gain,
-			{ when, off, dur, attack, release } = key;
-
-		par.cancelScheduledValues( 0 );
-		if ( off < .0001 ) {
-			par.setValueAtTime( 0, when );
-			par.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), when, attack );
-		}
-		if ( Number.isFinite( dur ) && dur - ( off < .0001 ? attack : 0 ) >= release ) {
-			par.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), when + dur - release, release );
-		}
 	}
 
 	// keys linked, variations
@@ -260,6 +266,7 @@ class gswaSynth {
 	// createOscNode
 	_createOscNode( key, id ) {
 		const atTime = key.when - key.off,
+			env = this.gsdata.data.env,
 			osc = this.gsdata.data.oscillators[ id ],
 			oscNode = this.ctx.createOscillator(),
 			panNode = this.ctx.createStereoPanner(),
@@ -281,13 +288,13 @@ class gswaSynth {
 			.connect( key.LFONode.node );
 		oscNode.start( key.when );
 		if ( Number.isFinite( key.dur ) ) {
-			oscNode.stop( key.when + key.dur );
+			oscNode.stop( key.when + key.dur + env.release / this._bps );
 		}
 		return nodes;
 	}
 	_destroyOscNode( nodes ) {
 		nodes.oscNode.stop();
-		nodes.oscNode.disconnect();
+		// nodes.oscNode.disconnect();
 	}
 	_nodeOscSetType( oscNode, type ) {
 		if ( gswaSynth.nativeTypes.indexOf( type ) > -1 ) {
