@@ -9,6 +9,7 @@ class gswaScheduler {
 		this.currentTime = () => {};
 		this.bpm = 60;
 		this.bps = 1;
+		this.delayStopCallback = 0;
 		this.started = false;
 		this.duration =
 		this._startDur =
@@ -203,11 +204,12 @@ class gswaScheduler {
 		}
 	}
 	_streamloop() {
-		const currTime = this.currentTime();
+		const currTime = this.currentTime(),
+			delay = this.delayStopCallback / this.bps;
 		let stillSomethingToPlay;
 
 		Object.entries( this._dataScheduled ).forEach( ( [ id, obj ] ) => {
-			if ( obj.whenEnd < currTime ) {
+			if ( obj.whenEnd + delay < currTime ) {
 				delete this._dataScheduled[ id ];
 				delete this._dataScheduledPerBlock[ obj.blockId ].started[ id ];
 				this.ondatastop( id );
