@@ -7,6 +7,7 @@ class gswaKeysScheduler {
 		this._startedKeys = new Map();
 		Object.seal( this );
 
+		this.scheduler.delayStopCallback = 4;
 		this.scheduler.ondatastart = this._onstartKey.bind( this );
 		this.scheduler.ondatastop = this._onstopKey.bind( this );
 	}
