@@ -69,10 +69,10 @@ class gswaSynth {
 		this._startedKeys.forEach( key => {
 			const nobj = { ...obj };
 
-			if ( "hold" in nobj ) { nobj.hold = nobj.hold * key.gainEnvHold / this._bps; }
-			if ( "decay" in nobj ) { nobj.decay = nobj.decay * key.gainEnvDecay / this._bps; }
-			if ( "attack" in nobj ) { nobj.attack = nobj.attack * key.gainEnvAttack / this._bps; }
-			if ( "release" in nobj ) { nobj.release = nobj.release * key.gainEnvRelease / this._bps; }
+			if ( "hold" in nobj ) { nobj.hold /= this._bps; }
+			if ( "decay" in nobj ) { nobj.decay /= this._bps; }
+			if ( "attack" in nobj ) { nobj.attack /= this._bps; }
+			if ( "release" in nobj ) { nobj.release /= this._bps; }
 			key.gainEnvNode.start( nobj );
 		} );
 	}
