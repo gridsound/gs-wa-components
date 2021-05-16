@@ -29,7 +29,7 @@ class gswaEnvelope {
 		Object.assign( d, obj );
 		d.attack = Math.max( def.attack, d.attack );
 		d.decay = Math.max( def.decay, d.decay );
-		// d.release = Math.min( def.release, d.release );
+		d.release = Math.max( def.release, d.release );
 		this._start();
 	}
 	destroy() {
