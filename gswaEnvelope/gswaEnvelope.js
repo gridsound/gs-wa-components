@@ -17,7 +17,7 @@ class gswaEnvelope {
 		attack: .01,
 		hold: 0,
 		decay: .01,
-		substain: 1,
+		sustain: 1,
 		release: .01,
 	} )
 
@@ -48,7 +48,7 @@ class gswaEnvelope {
 			A = env.attack,
 			H = env.hold,
 			D = env.decay,
-			S = env.substain,
+			S = env.sustain,
 			R = env.release;
 
 		par.cancelScheduledValues( 0 );
@@ -100,8 +100,8 @@ class gswaEnvelope {
 		if ( Number.isFinite( d.duration ) ) {
 			par.setValueAtTime( 0, now );
 		} else {
-			par.setValueAtTime( d.substain, now );
-			par.setValueCurveAtTime( new Float32Array( [ d.substain, 0 ] ), now, d.release );
+			par.setValueAtTime( d.sustain, now );
+			par.setValueCurveAtTime( new Float32Array( [ d.sustain, 0 ] ), now, d.release );
 		}
 	}
 }

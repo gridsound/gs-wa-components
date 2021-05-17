@@ -172,7 +172,7 @@ class gswaSynth {
 			attack: env.attack / bps,
 			hold: env.hold / bps,
 			decay: env.decay / bps,
-			substain: env.substain,
+			sustain: env.sustain,
 			release: env.release / bps,
 		} );
 		key.LFONode.start( {
