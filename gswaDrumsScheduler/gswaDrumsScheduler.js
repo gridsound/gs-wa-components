@@ -20,7 +20,7 @@ class gswaDrumsScheduler {
 		this._drumrows = drumrows;
 	}
 	change( obj ) {
-		const cpy = GSUtils.deepCopy( obj );
+		const cpy = DAWCore.utils.deepCopy( obj );
 
 		Object.values( cpy ).forEach( drum => {
 			if ( drum && "when" in drum ) { // 1.

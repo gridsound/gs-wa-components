@@ -29,7 +29,7 @@ class gswaScheduler {
 		this.isStreaming = true;
 		this._streamloop = this._streamloop.bind( this );
 		this._streamloopId = null;
-		this._crud = GSUtils.createUpdateDelete.bind( null, this.data,
+		this._crud = DAWCore.utils.createUpdateDelete.bind( null, this.data,
 			this._dataAddBlock.bind( this ),
 			this._dataUpdateBlock.bind( this ),
 			this._dataDeleteBlock.bind( this ) );
@@ -228,12 +228,11 @@ class gswaScheduler {
 	// Block functions
 	// .........................................................................
 	_blockStop( id ) {
-		const dataScheduled = this._dataScheduled,
-			blcSchedule = this._dataScheduledPerBlock[ id ];
+		const blcSchedule = this._dataScheduledPerBlock[ id ];
 
 		Object.keys( blcSchedule.started ).forEach( id => {
 			this.ondatastop( id );
-			delete dataScheduled[ id ];
+			delete this._dataScheduled[ id ];
 			delete blcSchedule.started[ id ];
 		} );
 		blcSchedule.scheduledUntil = 0;
