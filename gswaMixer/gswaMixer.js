@@ -1,33 +1,35 @@
 "use strict";
 
 class gswaMixer {
+	static fftSize = 4096
+	ctx = null
+	connectedTo = null
+	audioDataL = new Uint8Array( gswaMixer.fftSize / 2 )
+	audioDataR = new Uint8Array( gswaMixer.fftSize / 2 )
+	#chans = {}
+	#ctrlMixer = new DAWCore.controllers.mixer( {
+		dataCallbacks: {
+			addChannel: this.#addChan.bind( this ),
+			removeChannel: this.#removeChan.bind( this ),
+			toggleChannel: this.#toggleChan.bind( this ),
+			redirectChannel: this.#redirectChan.bind( this ),
+			changePanChannel: this.#updateChanPan.bind( this ),
+			changeGainChannel: this.#updateChanGain.bind( this ),
+		},
+	} )
+
 	constructor() {
-		this.ctx =
-		this.connectedTo = null;
-		this._chans = {};
-		this._fftSize = 4096;
-		this.audioDataL = new Uint8Array( this._fftSize / 2 );
-		this.audioDataR = new Uint8Array( this._fftSize / 2 );
-		this._ctrlMixer = new DAWCore.controllers.mixer( {
-			dataCallbacks: {
-				addChannel: this._addChan.bind( this ),
-				removeChannel: this._removeChan.bind( this ),
-				toggleChannel: this._toggleChan.bind( this ),
-				redirectChannel: this._redirectChan.bind( this ),
-				changePanChannel: this._updateChanPan.bind( this ),
-				changeGainChannel: this._updateChanGain.bind( this ),
-			},
-		} );
 		Object.seal( this );
 	}
 
+	// .........................................................................
 	setContext( ctx ) {
 		this.disconnect();
 		this.ctx = ctx;
-		if ( "main" in this._ctrlMixer.data.channels ) {
-			this._ctrlMixer.recall();
+		if ( "main" in this.#ctrlMixer.data.channels ) {
+			this.#ctrlMixer.recall();
 		} else {
-			this._ctrlMixer.change( {
+			this.#ctrlMixer.change( {
 				channels: {
 					main: {
 						toggle: true,
@@ -40,11 +42,11 @@ class gswaMixer {
 		}
 	}
 	change( obj ) {
-		this._ctrlMixer.change( obj );
+		this.#ctrlMixer.change( obj );
 	}
 	clear() {
-		this._ctrlMixer.clear();
-		this._ctrlMixer.change( {
+		this.#ctrlMixer.clear();
+		this.#ctrlMixer.change( {
 			channels: {
 				main: {
 					toggle: true,
@@ -57,30 +59,30 @@ class gswaMixer {
 	}
 	connect( dest ) {
 		this.disconnect();
-		this._chans.main.output.connect( dest );
+		this.#chans.main.output.connect( dest );
 		this.connectedTo = dest;
 	}
 	disconnect() {
-		if ( this._chans.main ) {
-			this._chans.main.output.disconnect();
+		if ( this.#chans.main ) {
+			this.#chans.main.output.disconnect();
 			this.connectedTo = null;
 		}
 	}
 	getChanInput( id ) {
-		return this._chans[ id ]?.input;
+		return this.#chans[ id ]?.input;
 	}
 	getChanOutput( id ) {
-		return this._chans[ id ]?.pan.getInput();
+		return this.#chans[ id ]?.pan.getInput();
 	}
 	fillAudioData( chanId ) {
-		const nodes = this._chans[ chanId ];
+		const nodes = this.#chans[ chanId ];
 
 		nodes.analyserL.getByteFrequencyData( this.audioDataL );
 		nodes.analyserR.getByteFrequencyData( this.audioDataR );
 	}
 
-	// chan:
-	_addChan( id ) {
+	// .........................................................................
+	#addChan( id ) {
 		const ctx = this.ctx,
 			pan = new gswaStereoPanner( ctx ),
 			gain = ctx.createGain(),
@@ -91,7 +93,7 @@ class gswaMixer {
 			analyserR = ctx.createAnalyser();
 
 		analyserL.fftSize =
-		analyserR.fftSize = this._fftSize;
+		analyserR.fftSize = gswaMixer.fftSize;
 		analyserL.smoothingTimeConstant =
 		analyserR.smoothingTimeConstant = 0;
 		input.connect( pan.getInput() );
@@ -100,41 +102,41 @@ class gswaMixer {
 		gain.connect( splitter );
 		splitter.connect( analyserL, 0 );
 		splitter.connect( analyserR, 1 );
-		this._chans[ id ] = {
+		this.#chans[ id ] = {
 			input, pan, gain, output, splitter, analyserL, analyserR,
 			analyserData: new Uint8Array( analyserL.frequencyBinCount )
 		};
-		Object.entries( this._ctrlMixer.data.channels ).forEach( kv => {
+		Object.entries( this.#ctrlMixer.data.channels ).forEach( kv => {
 			if ( kv[ 1 ].dest === id ) {
-				this._redirectChan( kv[ 0 ], id );
+				this.#redirectChan( kv[ 0 ], id );
 			}
 		} );
 	}
-	_redirectChan( id, val ) {
-		this._chans[ id ].output.disconnect();
-		if ( val in this._ctrlMixer.data.channels ) {
-			this._chans[ id ].output.connect( this.getChanInput( val ) );
+	#redirectChan( id, val ) {
+		this.#chans[ id ].output.disconnect();
+		if ( val in this.#ctrlMixer.data.channels ) {
+			this.#chans[ id ].output.connect( this.getChanInput( val ) );
 		}
 	}
-	_toggleChan( id, val ) {
-		this._chans[ id ].gain.gain.setValueAtTime( val ? this._ctrlMixer.data.channels[ id ].gain : 0, this.ctx.currentTime );
+	#toggleChan( id, val ) {
+		this.#chans[ id ].gain.gain.setValueAtTime( val ? this.#ctrlMixer.data.channels[ id ].gain : 0, this.ctx.currentTime );
 	}
-	_updateChanPan( id, val ) {
-		this._chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
+	#updateChanPan( id, val ) {
+		this.#chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
 	}
-	_updateChanGain( id, val ) {
-		if ( this._ctrlMixer.data.channels[ id ].toggle ) {
-			this._chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
+	#updateChanGain( id, val ) {
+		if ( this.#ctrlMixer.data.channels[ id ].toggle ) {
+			this.#chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
 		}
 	}
-	_removeChan( id ) {
-		const nodes = this._chans[ id ];
+	#removeChan( id ) {
+		const nodes = this.#chans[ id ];
 
 		nodes.pan.disconnect();
 		nodes.gain.disconnect();
 		nodes.input.disconnect();
 		nodes.output.disconnect();
 		nodes.splitter.disconnect();
-		delete this._chans[ id ];
+		delete this.#chans[ id ];
 	}
 }
