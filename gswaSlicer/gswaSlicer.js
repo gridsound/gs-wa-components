@@ -2,9 +2,9 @@
 
 class gswaSlicer {
 	static createBuffer( ctx, bufsrc, cropA, cropB, slices ) {
-		const bufCropA = cropA * bufsrc.length | 0;
-		const newlen = ( cropB - cropA ) * bufsrc.length | 0;
-		const newbuf = ctx.createBuffer( bufsrc.numberOfChannels, newlen, ctx.sampleRate );
+		const bufCropA = cropA * bufsrc.length | 0,
+			newlen = ( cropB - cropA ) * bufsrc.length | 0,
+			newbuf = ctx.createBuffer( bufsrc.numberOfChannels, newlen, ctx.sampleRate );
 
 		Object.values( slices ).forEach( sli => {
 			const obj = {
