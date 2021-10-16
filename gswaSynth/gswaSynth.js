@@ -1,6 +1,9 @@
 "use strict";
 
 class gswaSynth {
+	static nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] )
+	static midiKeyToHz = []
+	static #startedMaxId = 0
 	ctx = null
 	output = null
 	nyquist = 24000
@@ -91,7 +94,7 @@ class gswaSynth {
 
 	// .........................................................................
 	startKey( blocks, when, off, dur ) {
-		const id = ++gswaSynth._startedMaxId.value,
+		const id = ++gswaSynth.#startedMaxId,
 			blc0 = blocks[ 0 ][ 1 ],
 			blcLast = blocks[ blocks.length - 1 ][ 1 ],
 			blc0when = blc0.when,
@@ -299,9 +302,5 @@ class gswaSynth {
 		}
 	}
 }
-
-gswaSynth._startedMaxId = Object.seal( { value: 0 } );
-gswaSynth.nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] );
-gswaSynth.midiKeyToHz = [];
 
 Object.freeze( gswaSynth );
