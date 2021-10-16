@@ -1,18 +1,14 @@
 "use strict";
 
 class gswaEnvelope {
-	constructor( ctx ) {
-		this.ctx = ctx;
-		this.node = ctx.createGain();
-		this.data = Object.seal( {
-			toggle: false,
-			when: 0,
-			duration: 0,
-			...gswaEnvelope.defEnv,
-		} );
-		Object.seal( this );
-	}
-
+	ctx = null
+	node = null
+	data = Object.seal( {
+		toggle: false,
+		when: 0,
+		duration: 0,
+		...gswaEnvelope.defEnv,
+	} )
 	static defEnv = Object.freeze( {
 		attack: .01,
 		hold: 0,
@@ -20,6 +16,12 @@ class gswaEnvelope {
 		sustain: 1,
 		release: .01,
 	} )
+
+	constructor( ctx ) {
+		Object.seal( this );
+		this.ctx = ctx;
+		this.node = ctx.createGain();
+	}
 
 	// .........................................................................
 	start( obj ) {
@@ -30,14 +32,14 @@ class gswaEnvelope {
 		d.attack = Math.max( def.attack, d.attack );
 		d.decay = Math.max( def.decay, d.decay );
 		d.release = Math.max( def.release, d.release );
-		this._start();
+		this.#start();
 	}
 	destroy() {
-		this._stop();
+		this.#stop();
 	}
 
 	// .........................................................................
-	_start() {
+	#start() {
 		const d = this.data,
 			now = this.ctx.currentTime,
 			par = this.node.gain,
@@ -55,43 +57,43 @@ class gswaEnvelope {
 		par.setValueAtTime( 0, now );
 		if ( dur >= A + H + D ) {
 			if ( now <= w ) {
-				this._attack( 1, w, A );
+				this.#attack( 1, w, A );
 			} else if ( now < w + A ) {
-				this._attack( 1, now, w + A - now );
+				this.#attack( 1, now, w + A - now );
 			} else if ( now < w + A + H ) {
-				this._attack( 1, now, Af );
+				this.#attack( 1, now, Af );
 			} else if ( now < w + A + H + D ) {
-				this._attack( S, now, w + A + H + D - now );
+				this.#attack( S, now, w + A + H + D - now );
 			} else if ( now < w + dur - Af ) {
-				this._attack( S, now, Af );
+				this.#attack( S, now, Af );
 			}
 			if ( now < w + A + H && S < 1 ) {
 				par.setValueCurveAtTime( new Float32Array( [ 1, S ] ), w + A + H, D );
 			}
 		} else if ( now <= w ) {
-			this._attack( S, w, dur );
+			this.#attack( S, w, dur );
 		} else if ( now <= w + dur ) {
-			this._attack( S, now, w + dur - now );
+			this.#attack( S, now, w + dur - now );
 		} else {
-			this._attack( S, now, Af );
+			this.#attack( S, now, Af );
 		}
 		if ( Number.isFinite( dur ) ) {
 			if ( now <= w + dur) {
-				this._release( S, w + dur, R );
+				this.#release( S, w + dur, R );
 			} else if ( now < w + dur + R ) {
-				this._release( S, now + Af, w + dur + R - now );
+				this.#release( S, now + Af, w + dur + R - now );
 			} else {
-				this._release( S, now + Af, Af );
+				this.#release( S, now + Af, Af );
 			}
 		}
 	}
-	_attack( top, when, dur ) {
+	#attack( top, when, dur ) {
 		this.node.gain.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
 	}
-	_release( top, when, dur ) {
+	#release( top, when, dur ) {
 		this.node.gain.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
 	}
-	_stop() {
+	#stop() {
 		const d = this.data,
 			now = this.ctx.currentTime,
 			par = this.node.gain;
