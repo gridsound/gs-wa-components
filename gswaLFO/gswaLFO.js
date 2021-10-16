@@ -1,14 +1,17 @@
 "use strict";
 
 class gswaLFO {
+	ctx = null
+	node = null
+	#oscNode = null
+	#ampNode = null
+	#ampAttNode = null
+
 	constructor( ctx ) {
 		const node = ctx.createGain();
 
 		this.ctx = ctx;
 		this.node = node;
-		this._oscNode =
-		this._ampNode =
-		this._ampAttNode = null;
 		this.data = Object.seal( {
 			toggle: false,
 			when: 0,
@@ -44,102 +47,102 @@ class gswaLFO {
 		data.absoluteAmp = "absoluteAmp" in d ? d.absoluteAmp : 1;
 		data.absoluteSpeed = "absoluteSpeed" in d ? d.absoluteSpeed : 4;
 		data.variations = d.variations || [];
-		if ( data.toggle && !this._oscNode ) {
-			this._start();
+		if ( data.toggle && !this.#oscNode ) {
+			this.#start();
 		}
 	}
 	destroy() {
-		if ( this._oscNode ) {
-			this._stop( 0 );
-			this._oscNode.disconnect();
-			this._ampNode.disconnect();
-			this._ampAttNode.disconnect();
-			this._oscNode =
-			this._ampNode =
-			this._ampAttNode = null;
+		if ( this.#oscNode ) {
+			this.#stop( 0 );
+			this.#oscNode.disconnect();
+			this.#ampNode.disconnect();
+			this.#ampAttNode.disconnect();
+			this.#oscNode =
+			this.#ampNode =
+			this.#ampAttNode = null;
 		}
 	}
 	change( obj ) {
 		Object.assign( this.data, obj );
 		if ( this.data.toggle ) {
-			if ( !this._oscNode ) {
-				this._start();
+			if ( !this.#oscNode ) {
+				this.#start();
 			} else {
-				this._change( obj );
+				this.#change( obj );
 			}
-		} else if ( this._oscNode ) {
+		} else if ( this.#oscNode ) {
 			this.destroy();
 		}
 	}
 
 	// .........................................................................
-	_start() {
+	#start() {
 		const d = this.data,
 			osc = this.ctx.createOscillator(),
 			amp = this.ctx.createGain(),
 			ampAtt = this.ctx.createGain();
 
-		this._oscNode = osc;
-		this._ampNode = amp;
-		this._ampAttNode = ampAtt;
-		this._setType();
-		this._setAmpAtt();
-		this._setAmp();
-		this._setSpeed();
+		this.#oscNode = osc;
+		this.#ampNode = amp;
+		this.#ampAttNode = ampAtt;
+		this.#setType();
+		this.#setAmpAtt();
+		this.#setAmp();
+		this.#setSpeed();
 		osc.connect( ampAtt ).connect( amp ).connect( this.node.gain );
 		osc.start( d.when + d.delay - d.offset );
 		if ( d.whenStop > 0 ) {
-			this._stop( d.whenStop );
+			this.#stop( d.whenStop );
 		}
 	}
-	_stop( when ) {
-		this._oscNode.frequency.cancelScheduledValues( when );
-		this._ampNode.gain.cancelScheduledValues( when );
-		this._ampAttNode.gain.cancelScheduledValues( when );
-		this._oscNode.stop( when );
+	#stop( when ) {
+		this.#oscNode.frequency.cancelScheduledValues( when );
+		this.#ampNode.gain.cancelScheduledValues( when );
+		this.#ampAttNode.gain.cancelScheduledValues( when );
+		this.#oscNode.stop( when );
 	}
-	_change( obj ) {
+	#change( obj ) {
 		if ( "type" in obj ) {
-			this._setType();
+			this.#setType();
 		}
 		if ( "absoluteSpeed" in obj ) {
-			this._oscNode.frequency.cancelScheduledValues( 0 );
-			this._setSpeed();
+			this.#oscNode.frequency.cancelScheduledValues( 0 );
+			this.#setSpeed();
 		}
 		if ( "absoluteAmp" in obj ) {
-			this._ampNode.gain.cancelScheduledValues( 0 );
-			this._setAmp();
+			this.#ampNode.gain.cancelScheduledValues( 0 );
+			this.#setAmp();
 		}
 		if ( "when" in obj || "offset" in obj || "delay" in obj || "attack" in obj ) {
-			this._ampAttNode.gain.cancelScheduledValues( 0 );
-			this._setAmpAtt();
+			this.#ampAttNode.gain.cancelScheduledValues( 0 );
+			this.#setAmpAtt();
 		}
 	}
-	_setType() {
-		this._oscNode.type = this.data.type;
+	#setType() {
+		this.#oscNode.type = this.data.type;
 	}
-	_setAmpAtt() {
+	#setAmpAtt() {
 		const d = this.data,
 			now = this.ctx.currentTime,
 			atTime = d.when + d.delay - d.offset,
 			absAmp = Math.abs( d.absoluteAmp );
 
 		if ( now <= atTime && d.attack > 0 ) {
-			this._ampAttNode.gain.setValueAtTime( 0, now );
-			this._ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, absAmp ] ), atTime, d.attack );
+			this.#ampAttNode.gain.setValueAtTime( 0, now );
+			this.#ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, absAmp ] ), atTime, d.attack );
 		} else {
-			this._ampAttNode.gain.setValueAtTime( absAmp, now );
+			this.#ampAttNode.gain.setValueAtTime( absAmp, now );
 		}
 	}
-	_setAmp() {
-		gswaLFO._setVariations( this.data, "absoluteAmp", "amp",
-			this._ampNode.gain, this.ctx.currentTime );
+	#setAmp() {
+		gswaLFO.#setVariations( this.data, "absoluteAmp", "amp",
+			this.#ampNode.gain, this.ctx.currentTime );
 	}
-	_setSpeed() {
-		gswaLFO._setVariations( this.data, "absoluteSpeed", "speed",
-			this._oscNode.frequency, this.ctx.currentTime );
+	#setSpeed() {
+		gswaLFO.#setVariations( this.data, "absoluteSpeed", "speed",
+			this.#oscNode.frequency, this.ctx.currentTime );
 	}
-	static _setVariations( d, absProp, prop, nodeParam, now ) {
+	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];
 		let started = false;
 
