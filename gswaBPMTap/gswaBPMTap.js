@@ -3,7 +3,7 @@
 class gswaBPMTap {
 	static #stack = []
 	static #timeBefore = 0
-	static #stackLimit = 10
+	static #stackLimit = 20
 
 	static reset() {
 		gswaBPMTap.#timeBefore =
@@ -27,7 +27,7 @@ class gswaBPMTap {
 				if ( stack.unshift( bpm ) > gswaBPMTap.#stackLimit ) {
 					stack.length = gswaBPMTap.#stackLimit;
 				}
-				return stack.reduce( ( sum, bpm ) => sum + bpm, 0 ) / stack.length;
+				return +( stack.reduce( ( sum, bpm ) => sum + bpm, 0 ) / stack.length ).toFixed( 2 );
 			}
 		}
 		return 0;
