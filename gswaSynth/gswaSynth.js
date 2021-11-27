@@ -2,7 +2,6 @@
 
 class gswaSynth {
 	static nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] )
-	static midiKeyToHz = []
 	static #startedMaxId = 0
 	ctx = null
 	output = null
@@ -21,6 +20,11 @@ class gswaSynth {
 
 	constructor() {
 		Object.seal( this );
+	}
+
+	// .........................................................................
+	static getHz( key ) {
+		return 440 * ( 2 ** ( ( key - 57 ) / 12 ) );
 	}
 
 	// .........................................................................
@@ -247,8 +251,8 @@ class gswaSynth {
 			const when = key.when - key.off + va.when,
 				dur = va.duration,
 				freqArr = new Float32Array( [
-					gswaSynth.midiKeyToHz[ va.midi[ 0 ] ],
-					gswaSynth.midiKeyToHz[ va.midi[ 1 ] ]
+					gswaSynth.getHz( va.midi[ 0 ] ),
+					gswaSynth.getHz( va.midi[ 1 ] )
 				] );
 
 			if ( when > this.ctx.currentTime && dur > 0 ) {
@@ -277,7 +281,7 @@ class gswaSynth {
 
 		this.#nodeOscSetType( oscNode, osc.type );
 		oscNode.detune.setValueAtTime( osc.detune * 100, atTime );
-		oscNode.frequency.setValueAtTime( gswaSynth.midiKeyToHz[ key.midi ], atTime );
+		oscNode.frequency.setValueAtTime( gswaSynth.getHz( key.midi ), atTime );
 		panNode.pan.setValueAtTime( osc.pan, atTime );
 		gainNode.gain.setValueAtTime( osc.gain, atTime );
 		oscNode
