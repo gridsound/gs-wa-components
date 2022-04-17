@@ -1,10 +1,10 @@
 "use strict";
 
 class gswaStereoPanner {
-	#splitter = null
-	#left = null
-	#right = null
-	#merger = null
+	#splitter = null;
+	#left = null;
+	#right = null;
+	#merger = null;
 
 	constructor( ctx ) {
 		Object.freeze( this );

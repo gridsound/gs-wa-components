@@ -1,15 +1,15 @@
 "use strict";
 
 class gswaFxFilter {
-	ctx = null
-	input = null
-	output = null
-	responseHzIn = null
-	responseMagOut = null
-	responsePhaseOut = null
-	#filter = null
-	#respSize = -1
-	#enable = false
+	ctx = null;
+	input = null;
+	output = null;
+	responseHzIn = null;
+	responseMagOut = null;
+	responsePhaseOut = null;
+	#filter = null;
+	#respSize = -1;
+	#enable = false;
 	#ctrl = new DAWCore.controllersFx.filter( {
 		dataCallbacks: {
 			type: this.#changeType.bind( this ),
@@ -18,7 +18,7 @@ class gswaFxFilter {
 			detune: this.#changeProp.bind( this, "detune" ),
 			frequency: this.#changeProp.bind( this, "frequency" ),
 		},
-	} )
+	} );
 
 	constructor() {
 		Object.seal( this );

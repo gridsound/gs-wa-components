@@ -1,9 +1,9 @@
 "use strict";
 
 class gswaKeysScheduler {
-	scheduler = new gswaScheduler()
-	#synth = null
-	#startedKeys = new Map()
+	scheduler = new gswaScheduler();
+	#synth = null;
+	#startedKeys = new Map();
 
 	constructor() {
 		Object.seal( this );

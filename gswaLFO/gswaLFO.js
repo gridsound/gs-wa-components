@@ -1,11 +1,11 @@
 "use strict";
 
 class gswaLFO {
-	ctx = null
-	node = null
-	#oscNode = null
-	#ampNode = null
-	#ampAttNode = null
+	ctx = null;
+	node = null;
+	#oscNode = null;
+	#ampNode = null;
+	#ampAttNode = null;
 
 	constructor( ctx ) {
 		const node = ctx.createGain();

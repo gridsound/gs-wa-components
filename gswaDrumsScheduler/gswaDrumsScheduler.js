@@ -1,9 +1,9 @@
 "use strict";
 
 class gswaDrumsScheduler {
-	scheduler = new gswaScheduler()
-	#drumrows = null
-	#startedDrums = new Map()
+	scheduler = new gswaScheduler();
+	#drumrows = null;
+	#startedDrums = new Map();
 
 	constructor() {
 		Object.seal( this );
@@ -37,7 +37,7 @@ class gswaDrumsScheduler {
 		this.scheduler.stop();
 	}
 
-	#onstartDrum( startedId, [ [ , drum ] ], when, off, dur ) {
+	#onstartDrum( startedId, [ [ , drum ] ], when, off ) {
 		if ( "gain" in drum ) {
 			this.#startedDrums.set( startedId,
 				this.#drumrows.startDrum( drum, when, off, drum.duration ) );

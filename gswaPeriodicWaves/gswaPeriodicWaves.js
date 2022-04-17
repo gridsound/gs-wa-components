@@ -1,8 +1,8 @@
 "use strict";
 
 class gswaPeriodicWaves {
-	static list = new Map()
-	static #cache = new Map()
+	static list = new Map();
+	static #cache = new Map();
 
 	static clearCache() {
 		gswaPeriodicWaves.#cache.clear();

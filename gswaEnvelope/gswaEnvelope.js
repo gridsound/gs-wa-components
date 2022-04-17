@@ -1,21 +1,21 @@
 "use strict";
 
 class gswaEnvelope {
-	ctx = null
-	node = null
+	ctx = null;
+	node = null;
 	data = Object.seal( {
 		toggle: false,
 		when: 0,
 		duration: 0,
 		...gswaEnvelope.defEnv,
-	} )
+	} );
 	static defEnv = Object.freeze( {
 		attack: .01,
 		hold: 0,
 		decay: .01,
 		sustain: 1,
 		release: .01,
-	} )
+	} );
 
 	constructor( ctx ) {
 		Object.seal( this );
@@ -78,7 +78,7 @@ class gswaEnvelope {
 			this.#attack( S, now, Af );
 		}
 		if ( Number.isFinite( dur ) ) {
-			if ( now <= w + dur) {
+			if ( now <= w + dur ) {
 				this.#release( S, w + dur, R );
 			} else if ( now < w + dur + R ) {
 				this.#release( S, now + Af, w + dur + R - now );

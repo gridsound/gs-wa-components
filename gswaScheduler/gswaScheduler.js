@@ -1,38 +1,39 @@
 "use strict";
 
 class gswaScheduler {
-	static #startedMaxId = 0
-	data = {}
-	bpm = 60
-	bps = 1
-	loopA = null
-	loopB = null
-	looping = false
-	loopDuration = 0
-	isStreaming = true
-	started = false
-	duration = 0
-	delayStopCallback = 0
-	currentTime = DAWCore.utils.noop
-	ondatastart = DAWCore.utils.noop
-	ondatastop = DAWCore.utils.noop
-	ondatapropchange = DAWCore.utils.noop
-	onended = DAWCore.utils.noop
-	#startDur = 0
-	#startOff = 0
-	#startWhen = 0
-	#startFixedDur = 0
-	#timeoutIdEnded = null
-	#sortedData = []
-	#dataScheduled = {}
-	#dataScheduledPerBlock = {}
-	#lastBlockId = null
-	#streamloopId = null
-	#streamloopBind = this.#streamloop.bind( this )
+	static #startedMaxId = 0;
+	data = {};
+	bpm = 60;
+	bps = 1;
+	loopA = null;
+	loopB = null;
+	looping = false;
+	loopDuration = 0;
+	isStreaming = true;
+	started = false;
+	duration = 0;
+	delayStopCallback = 0;
+	currentTime = DAWCore.utils.noop;
+	ondatastart = DAWCore.utils.noop;
+	ondatastop = DAWCore.utils.noop;
+	ondatapropchange = DAWCore.utils.noop;
+	onended = DAWCore.utils.noop;
+	#startDur = 0;
+	#startOff = 0;
+	#startWhen = 0;
+	#startFixedDur = 0;
+	#timeoutIdEnded = null;
+	#sortedData = [];
+	#dataScheduled = {};
+	#dataScheduledPerBlock = {};
+	#lastBlockId = null;
+	#streamloopId = null;
+	#streamloopBind = this.#streamloop.bind( this );
 	#ctrl = DAWCore.utils.createUpdateDelete.bind( null, this.data,
 		this.#dataAddBlock.bind( this ),
 		this.#dataUpdateBlock.bind( this ),
-		this.#dataDeleteBlock.bind( this ) )
+		this.#dataDeleteBlock.bind( this )
+	);
 
 	constructor() {
 		Object.seal( this );

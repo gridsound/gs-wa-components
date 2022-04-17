@@ -1,9 +1,9 @@
 "use strict";
 
 class gswaBPMTap {
-	static #stack = []
-	static #timeBefore = 0
-	static #stackLimit = 20
+	static #stack = [];
+	static #timeBefore = 0;
+	static #stackLimit = 20;
 
 	static reset() {
 		gswaBPMTap.#timeBefore =

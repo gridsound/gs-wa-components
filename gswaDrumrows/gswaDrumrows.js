@@ -1,21 +1,21 @@
 "use strict";
 
 class gswaDrumrows {
-	static #startedMaxId = 0
-	ctx = null
-	onstartdrum = null
-	onstartdrumcut = null
-	getAudioBuffer = DAWCore.utils.noop
-	getChannelInput = DAWCore.utils.noop
-	#bps = 1
-	#startedDrums = new Map()
+	static #startedMaxId = 0;
+	ctx = null;
+	onstartdrum = null;
+	onstartdrumcut = null;
+	getAudioBuffer = DAWCore.utils.noop;
+	getChannelInput = DAWCore.utils.noop;
+	#bps = 1;
+	#startedDrums = new Map();
 	#ctrl = new DAWCore.controllers.drumrows( {
 		dataCallbacks: {
 			addDrumrow: DAWCore.utils.noop,
 			removeDrumrow: this.#removeDrumrow.bind( this ),
 			changeDrumrow: this.#changeDrumrow.bind( this ),
 		},
-	} )
+	} );
 
 	constructor() {
 		Object.seal( this );
@@ -64,7 +64,7 @@ class gswaDrumrows {
 		const cutDur = .001,
 			whenCutStart = when - cutDur;
 
-		this.#startedDrums.forEach( ( nodes, id ) => {
+		this.#startedDrums.forEach( nodes => {
 			if ( nodes.absn && nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
 				nodes.endAt = when;
 				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
@@ -170,10 +170,10 @@ class gswaDrumrows {
 					nodes.gain = val;
 					nodes.gainRow.gain.setValueAtTime( row.toggle ? val * row.gain : 0, this.ctx.currentTime );
 					break;
-				case "pan": {
+				case "pan":
 					nodes.pan = val;
 					nodes.panRow.pan.setValueAtTime( DAWCore.utils.panningMerge( val, row.pan ), this.ctx.currentTime );
-				} break;
+					break;
 			}
 		}
 	}

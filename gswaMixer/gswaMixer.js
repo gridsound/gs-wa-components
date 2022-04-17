@@ -1,12 +1,12 @@
 "use strict";
 
 class gswaMixer {
-	static fftSize = 4096
-	ctx = null
-	connectedTo = null
-	audioDataL = new Uint8Array( gswaMixer.fftSize / 2 )
-	audioDataR = new Uint8Array( gswaMixer.fftSize / 2 )
-	#chans = {}
+	static fftSize = 4096;
+	ctx = null;
+	connectedTo = null;
+	audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
+	audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
+	#chans = {};
 	#ctrlMixer = new DAWCore.controllers.mixer( {
 		dataCallbacks: {
 			addChannel: this.#addChan.bind( this ),
@@ -16,7 +16,7 @@ class gswaMixer {
 			changePanChannel: this.#updateChanPan.bind( this ),
 			changeGainChannel: this.#updateChanGain.bind( this ),
 		},
-	} )
+	} );
 
 	constructor() {
 		Object.seal( this );

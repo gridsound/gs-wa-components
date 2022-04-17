@@ -1,10 +1,10 @@
 "use strict";
 
 class gswaEffects {
-	ctx = null
-	#wafxs = new Map()
-	#getChanInput = null
-	#getChanOutput = null
+	ctx = null;
+	#wafxs = new Map();
+	#getChanInput = null;
+	#getChanOutput = null;
 	#ctrl = new DAWCore.controllers.effects( {
 		dataCallbacks: {
 			changeBPM: bpm => this.#wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) ),
@@ -14,7 +14,7 @@ class gswaEffects {
 			connectEffectTo: this.#connectEffectTo.bind( this ),
 			changeEffectData: ( id, data ) => this.getFx( id ).change( data ),
 		},
-	} )
+	} );
 
 	constructor( fns ) {
 		Object.seal( this );

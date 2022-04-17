@@ -1,11 +1,11 @@
 "use strict";
 
 class gswaSynth {
-	static nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] )
-	static #startedMaxId = 0
-	ctx = null
-	output = null
-	nyquist = 24000
+	static nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] );
+	static #startedMaxId = 0;
+	ctx = null;
+	output = null;
+	nyquist = 24000;
 	gsdata = new DAWCore.controllers.synth( {
 		dataCallbacks: {
 			addOsc: this.#addOsc.bind( this ),
@@ -14,9 +14,9 @@ class gswaSynth {
 			changeEnv: this.#changeEnv.bind( this ),
 			changeLFO: this.#changeLFO.bind( this ),
 		},
-	} )
-	#bps = 1
-	#startedKeys = new Map()
+	} );
+	#bps = 1;
+	#startedKeys = new Map();
 
 	constructor() {
 		Object.seal( this );
@@ -49,7 +49,7 @@ class gswaSynth {
 			key.oscNodes.delete( id );
 		} );
 	}
-	#addOsc( id, osc ) {
+	#addOsc( id ) {
 		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, id ) ) );
 	}
 	#changeOsc( id, obj ) {
