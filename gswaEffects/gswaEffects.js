@@ -58,11 +58,11 @@ class gswaEffects {
 	}
 	#connectEffectTo( chanId, fxId, nextFxId ) {
 		const dest = nextFxId
-				? this.#wafxs.get( nextFxId ).input
-				: this.#getChanOutput( chanId ),
-			node = fxId
-				? this.#wafxs.get( fxId ).output
-				: this.#getChanInput( chanId );
+			? this.#wafxs.get( nextFxId ).input
+			: this.#getChanOutput( chanId );
+		const node = fxId
+			? this.#wafxs.get( fxId ).output
+			: this.#getChanInput( chanId );
 
 		if ( node ) {
 			node.disconnect();

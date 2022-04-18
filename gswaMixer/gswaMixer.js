@@ -83,14 +83,14 @@ class gswaMixer {
 
 	// .........................................................................
 	#addChan( id ) {
-		const ctx = this.ctx,
-			pan = new gswaStereoPanner( ctx ),
-			gain = ctx.createGain(),
-			input = ctx.createGain(),
-			output = ctx.createGain(),
-			splitter = ctx.createChannelSplitter( 2 ),
-			analyserL = ctx.createAnalyser(),
-			analyserR = ctx.createAnalyser();
+		const ctx = this.ctx;
+		const pan = new gswaStereoPanner( ctx );
+		const gain = ctx.createGain();
+		const input = ctx.createGain();
+		const output = ctx.createGain();
+		const splitter = ctx.createChannelSplitter( 2 );
+		const analyserL = ctx.createAnalyser();
+		const analyserR = ctx.createAnalyser();
 
 		analyserL.fftSize =
 		analyserR.fftSize = gswaMixer.fftSize;

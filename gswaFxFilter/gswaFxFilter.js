@@ -82,8 +82,8 @@ class gswaFxFilter {
 	}
 	#createResponseArrays( w ) {
 		if ( w !== this.#respSize ) {
-			const nyquist = this.ctx.sampleRate / 2,
-				Hz = new Float32Array( w );
+			const nyquist = this.ctx.sampleRate / 2;
+			const Hz = new Float32Array( w );
 
 			this.#respSize = w;
 			this.responseHzIn = Hz;

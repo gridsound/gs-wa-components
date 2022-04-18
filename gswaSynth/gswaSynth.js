@@ -53,8 +53,8 @@ class gswaSynth {
 		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, id ) ) );
 	}
 	#changeOsc( id, obj ) {
-		const now = this.ctx.currentTime,
-			objEnt = Object.entries( obj );
+		const now = this.ctx.currentTime;
+		const objEnt = Object.entries( obj );
 
 		this.#startedKeys.forEach( key => {
 			const nodes = key.oscNodes.get( id );
@@ -98,44 +98,44 @@ class gswaSynth {
 
 	// .........................................................................
 	startKey( blocks, when, off, dur ) {
-		const id = ++gswaSynth.#startedMaxId,
-			blc0 = blocks[ 0 ][ 1 ],
-			blcLast = blocks[ blocks.length - 1 ][ 1 ],
-			blc0when = blc0.when,
-			atTime = when - off,
-			ctx = this.ctx,
-			bps = this.#bps,
-			env = this.gsdata.data.env,
-			lfo = this.gsdata.data.lfo,
-			oscs = this.gsdata.data.oscillators,
-			lfoVariations = [],
-			key = Object.freeze( {
-				when,
-				off,
-				dur,
-				pan: blc0.pan,
-				midi: blc0.key,
-				gain: blc0.gain,
-				lowpass: blc0.lowpass,
-				highpass: blc0.highpass,
-				attack: blc0.attack / bps || .005,
-				release: blcLast.release / bps || .005,
-				variations: [],
-				oscNodes: new Map(),
-				gainEnvNode: new gswaEnvelope( ctx ),
-				LFONode: new gswaLFO( ctx ),
-				gainNode: ctx.createGain(),
-				panNode: ctx.createStereoPanner(),
-				lowpassNode: ctx.createBiquadFilter(),
-				highpassNode: ctx.createBiquadFilter(),
-			} );
+		const id = ++gswaSynth.#startedMaxId;
+		const blc0 = blocks[ 0 ][ 1 ];
+		const blcLast = blocks[ blocks.length - 1 ][ 1 ];
+		const blc0when = blc0.when;
+		const atTime = when - off;
+		const ctx = this.ctx;
+		const bps = this.#bps;
+		const env = this.gsdata.data.env;
+		const lfo = this.gsdata.data.lfo;
+		const oscs = this.gsdata.data.oscillators;
+		const lfoVariations = [];
+		const key = Object.freeze( {
+			when,
+			off,
+			dur,
+			pan: blc0.pan,
+			midi: blc0.key,
+			gain: blc0.gain,
+			lowpass: blc0.lowpass,
+			highpass: blc0.highpass,
+			attack: blc0.attack / bps || .005,
+			release: blcLast.release / bps || .005,
+			variations: [],
+			oscNodes: new Map(),
+			gainEnvNode: new gswaEnvelope( ctx ),
+			LFONode: new gswaLFO( ctx ),
+			gainNode: ctx.createGain(),
+			panNode: ctx.createStereoPanner(),
+			lowpassNode: ctx.createBiquadFilter(),
+			highpassNode: ctx.createBiquadFilter(),
+		} );
 
 		if ( blocks.length > 1 ) {
 			blocks.reduce( ( prev, [ , blc ] ) => {
 				if ( prev ) {
-					const prevWhen = prev.when - blc0when,
-						when = ( prevWhen + prev.duration ) / bps,
-						duration = ( blc.when - blc0when ) / bps - when;
+					const prevWhen = prev.when - blc0when;
+					const when = ( prevWhen + prev.duration ) / bps;
+					const duration = ( blc.when - blc0when ) / bps - when;
 
 					key.variations.push( {
 						when,
@@ -248,12 +248,12 @@ class gswaSynth {
 	// .........................................................................
 	#scheduleVariations( key ) {
 		key.variations.forEach( va => {
-			const when = key.when - key.off + va.when,
-				dur = va.duration,
-				freqArr = new Float32Array( [
-					gswaSynth.getHz( va.midi[ 0 ] ),
-					gswaSynth.getHz( va.midi[ 1 ] )
-				] );
+			const when = key.when - key.off + va.when;
+			const dur = va.duration;
+			const freqArr = new Float32Array( [
+				gswaSynth.getHz( va.midi[ 0 ] ),
+				gswaSynth.getHz( va.midi[ 1 ] )
+			] );
 
 			if ( when > this.ctx.currentTime && dur > 0 ) {
 				key.oscNodes.forEach( nodes => nodes.oscNode.frequency.setValueCurveAtTime( freqArr, when, dur ) );
@@ -267,17 +267,17 @@ class gswaSynth {
 
 	// .........................................................................
 	#createOscNode( key, id ) {
-		const atTime = key.when - key.off,
-			env = this.gsdata.data.env,
-			osc = this.gsdata.data.oscillators[ id ],
-			oscNode = this.ctx.createOscillator(),
-			panNode = this.ctx.createStereoPanner(),
-			gainNode = this.ctx.createGain(),
-			nodes = Object.freeze( {
-				oscNode,
-				panNode,
-				gainNode,
-			} );
+		const atTime = key.when - key.off;
+		const env = this.gsdata.data.env;
+		const osc = this.gsdata.data.oscillators[ id ];
+		const oscNode = this.ctx.createOscillator();
+		const panNode = this.ctx.createStereoPanner();
+		const gainNode = this.ctx.createGain();
+		const nodes = Object.freeze( {
+			oscNode,
+			panNode,
+			gainNode,
+		} );
 
 		this.#nodeOscSetType( oscNode, osc.type );
 		oscNode.detune.setValueAtTime( osc.detune * 100, atTime );

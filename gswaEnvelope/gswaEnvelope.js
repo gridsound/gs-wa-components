@@ -25,8 +25,8 @@ class gswaEnvelope {
 
 	// .........................................................................
 	start( obj ) {
-		const d = this.data,
-			def = gswaEnvelope.defEnv;
+		const d = this.data;
+		const def = gswaEnvelope.defEnv;
 
 		Object.assign( d, obj );
 		d.attack = Math.max( def.attack, d.attack );
@@ -40,18 +40,18 @@ class gswaEnvelope {
 
 	// .........................................................................
 	#start() {
-		const d = this.data,
-			now = this.ctx.currentTime,
-			par = this.node.gain,
-			w = d.when,
-			dur = d.duration,
-			env = d.toggle ? d : gswaEnvelope.defEnv,
-			Af = gswaEnvelope.defEnv.attack,
-			A = env.attack,
-			H = env.hold,
-			D = env.decay,
-			S = env.sustain,
-			R = env.release;
+		const d = this.data;
+		const now = this.ctx.currentTime;
+		const par = this.node.gain;
+		const w = d.when;
+		const dur = d.duration;
+		const env = d.toggle ? d : gswaEnvelope.defEnv;
+		const Af = gswaEnvelope.defEnv.attack;
+		const A = env.attack;
+		const H = env.hold;
+		const D = env.decay;
+		const S = env.sustain;
+		const R = env.release;
 
 		par.cancelScheduledValues( 0 );
 		par.setValueAtTime( 0, now );
@@ -94,9 +94,9 @@ class gswaEnvelope {
 		this.node.gain.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
 	}
 	#stop() {
-		const d = this.data,
-			now = this.ctx.currentTime,
-			par = this.node.gain;
+		const d = this.data;
+		const now = this.ctx.currentTime;
+		const par = this.node.gain;
 
 		par.cancelScheduledValues( 0 );
 		if ( Number.isFinite( d.duration ) ) {

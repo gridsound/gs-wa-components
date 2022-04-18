@@ -44,11 +44,11 @@ class gswaDrumrows {
 	// .........................................................................
 	startLiveDrum( rowId ) {
 		const drum = {
-				row: rowId,
-				detune: 0,
-				gain: 1,
-				pan: 0,
-			};
+			row: rowId,
+			detune: 0,
+			gain: 1,
+			pan: 0,
+		};
 
 		return this.#startDrum( drum, this.ctx.currentTime, 0, null, true );
 	}
@@ -61,8 +61,8 @@ class gswaDrumrows {
 		} );
 	}
 	startDrumcut( drumcut, when ) {
-		const cutDur = .001,
-			whenCutStart = when - cutDur;
+		const cutDur = .001;
+		const whenCutStart = when - cutDur;
 
 		this.#startedDrums.forEach( nodes => {
 			if ( nodes.absn && nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
@@ -70,8 +70,8 @@ class gswaDrumrows {
 				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
 				nodes.absn.stop( when + cutDur );
 				if ( this.onstartdrumcut ) {
-					const fn = this.onstartdrumcut.bind( null, nodes.rowId ),
-						time = whenCutStart - this.ctx.currentTime;
+					const fn = this.onstartdrumcut.bind( null, nodes.rowId );
+					const time = whenCutStart - this.ctx.currentTime;
 
 					nodes.startDrumcutTimeoutId = setTimeout( fn, time * 1000 );
 				}
@@ -82,27 +82,27 @@ class gswaDrumrows {
 		return this.#startDrum( drum, when, off, dur, false );
 	}
 	#startDrum( drum, when, off, durUser, live ) {
-		const data = this.#ctrl.data,
-			rowId = drum.row,
-			row = data.drumrows[ rowId ],
-			pat = data.patterns[ row.pattern ],
-			buffer = this.getAudioBuffer( pat.buffer ),
-			dur = durUser !== null ? durUser : buffer ? buffer.duration : 0,
-			id = ++gswaDrumrows.#startedMaxId,
-			nodes = {
-				rowId, live, when, dur,
-				endAt: when + dur,
-				pan: drum.pan,
-				gain: drum.gain,
-				detune: drum.detune,
-			};
+		const data = this.#ctrl.data;
+		const rowId = drum.row;
+		const row = data.drumrows[ rowId ];
+		const pat = data.patterns[ row.pattern ];
+		const buffer = this.getAudioBuffer( pat.buffer );
+		const dur = durUser !== null ? durUser : buffer ? buffer.duration : 0;
+		const id = ++gswaDrumrows.#startedMaxId;
+		const nodes = {
+			rowId, live, when, dur,
+			endAt: when + dur,
+			pan: drum.pan,
+			gain: drum.gain,
+			detune: drum.detune,
+		};
 
 		if ( buffer ) {
-			const absn = this.ctx.createBufferSource(),
-				gainRow = this.ctx.createGain(),
-				gainCut = this.ctx.createGain(),
-				panRow = this.ctx.createStereoPanner(),
-				dest = this.getChannelInput( pat.dest );
+			const absn = this.ctx.createBufferSource();
+			const gainRow = this.ctx.createGain();
+			const gainCut = this.ctx.createGain();
+			const panRow = this.ctx.createStereoPanner();
+			const dest = this.getChannelInput( pat.dest );
 
 			nodes.absn = absn;
 			nodes.gainCut = gainCut;

@@ -2,18 +2,18 @@
 
 class gswaEncodeWAV {
 	static encode( buffer, opt ) {
-		const nbChannels = buffer.numberOfChannels,
-			sampleRate = buffer.sampleRate,
-			format = opt && opt.float32 ? 3 : 1,
-			bitsPerSample = format === 3 ? 32 : 16,
-			bytesPerSample = bitsPerSample / 8,
-			bytesPerbloc = nbChannels * bytesPerSample,
-			samples = nbChannels === 2
-				? gswaEncodeWAV.#interleave( buffer.getChannelData( 0 ), buffer.getChannelData( 1 ) )
-				: buffer.getChannelData( 0 ),
-			dataSize = samples.length * bytesPerSample,
-			arrBuffer = new ArrayBuffer( 44 + dataSize ),
-			data = new DataView( arrBuffer );
+		const nbChannels = buffer.numberOfChannels;
+		const sampleRate = buffer.sampleRate;
+		const format = opt && opt.float32 ? 3 : 1;
+		const bitsPerSample = format === 3 ? 32 : 16;
+		const bytesPerSample = bitsPerSample / 8;
+		const bytesPerbloc = nbChannels * bytesPerSample;
+		const samples = nbChannels === 2
+			? gswaEncodeWAV.#interleave( buffer.getChannelData( 0 ), buffer.getChannelData( 1 ) )
+			: buffer.getChannelData( 0 );
+		const dataSize = samples.length * bytesPerSample;
+		const arrBuffer = new ArrayBuffer( 44 + dataSize );
+		const data = new DataView( arrBuffer );
 
 		gswaEncodeWAV.#setString( data, 0, "RIFF" );           // FileTypeBlocID(4) : "RIFF"
 		data.setUint32( 4, 36 + dataSize, true );              // FileSize(4)       : headerSize + dataSize - 8
@@ -37,8 +37,8 @@ class gswaEncodeWAV {
 
 	// .........................................................................
 	static #interleave( ldata, rdata ) {
-		const len = ldata.length + rdata.length,
-			arr = new Float32Array( len );
+		const len = ldata.length + rdata.length;
+		const arr = new Float32Array( len );
 
 		for ( let i = 0, j = 0; i < len; ++j ) {
 			arr[ i++ ] = ldata[ j ];

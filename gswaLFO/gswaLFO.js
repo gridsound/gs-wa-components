@@ -77,10 +77,10 @@ class gswaLFO {
 
 	// .........................................................................
 	#start() {
-		const d = this.data,
-			osc = this.ctx.createOscillator(),
-			amp = this.ctx.createGain(),
-			ampAtt = this.ctx.createGain();
+		const d = this.data;
+		const osc = this.ctx.createOscillator();
+		const amp = this.ctx.createGain();
+		const ampAtt = this.ctx.createGain();
 
 		this.#oscNode = osc;
 		this.#ampNode = amp;
@@ -122,10 +122,10 @@ class gswaLFO {
 		this.#oscNode.type = this.data.type;
 	}
 	#setAmpAtt() {
-		const d = this.data,
-			now = this.ctx.currentTime,
-			atTime = d.when + d.delay - d.offset,
-			absAmp = Math.abs( d.absoluteAmp );
+		const d = this.data;
+		const now = this.ctx.currentTime;
+		const atTime = d.when + d.delay - d.offset;
+		const absAmp = Math.abs( d.absoluteAmp );
 
 		if ( now <= atTime && d.attack > 0 ) {
 			this.#ampAttNode.gain.setValueAtTime( 0, now );
@@ -147,8 +147,8 @@ class gswaLFO {
 		let started = false;
 
 		d.variations.forEach( va => {
-			const when = d.when - d.offset + va.when,
-				dur = va.duration;
+			const when = d.when - d.offset + va.when;
+			const dur = va.duration;
 
 			if ( when > now && dur > 0 ) {
 				const ab = va[ prop ];

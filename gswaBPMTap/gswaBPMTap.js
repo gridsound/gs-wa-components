@@ -10,16 +10,16 @@ class gswaBPMTap {
 		gswaBPMTap.#stack.length = 0;
 	}
 	static tap() {
-		const time = Date.now(),
-			timeBefore = gswaBPMTap.#timeBefore;
+		const time = Date.now();
+		const timeBefore = gswaBPMTap.#timeBefore;
 
 		gswaBPMTap.#timeBefore = time;
 		if ( timeBefore ) {
-			const bpm = 60000 / ( time - timeBefore ),
-				stack = gswaBPMTap.#stack,
-				lastBpm = stack.length
-					? stack[ stack.length - 1 ]
-					: 0;
+			const bpm = 60000 / ( time - timeBefore );
+			const stack = gswaBPMTap.#stack;
+			const lastBpm = stack.length
+				? stack[ stack.length - 1 ]
+				: 0;
 
 			if ( lastBpm && ( bpm < lastBpm / 1.5 || bpm > lastBpm * 1.5 ) ) {
 				stack.length = 0;
