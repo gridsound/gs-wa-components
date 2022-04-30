@@ -7,7 +7,6 @@ class gswaDrumrows {
 	onstartdrumcut = null;
 	getAudioBuffer = DAWCore.utils.noop;
 	getChannelInput = DAWCore.utils.noop;
-	#bps = 1;
 	#startedDrums = new Map();
 	#ctrl = new DAWCore.controllers.drumrows( {
 		dataCallbacks: {
@@ -25,9 +24,6 @@ class gswaDrumrows {
 	setContext( ctx ) {
 		this.stopAllDrums();
 		this.ctx = ctx;
-	}
-	setBPM( bpm ) {
-		this.#bps = bpm / 60;
 	}
 	change( obj ) {
 		this.#ctrl.change( obj );
