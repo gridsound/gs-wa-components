@@ -38,7 +38,7 @@ class gswaDrumrows {
 	}
 
 	// .........................................................................
-	startLiveDrum( rowId ) {
+	liveDrumStart( rowId ) {
 		const drum = {
 			row: rowId,
 			detune: 0,
@@ -48,7 +48,7 @@ class gswaDrumrows {
 
 		return this.#startDrum( drum, this.ctx.currentTime, 0, null, true );
 	}
-	stopLiveDrum( rowId ) {
+	liveDrumStop( rowId ) {
 		this.#startedDrums.forEach( ( nodes, id ) => {
 			// if ( nodes.live && nodes.rowId === rowId ) {
 			if ( nodes.rowId === rowId ) {
@@ -56,6 +56,8 @@ class gswaDrumrows {
 			}
 		} );
 	}
+
+	// .........................................................................
 	startDrumcut( drumcut, when ) {
 		const cutDur = .001;
 		const whenCutStart = when - cutDur;
