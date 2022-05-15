@@ -18,4 +18,18 @@ class gswaPeriodicWaves {
 		}
 		return p;
 	}
+	static loadWaves( waves ) {
+		waves.forEach( ( [ name, w ] ) => {
+			const imag = w.imag || w.real.map( () => 0 );
+			const real = w.real || w.imag.map( () => 0 );
+
+			real[ 0 ] =
+			imag[ 0 ] = 0;
+			gswaPeriodicWaves.list.set( name, Object.freeze( {
+				real: new Float32Array( real ),
+				imag: new Float32Array( imag ),
+			} ) );
+		} );
+		return gswaPeriodicWaves.list;
+	}
 }
