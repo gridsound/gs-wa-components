@@ -2,16 +2,14 @@
 
 class gswaLFO {
 	ctx = null;
-	node = null;
+	#audioParam = null;
 	#oscNode = null;
 	#ampNode = null;
 	#ampAttNode = null;
 
-	constructor( ctx ) {
-		const node = ctx.createGain();
-
+	constructor( ctx, audioParam ) {
 		this.ctx = ctx;
-		this.node = node;
+		this.#audioParam = audioParam;
 		this.data = Object.seal( {
 			toggle: false,
 			when: 0,
@@ -89,7 +87,7 @@ class gswaLFO {
 		this.#setAmpAtt();
 		this.#setAmp();
 		this.#setSpeed();
-		osc.connect( ampAtt ).connect( amp ).connect( this.node.gain );
+		osc.connect( ampAtt ).connect( amp ).connect( this.#audioParam );
 		osc.start( d.when + d.delay - d.offset );
 		if ( d.whenStop > 0 ) {
 			this.#stop( d.whenStop );
@@ -135,12 +133,10 @@ class gswaLFO {
 		}
 	}
 	#setAmp() {
-		gswaLFO.#setVariations( this.data, "absoluteAmp", "amp",
-			this.#ampNode.gain, this.ctx.currentTime );
+		gswaLFO.#setVariations( this.data, "absoluteAmp", "amp", this.#ampNode.gain, this.ctx.currentTime );
 	}
 	#setSpeed() {
-		gswaLFO.#setVariations( this.data, "absoluteSpeed", "speed",
-			this.#oscNode.frequency, this.ctx.currentTime );
+		gswaLFO.#setVariations( this.data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];
