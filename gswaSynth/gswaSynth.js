@@ -93,7 +93,7 @@ class gswaSynth {
 			nobj.absoluteSpeed = nobj.speed * this.#bps;
 			delete nobj.speed;
 		}
-		this.#startedKeys.forEach( key => key.LFONode.change( nobj ) );
+		this.#startedKeys.forEach( key => key.gainLFO.change( nobj ) );
 	}
 
 	// .........................................................................
@@ -109,6 +109,7 @@ class gswaSynth {
 		const lfo = this.gsdata.data.lfo;
 		const oscs = this.gsdata.data.oscillators;
 		const lfoVariations = [];
+		const gainLFOtarget = ctx.createGain();
 		const key = Object.freeze( {
 			when,
 			off,
@@ -123,7 +124,8 @@ class gswaSynth {
 			variations: [],
 			oscNodes: new Map(),
 			gainEnvNode: new gswaEnvelope( ctx ),
-			LFONode: new gswaLFO( ctx ),
+			gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
+			gainLFOtarget,
 			gainNode: ctx.createGain(),
 			panNode: ctx.createStereoPanner(),
 			lowpassNode: ctx.createBiquadFilter(),
@@ -178,7 +180,7 @@ class gswaSynth {
 			sustain: env.sustain,
 			release: env.release / bps,
 		} );
-		key.LFONode.start( {
+		key.gainLFO.start( {
 			toggle: lfo.toggle,
 			when,
 			whenStop: Number.isFinite( dur ) ? when + dur + env.release / bps : 0,
@@ -194,7 +196,7 @@ class gswaSynth {
 		} );
 		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this.#createOscNode( key, id ) ) );
 		this.#scheduleVariations( key );
-		key.LFONode.node
+		key.gainLFOtarget
 			.connect( key.gainEnvNode.node )
 			.connect( key.gainNode )
 			.connect( key.panNode )
@@ -227,7 +229,7 @@ class gswaSynth {
 		const key = this.#startedKeys.get( id );
 
 		key.oscNodes.forEach( this.#destroyOscNode, this );
-		key.LFONode.destroy();
+		key.gainLFO.destroy();
 		key.gainEnvNode.destroy();
 		this.#startedKeys.delete( id );
 	}
@@ -287,7 +289,7 @@ class gswaSynth {
 		oscNode
 			.connect( panNode )
 			.connect( gainNode )
-			.connect( key.LFONode.node );
+			.connect( key.gainLFOtarget );
 		oscNode.start( key.when );
 		if ( Number.isFinite( key.dur ) ) {
 			oscNode.stop( key.when + key.dur + env.release / this.#bps );
