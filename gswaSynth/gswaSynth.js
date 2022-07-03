@@ -6,7 +6,7 @@ class gswaSynth {
 	ctx = null;
 	output = null;
 	nyquist = 24000;
-	gsdata = new DAWCore.controllers.synth( {
+	gsdata = new DAWCoreControllers.synth( {
 		dataCallbacks: {
 			addOsc: this.#addOsc.bind( this ),
 			removeOsc: this.#removeOsc.bind( this ),

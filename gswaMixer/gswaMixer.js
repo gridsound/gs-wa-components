@@ -7,7 +7,7 @@ class gswaMixer {
 	audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
 	audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
 	#chans = {};
-	#ctrlMixer = new DAWCore.controllers.mixer( {
+	#ctrlMixer = new DAWCoreControllers.mixer( {
 		dataCallbacks: {
 			addChannel: this.#addChan.bind( this ),
 			removeChannel: this.#removeChan.bind( this ),

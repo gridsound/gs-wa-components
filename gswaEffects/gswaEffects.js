@@ -5,7 +5,7 @@ class gswaEffects {
 	#wafxs = new Map();
 	#getChanInput = null;
 	#getChanOutput = null;
-	#ctrl = new DAWCore.controllers.effects( {
+	#ctrl = new DAWCoreControllers.effects( {
 		dataCallbacks: {
 			changeBPM: bpm => this.#wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) ),
 			addEffect: this.#addEffect.bind( this ),

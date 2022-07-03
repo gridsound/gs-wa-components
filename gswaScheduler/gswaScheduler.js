@@ -13,11 +13,11 @@ class gswaScheduler {
 	started = false;
 	duration = 0;
 	delayStopCallback = 0;
-	currentTime = DAWCore.utils.noop;
-	ondatastart = DAWCore.utils.noop;
-	ondatastop = DAWCore.utils.noop;
-	ondatapropchange = DAWCore.utils.noop;
-	onended = DAWCore.utils.noop;
+	currentTime = DAWCoreUtils.noop;
+	ondatastart = DAWCoreUtils.noop;
+	ondatastop = DAWCoreUtils.noop;
+	ondatapropchange = DAWCoreUtils.noop;
+	onended = DAWCoreUtils.noop;
 	#startDur = 0;
 	#startOff = 0;
 	#startWhen = 0;
@@ -29,7 +29,7 @@ class gswaScheduler {
 	#lastBlockId = null;
 	#streamloopId = null;
 	#streamloopBind = this.#streamloop.bind( this );
-	#ctrl = DAWCore.utils.createUpdateDelete.bind( null, this.data,
+	#ctrl = DAWCoreUtils.createUpdateDelete.bind( null, this.data,
 		this.#dataAddBlock.bind( this ),
 		this.#dataUpdateBlock.bind( this ),
 		this.#dataDeleteBlock.bind( this )

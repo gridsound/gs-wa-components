@@ -10,7 +10,7 @@ class gswaFxFilter {
 	#filter = null;
 	#respSize = -1;
 	#enable = false;
-	#ctrl = new DAWCore.controllersFx.filter( {
+	#ctrl = new DAWCoreControllersFx.filter( {
 		dataCallbacks: {
 			type: this.#changeType.bind( this ),
 			Q: this.#changeProp.bind( this, "Q" ),
