@@ -40,10 +40,10 @@ class gswaScheduler {
 	}
 
 	// .........................................................................
-	setBPM( bpm ) {
+	$setBPM( bpm ) {
 		if ( this.bpm !== bpm ) {
 			const ratio = this.bpm / bpm;
-			const currTime = this.getCurrentOffset() * ratio;
+			const currTime = this.#getCurrentOffset() * ratio;
 
 			this.bpm = bpm;
 			this.bps = bpm / 60;
@@ -52,60 +52,60 @@ class gswaScheduler {
 				this.loopA *= ratio;
 				this.loopB *= ratio;
 				this.loopDuration = this.loopB - this.loopA;
-				this.setCurrentOffset( this.loopB > currTime ? currTime : this.loopA );
+				this.#setCurrentOffset( this.loopB > currTime ? currTime : this.loopA );
 			} else {
-				this.setCurrentOffset( currTime );
+				this.#setCurrentOffset( currTime );
 			}
 		}
 	}
 
 	// .........................................................................
-	empty() {
+	$empty() {
 		this.#sortedData.forEach( kv => this.#dataDeleteBlock( kv[ 0 ] ) );
-		this.clearLoop();
+		this.$clearLoop();
 	}
 
 	// .........................................................................
-	setLoopBeat( a, b ) {
-		return this.setLoop( a / this.bps, b / this.bps );
+	$setLoopBeat( a, b ) {
+		return this.#setLoop( a / this.bps, b / this.bps );
 	}
-	setLoop( a, b ) {
-		const off = this.started && this.getCurrentOffset();
+	#setLoop( a, b ) {
+		const off = this.started && this.#getCurrentOffset();
 
 		this.looping = true;
 		this.loopA = Math.min( a, b );
 		this.loopB = Math.max( a, b );
 		this.loopDuration = this.loopB - this.loopA;
 		if ( this.started ) {
-			this.setCurrentOffset( this.loopB > off ? off : this.loopA );
+			this.#setCurrentOffset( this.loopB > off ? off : this.loopA );
 		}
 	}
-	clearLoop() {
+	$clearLoop() {
 		if ( this.looping ) {
-			const off = this.getCurrentOffset();
+			const off = this.#getCurrentOffset();
 
 			this.looping = false;
-			this.setCurrentOffset( off );
+			this.#setCurrentOffset( off );
 		}
 	}
 
 	// .........................................................................
-	setCurrentOffsetBeat( off ) {
-		this.setCurrentOffset( off / this.bps );
+	$setCurrentOffsetBeat( off ) {
+		this.#setCurrentOffset( off / this.bps );
 	}
-	setCurrentOffset( off ) {
+	#setCurrentOffset( off ) {
 		this.#startOff = off;
-		this.started && this.start( 0, off );
+		this.started && this.$start( 0, off );
 	}
-	getCurrentOffsetBeat() {
-		return this.getCurrentOffset() * this.bps;
+	$getCurrentOffsetBeat() {
+		return this.#getCurrentOffset() * this.bps;
 	}
-	getCurrentOffset() {
+	#getCurrentOffset() {
 		return this.started
-			? this.getFutureOffsetAt( this.currentTime() )
+			? this.#getFutureOffsetAt( this.currentTime() )
 			: this.#startOff;
 	}
-	getFutureOffsetAt( futureTime ) {
+	#getFutureOffsetAt( futureTime ) {
 		let t = this.#startOff + futureTime - this.#startWhen;
 
 		if ( this.looping && t > this.loopB - .001 ) {
@@ -118,20 +118,20 @@ class gswaScheduler {
 	}
 
 	// .........................................................................
-	enableStreaming( b = true ) {
+	$enableStreaming( b = true ) {
 		this.isStreaming = b;
 	}
-	startBeat( when, off = 0, dur ) {
-		return this.start( when, off / this.bps,
+	$startBeat( when, off = 0, dur ) {
+		return this.$start( when, off / this.bps,
 			Number.isFinite( dur )
 				? dur / this.bps
 				: dur );
 	}
-	start( when, off = 0, dur ) {
+	$start( when, off = 0, dur ) {
 		const currTime = this.currentTime();
 
 		if ( this.started ) {
-			this.stop();
+			this.$stop();
 		}
 		this.started = true;
 		this.#startFixedDur = Number.isFinite( dur );
@@ -149,9 +149,9 @@ class gswaScheduler {
 			? this.#streamloopOn()
 			: this.#fullStart();
 	}
-	stop() {
+	$stop() {
 		if ( this.started ) {
-			this.#startOff = this.getCurrentOffset();
+			this.#startOff = this.#getCurrentOffset();
 			this.started = false;
 			clearTimeout( this.#timeoutIdEnded );
 			this.#streamloopOff();
@@ -244,7 +244,7 @@ class gswaScheduler {
 				const blc = this.data[ id ];
 
 				do {
-					const from = this.getFutureOffsetAt( until );
+					const from = this.#getFutureOffsetAt( until );
 					const to = Math.min( from + 1, offEnd );
 
 					until += this.#blockStart( until, from, to, offEnd, id, blc );
@@ -329,7 +329,7 @@ class gswaScheduler {
 	}
 
 	// .........................................................................
-	change( obj ) {
+	$change( obj ) {
 		this.#ctrl( obj );
 		this.#sortedData = Object.entries( this.data ).sort( ( a, b ) => a[ 1 ].when - b[ 1 ].when );
 	}

@@ -4,8 +4,8 @@ class gswaMixer {
 	static fftSize = 4096;
 	ctx = null;
 	connectedTo = null;
-	audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
-	audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
+	$audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
+	$audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
 	#chans = {};
 	#ctrlMixer = new DAWCoreControllers.mixer( {
 		dataCallbacks: {
@@ -23,8 +23,8 @@ class gswaMixer {
 	}
 
 	// .........................................................................
-	setContext( ctx ) {
-		this.disconnect();
+	$setContext( ctx ) {
+		this.$disconnect();
 		this.ctx = ctx;
 		if ( "main" in this.#ctrlMixer.data.channels ) {
 			this.#ctrlMixer.recall();
@@ -41,10 +41,10 @@ class gswaMixer {
 			} );
 		}
 	}
-	change( obj ) {
+	$change( obj ) {
 		this.#ctrlMixer.change( obj );
 	}
-	clear() {
+	$clear() {
 		this.#ctrlMixer.clear();
 		this.#ctrlMixer.change( {
 			channels: {
@@ -57,28 +57,28 @@ class gswaMixer {
 			},
 		} );
 	}
-	connect( dest ) {
-		this.disconnect();
+	$connect( dest ) {
+		this.$disconnect();
 		this.#chans.main.output.connect( dest );
 		this.connectedTo = dest;
 	}
-	disconnect() {
+	$disconnect() {
 		if ( this.#chans.main ) {
 			this.#chans.main.output.disconnect();
 			this.connectedTo = null;
 		}
 	}
-	getChanInput( id ) {
+	$getChanInput( id ) {
 		return this.#chans[ id ]?.input;
 	}
-	getChanOutput( id ) {
+	$getChanOutput( id ) {
 		return this.#chans[ id ]?.pan.getInput();
 	}
-	fillAudioData( chanId ) {
+	$fillAudioData( chanId ) {
 		const nodes = this.#chans[ chanId ];
 
-		nodes.analyserL.getByteFrequencyData( this.audioDataL );
-		nodes.analyserR.getByteFrequencyData( this.audioDataR );
+		nodes.analyserL.getByteFrequencyData( this.$audioDataL );
+		nodes.analyserR.getByteFrequencyData( this.$audioDataR );
 	}
 
 	// .........................................................................
@@ -115,7 +115,7 @@ class gswaMixer {
 	#redirectChan( id, val ) {
 		this.#chans[ id ].output.disconnect();
 		if ( val in this.#ctrlMixer.data.channels ) {
-			this.#chans[ id ].output.connect( this.getChanInput( val ) );
+			this.#chans[ id ].output.connect( this.$getChanInput( val ) );
 		}
 	}
 	#toggleChan( id, val ) {

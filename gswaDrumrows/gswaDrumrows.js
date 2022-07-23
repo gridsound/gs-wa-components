@@ -2,11 +2,11 @@
 
 class gswaDrumrows {
 	static #startedMaxId = 0;
-	ctx = null;
-	onstartdrum = null;
-	onstartdrumcut = null;
-	getAudioBuffer = DAWCoreUtils.noop;
-	getChannelInput = DAWCoreUtils.noop;
+	$onstartdrum = null;
+	$onstartdrumcut = null;
+	$getAudioBuffer = DAWCoreUtils.noop;
+	$getChannelInput = DAWCoreUtils.noop;
+	#ctx = null;
 	#startedDrums = new Map();
 	#ctrl = new DAWCoreControllers.drumrows( {
 		dataCallbacks: {
@@ -21,24 +21,24 @@ class gswaDrumrows {
 	}
 
 	// .........................................................................
-	setContext( ctx ) {
-		this.stopAllDrums();
-		this.ctx = ctx;
+	$setContext( ctx ) {
+		this.$stopAllDrums();
+		this.#ctx = ctx;
 	}
-	change( obj ) {
+	$change( obj ) {
 		this.#ctrl.change( obj );
 	}
-	clear() {
+	$clear() {
 		this.#ctrl.clear();
 	}
-	getPatternDurationByRowId( rowId ) {
+	$getPatternDurationByRowId( rowId ) {
 		const d = this.#ctrl.data;
 
 		return d.patterns[ d.drumrows[ rowId ].pattern ].duration;
 	}
 
 	// .........................................................................
-	liveDrumStart( rowId ) {
+	$liveDrumStart( rowId ) {
 		const drum = {
 			row: rowId,
 			detune: 0,
@@ -46,19 +46,19 @@ class gswaDrumrows {
 			pan: 0,
 		};
 
-		return this.#startDrum( drum, this.ctx.currentTime, 0, null, true );
+		return this.#startDrum( drum, this.#ctx.currentTime, 0, null, true );
 	}
-	liveDrumStop( rowId ) {
+	$liveDrumStop( rowId ) {
 		this.#startedDrums.forEach( ( nodes, id ) => {
 			// if ( nodes.live && nodes.rowId === rowId ) {
 			if ( nodes.rowId === rowId ) {
-				this.stopDrum( id, "-f" );
+				this.$stopDrum( id, "-f" );
 			}
 		} );
 	}
 
 	// .........................................................................
-	startDrumcut( drumcut, when ) {
+	$startDrumcut( drumcut, when ) {
 		const cutDur = .001;
 		const whenCutStart = when - cutDur;
 
@@ -67,16 +67,16 @@ class gswaDrumrows {
 				nodes.endAt = when;
 				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
 				nodes.absn.stop( when + cutDur );
-				if ( this.onstartdrumcut ) {
-					const fn = this.onstartdrumcut.bind( null, nodes.rowId );
-					const time = whenCutStart - this.ctx.currentTime;
+				if ( this.$onstartdrumcut ) {
+					const fn = this.$onstartdrumcut.bind( null, nodes.rowId );
+					const time = whenCutStart - this.#ctx.currentTime;
 
 					nodes.startDrumcutTimeoutId = setTimeout( fn, time * 1000 );
 				}
 			}
 		} );
 	}
-	startDrum( drum, when, off, dur ) {
+	$startDrum( drum, when, off, dur ) {
 		return this.#startDrum( drum, when, off, dur, false );
 	}
 	#startDrum( drum, when, off, durUser, live ) {
@@ -84,7 +84,7 @@ class gswaDrumrows {
 		const rowId = drum.row;
 		const row = data.drumrows[ rowId ];
 		const pat = data.patterns[ row.pattern ];
-		const buffer = this.getAudioBuffer( pat.buffer );
+		const buffer = this.$getAudioBuffer( pat.buffer );
 		const dur = durUser !== null ? durUser : buffer ? buffer.duration : 0;
 		const id = ++gswaDrumrows.#startedMaxId;
 		const nodes = {
@@ -96,45 +96,45 @@ class gswaDrumrows {
 		};
 
 		if ( buffer ) {
-			const absn = this.ctx.createBufferSource();
-			const gainRow = this.ctx.createGain();
-			const gainCut = this.ctx.createGain();
-			const panRow = this.ctx.createStereoPanner();
-			const dest = this.getChannelInput( pat.dest );
+			const absn = this.#ctx.createBufferSource();
+			const gainRow = this.#ctx.createGain();
+			const gainCut = this.#ctx.createGain();
+			const panRow = this.#ctx.createStereoPanner();
+			const dest = this.$getChannelInput( pat.dest );
 
 			nodes.absn = absn;
 			nodes.gainCut = gainCut;
 			nodes.gainRow = gainRow;
 			nodes.panRow = panRow;
 			absn.buffer = buffer;
-			absn.detune.setValueAtTime( ( row.detune + drum.detune ) * 100, this.ctx.currentTime );
-			gainRow.gain.setValueAtTime( row.toggle ? row.gain * drum.gain : 0, this.ctx.currentTime );
-			panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( row.pan, drum.pan ), this.ctx.currentTime );
+			absn.detune.setValueAtTime( ( row.detune + drum.detune ) * 100, this.#ctx.currentTime );
+			gainRow.gain.setValueAtTime( row.toggle ? row.gain * drum.gain : 0, this.#ctx.currentTime );
+			panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
 			absn.connect( gainCut ).connect( gainRow ).connect( panRow ).connect( dest );
 			absn.start( when, off, dur );
-			if ( this.onstartdrum ) {
-				const timeoutMs = ( when - this.ctx.currentTime ) * 1000;
+			if ( this.$onstartdrum ) {
+				const timeoutMs = ( when - this.#ctx.currentTime ) * 1000;
 
-				nodes.startDrumTimeoutId = setTimeout( () => this.onstartdrum( rowId ), timeoutMs );
+				nodes.startDrumTimeoutId = setTimeout( () => this.$onstartdrum( rowId ), timeoutMs );
 			}
 		}
 		this.#startedDrums.set( id, nodes );
 		this.#startedDrums.forEach( ( nodes, id ) => {
-			if ( nodes.when + nodes.dur <= this.ctx.currentTime ) {
+			if ( nodes.when + nodes.dur <= this.#ctx.currentTime ) {
 				this.#stopDrum( id, nodes );
 			}
 		} );
 		return id;
 	}
-	stopAllDrums() {
-		this.#startedDrums.forEach( ( nodes, id ) => this.stopDrum( id, "-f" ) );
+	$stopAllDrums() {
+		this.#startedDrums.forEach( ( nodes, id ) => this.$stopDrum( id, "-f" ) );
 	}
-	stopDrum( id, force ) {
+	$stopDrum( id, force ) {
 		const nodes = this.#startedDrums.get( id );
 
 		if ( nodes && ( force === "-f" ||
-			nodes.when + nodes.dur <= this.ctx.currentTime ||
-			nodes.when >= this.ctx.currentTime
+			nodes.when + nodes.dur <= this.#ctx.currentTime ||
+			nodes.when >= this.#ctx.currentTime
 		) ) {
 			this.#stopDrum( id, nodes );
 		}
@@ -153,7 +153,7 @@ class gswaDrumrows {
 			}
 		}
 	}
-	changeDrumProp( id, prop, val ) {
+	$changeDrumProp( id, prop, val ) {
 		const nodes = this.#startedDrums.get( +id );
 
 		if ( nodes ) {
@@ -162,15 +162,15 @@ class gswaDrumrows {
 			switch ( prop ) {
 				case "detune":
 					nodes.detune = val;
-					nodes.absn.detune.setValueAtTime( ( val + row.detune ) * 100, this.ctx.currentTime );
+					nodes.absn.detune.setValueAtTime( ( val + row.detune ) * 100, this.#ctx.currentTime );
 					break;
 				case "gain":
 					nodes.gain = val;
-					nodes.gainRow.gain.setValueAtTime( row.toggle ? val * row.gain : 0, this.ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( row.toggle ? val * row.gain : 0, this.#ctx.currentTime );
 					break;
 				case "pan":
 					nodes.pan = val;
-					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, row.pan ), this.ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, row.pan ), this.#ctx.currentTime );
 					break;
 			}
 		}
@@ -180,7 +180,7 @@ class gswaDrumrows {
 	#removeDrumrow( id ) {
 		this.#startedDrums.forEach( ( nodes, startedId ) => {
 			if ( nodes.rowId === id ) {
-				this.stopDrum( startedId, "-f" );
+				this.$stopDrum( startedId, "-f" );
 			}
 		} );
 	}
@@ -190,28 +190,28 @@ class gswaDrumrows {
 		switch ( prop ) {
 			case "toggle":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, this.ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, this.#ctx.currentTime );
 				} );
 				break;
 			case "dest":
 				this.#changeDrumrowProp( id, nodes => {
 					nodes.gainRow.disconnect();
-					nodes.gainRow.connect( this.getChannelInput( val ) );
+					nodes.gainRow.connect( this.$getChannelInput( val ) );
 				} );
 				break;
 			case "detune":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.absn.detune.setValueAtTime( ( val + nodes.detune ) * 100, this.ctx.currentTime );
+					nodes.absn.detune.setValueAtTime( ( val + nodes.detune ) * 100, this.#ctx.currentTime );
 				} );
 				break;
 			case "gain":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val * nodes.gain, this.ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( val * nodes.gain, this.#ctx.currentTime );
 				} );
 				break;
 			case "pan":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, nodes.pan ), this.ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, nodes.pan ), this.#ctx.currentTime );
 				} );
 				break;
 		}

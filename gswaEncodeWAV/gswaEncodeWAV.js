@@ -1,7 +1,7 @@
 "use strict";
 
 class gswaEncodeWAV {
-	static encode( buffer, opt ) {
+	static $encode( buffer, opt ) {
 		const nbChannels = buffer.numberOfChannels;
 		const sampleRate = buffer.sampleRate;
 		const format = opt && opt.float32 ? 3 : 1;

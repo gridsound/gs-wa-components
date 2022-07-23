@@ -5,11 +5,11 @@ class gswaBPMTap {
 	static #timeBefore = 0;
 	static #stackLimit = 20;
 
-	static reset() {
+	static $reset() {
 		gswaBPMTap.#timeBefore =
 		gswaBPMTap.#stack.length = 0;
 	}
-	static tap() {
+	static $tap() {
 		const time = Date.now();
 		const timeBefore = gswaBPMTap.#timeBefore;
 

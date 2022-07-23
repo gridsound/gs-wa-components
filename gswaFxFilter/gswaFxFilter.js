@@ -25,7 +25,7 @@ class gswaFxFilter {
 	}
 
 	// .........................................................................
-	setContext( ctx ) {
+	$setContext( ctx ) {
 		if ( this.ctx ) {
 			this.input.disconnect();
 			this.output.disconnect();
@@ -36,9 +36,9 @@ class gswaFxFilter {
 		this.output = ctx.createGain();
 		this.#filter = ctx.createBiquadFilter();
 		this.#ctrl.recall();
-		this.toggle( this.#enable );
+		this.$toggle( this.#enable );
 	}
-	toggle( b ) {
+	$toggle( b ) {
 		this.#enable = b;
 		if ( this.ctx ) {
 			if ( b ) {
@@ -51,20 +51,20 @@ class gswaFxFilter {
 			}
 		}
 	}
-	change( obj ) {
+	$change( obj ) {
 		this.#ctrl.change( obj );
 	}
-	liveChange( prop, val ) {
+	$liveChange( prop, val ) {
 		this.#changeProp( prop, val );
 	}
-	clear() {
+	$clear() {
 		this.#ctrl.clear();
 		this.#respSize = -1;
 		this.responseHzIn =
 		this.responseMagOut =
 		this.responsePhaseOut = null;
 	}
-	updateResponse( size ) {
+	$updateResponse( size ) {
 		this.#createResponseArrays( size );
 		this.#filter.getFrequencyResponse(
 			this.responseHzIn,

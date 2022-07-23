@@ -28,7 +28,7 @@ class gswaLFO {
 	}
 
 	// .........................................................................
-	start( d ) {
+	$start( d ) {
 		const data = this.data;
 
 		data.toggle = d.toggle || false;
@@ -49,7 +49,7 @@ class gswaLFO {
 			this.#start();
 		}
 	}
-	destroy() {
+	$destroy() {
 		if ( this.#oscNode ) {
 			this.#stop( 0 );
 			this.#oscNode.disconnect();
@@ -60,7 +60,7 @@ class gswaLFO {
 			this.#ampAttNode = null;
 		}
 	}
-	change( obj ) {
+	$change( obj ) {
 		Object.assign( this.data, obj );
 		if ( this.data.toggle ) {
 			if ( !this.#oscNode ) {

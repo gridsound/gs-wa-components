@@ -7,9 +7,9 @@ class gswaEnvelope {
 		toggle: false,
 		when: 0,
 		duration: 0,
-		...gswaEnvelope.defEnv,
+		...gswaEnvelope.#defEnv,
 	} );
-	static defEnv = Object.freeze( {
+	static #defEnv = Object.freeze( {
 		attack: .01,
 		hold: 0,
 		decay: .01,
@@ -24,9 +24,9 @@ class gswaEnvelope {
 	}
 
 	// .........................................................................
-	start( obj ) {
+	$start( obj ) {
 		const d = this.data;
-		const def = gswaEnvelope.defEnv;
+		const def = gswaEnvelope.#defEnv;
 
 		Object.assign( d, obj );
 		d.attack = Math.max( def.attack, d.attack );
@@ -34,7 +34,7 @@ class gswaEnvelope {
 		d.release = Math.max( def.release, d.release );
 		this.#start();
 	}
-	destroy() {
+	$destroy() {
 		this.#stop();
 	}
 
@@ -45,8 +45,8 @@ class gswaEnvelope {
 		const par = this.node.gain;
 		const w = d.when;
 		const dur = d.duration;
-		const env = d.toggle ? d : gswaEnvelope.defEnv;
-		const Af = gswaEnvelope.defEnv.attack;
+		const env = d.toggle ? d : gswaEnvelope.#defEnv;
+		const Af = gswaEnvelope.#defEnv.attack;
 		const A = env.attack;
 		const H = env.hold;
 		const D = env.decay;

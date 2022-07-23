@@ -12,7 +12,7 @@ class gswaEffects {
 			removeEffect: this.#removeEffect.bind( this ),
 			changeEffect: this.#changeEffect.bind( this ),
 			connectEffectTo: this.#connectEffectTo.bind( this ),
-			changeEffectData: ( id, data ) => this.getFx( id ).change( data ),
+			changeEffectData: ( id, data ) => this.$getFx( id ).$change( data ),
 		},
 	} );
 
@@ -23,21 +23,21 @@ class gswaEffects {
 	}
 
 	// .........................................................................
-	getFx( id ) {
+	$getFx( id ) {
 		return this.#wafxs.get( id );
 	}
-	setContext( ctx ) {
+	$setContext( ctx ) {
 		this.ctx = ctx;
 		this.#ctrl.reset();
 	}
-	change( obj ) {
+	$change( obj ) {
 		this.#ctrl.change( obj );
 	}
-	clear() {
+	$clear() {
 		this.#ctrl.clear();
 	}
-	liveChangeFxProp( id, prop, val ) {
-		this.getFx( id ).liveChange( prop, val );
+	$liveChangeFxProp( id, prop, val ) {
+		this.$getFx( id ).$liveChange( prop, val );
 	}
 
 	// .........................................................................
@@ -45,15 +45,15 @@ class gswaEffects {
 		const wafx = new ( gswaEffects.fxsMap.get( fx.type ) )();
 
 		this.#wafxs.set( id, wafx );
-		wafx.setContext( this.ctx );
+		wafx.$setContext( this.ctx );
 	}
 	#removeEffect( id ) {
-		this.getFx( id ).output.disconnect();
+		this.$getFx( id ).output.disconnect();
 		this.#wafxs.delete( id );
 	}
 	#changeEffect( id, prop, val ) {
 		if ( prop === "toggle" ) {
-			this.getFx( id ).toggle( val );
+			this.$getFx( id ).$toggle( val );
 		}
 	}
 	#connectEffectTo( chanId, fxId, nextFxId ) {

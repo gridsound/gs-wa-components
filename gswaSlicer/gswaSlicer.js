@@ -1,7 +1,7 @@
 "use strict";
 
 class gswaSlicer {
-	static createBuffer( ctx, bufsrc, cropA, cropB, slices ) {
+	static $createBuffer( ctx, bufsrc, cropA, cropB, slices ) {
 		const bufCropA = cropA * bufsrc.length | 0;
 		const newlen = ( cropB - cropA ) * bufsrc.length | 0;
 		const newbuf = ctx.createBuffer( bufsrc.numberOfChannels, newlen, ctx.sampleRate );
