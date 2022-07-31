@@ -4,13 +4,13 @@ class gswaDrumrows {
 	static #startedMaxId = 0;
 	$onstartdrum = null;
 	$onstartdrumcut = null;
-	$getAudioBuffer = DAWCoreUtils.noop;
-	$getChannelInput = DAWCoreUtils.noop;
+	$getAudioBuffer = DAWCoreUtils.$noop;
+	$getChannelInput = DAWCoreUtils.$noop;
 	#ctx = null;
 	#startedDrums = new Map();
 	#ctrl = new DAWCoreControllers.drumrows( {
 		dataCallbacks: {
-			addDrumrow: DAWCoreUtils.noop,
+			addDrumrow: DAWCoreUtils.$noop,
 			removeDrumrow: this.#removeDrumrow.bind( this ),
 			changeDrumrow: this.#changeDrumrow.bind( this ),
 		},
@@ -109,7 +109,7 @@ class gswaDrumrows {
 			absn.buffer = buffer;
 			absn.detune.setValueAtTime( ( row.detune + drum.detune ) * 100, this.#ctx.currentTime );
 			gainRow.gain.setValueAtTime( row.toggle ? row.gain * drum.gain : 0, this.#ctx.currentTime );
-			panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
+			panRow.pan.setValueAtTime( DAWCoreUtils.$panningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
 			absn.connect( gainCut ).connect( gainRow ).connect( panRow ).connect( dest );
 			absn.start( when, off, dur );
 			if ( this.$onstartdrum ) {
@@ -170,7 +170,7 @@ class gswaDrumrows {
 					break;
 				case "pan":
 					nodes.pan = val;
-					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, row.pan ), this.#ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.$panningMerge( val, row.pan ), this.#ctx.currentTime );
 					break;
 			}
 		}
@@ -211,7 +211,7 @@ class gswaDrumrows {
 				break;
 			case "pan":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.panningMerge( val, nodes.pan ), this.#ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( DAWCoreUtils.$panningMerge( val, nodes.pan ), this.#ctx.currentTime );
 				} );
 				break;
 		}
