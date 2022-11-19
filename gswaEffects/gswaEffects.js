@@ -42,13 +42,20 @@ class gswaEffects {
 
 	// .........................................................................
 	#addEffect( id, fx ) {
-		const wafx = new ( gswaEffects.fxsMap.get( fx.type ) )();
+		const wafx = gswaEffects.#addEffectCreate( fx.type );
 
 		this.#wafxs.set( id, wafx );
 		wafx.$setContext( this.ctx );
+		wafx.$change( DAWCoreJSON.effects[ fx.type ]() );
+	}
+	static #addEffectCreate( fx ) {
+		switch ( fx ) {
+			// case "delay": return new gswaFxDelay();
+			case "filter": return new gswaFxFilter();
+		}
 	}
 	#removeEffect( id ) {
-		this.$getFx( id ).output.disconnect();
+		this.$getFx( id ).$getOutput().disconnect();
 		this.#wafxs.delete( id );
 	}
 	#changeEffect( id, prop, val ) {
@@ -58,10 +65,10 @@ class gswaEffects {
 	}
 	#connectEffectTo( chanId, fxId, nextFxId ) {
 		const dest = nextFxId
-			? this.#wafxs.get( nextFxId ).input
+			? this.$getFx( nextFxId ).$getInput()
 			: this.#getChanOutput( chanId );
 		const node = fxId
-			? this.#wafxs.get( fxId ).output
+			? this.$getFx( fxId ).$getOutput()
 			: this.#getChanInput( chanId );
 
 		if ( node ) {
@@ -71,5 +78,4 @@ class gswaEffects {
 	}
 }
 
-gswaEffects.fxsMap = new Map();
 Object.freeze( gswaEffects );
