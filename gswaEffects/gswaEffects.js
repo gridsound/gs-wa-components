@@ -2,12 +2,16 @@
 
 class gswaEffects {
 	ctx = null;
+	#bpm = 60;
 	#wafxs = new Map();
 	#getChanInput = null;
 	#getChanOutput = null;
 	#ctrl = new DAWCoreControllers.effects( {
 		dataCallbacks: {
-			changeBPM: bpm => this.#wafxs.forEach( fx => fx.setBPM && fx.setBPM( bpm ) ),
+			changeBPM: bpm => {
+				this.#bpm = bpm;
+				this.#wafxs.forEach( fx => fx.$setBPM?.( bpm ) );
+			},
 			addEffect: this.#addEffect.bind( this ),
 			removeEffect: this.#removeEffect.bind( this ),
 			changeEffect: this.#changeEffect.bind( this ),
@@ -46,11 +50,12 @@ class gswaEffects {
 
 		this.#wafxs.set( id, wafx );
 		wafx.$setContext( this.ctx );
+		wafx.$setBPM?.( this.#bpm );
 		wafx.$change( DAWCoreJSON.effects[ fx.type ]() );
 	}
 	static #addEffectCreate( fx ) {
 		switch ( fx ) {
-			// case "delay": return new gswaFxDelay();
+			case "delay": return new gswaFxDelay();
 			case "filter": return new gswaFxFilter();
 		}
 	}
