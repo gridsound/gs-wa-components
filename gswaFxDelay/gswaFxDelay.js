@@ -27,7 +27,6 @@ class gswaFxDelay {
 	}
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;
-		lg({bpm})
 		this.#changeProp( "time", this.#data.time );
 	}
 	$setContext( ctx ) {
