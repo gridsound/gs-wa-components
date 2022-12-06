@@ -6,15 +6,11 @@ class gswaSynth {
 	$ctx = null;
 	$output = null;
 	#nyquist = 24000;
-	#ctrl = new DAWCoreControllers.synth( {
-		dataCallbacks: {
-			addOsc: this.#addOsc.bind( this ),
-			removeOsc: this.#removeOsc.bind( this ),
-			changeOsc: this.#changeOsc.bind( this ),
-			changeEnv: this.#changeEnv.bind( this ),
-			changeLFO: this.#changeLFO.bind( this ),
-		},
-	} );
+	#data = DAWCoreJSON.synth();
+	#oscsCrud = DAWCoreUtils.$createUpdateDelete.bind( null, this.#data.oscillators,
+		this.#addOsc.bind( this ),
+		this.#changeOsc.bind( this ),
+		this.#removeOsc.bind( this ) );
 	#bps = 1;
 	#startedKeys = new Map();
 
@@ -29,17 +25,29 @@ class gswaSynth {
 
 	// .........................................................................
 	$setContext( ctx ) {
+		const oscs = Object.entries( this.#data.oscillators );
+
 		this.$stopAllKeys();
 		this.$ctx = ctx;
 		this.#nyquist = ctx.sampleRate / 2;
 		this.$output = ctx.createGain();
-		this.#ctrl.recall();
+		oscs.forEach( kv => this.#removeOsc( kv[ 0 ] ) );
+		oscs.forEach( kv => this.#addOsc( ...kv ) );
 	}
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;
 	}
 	$change( obj ) {
-		this.#ctrl.change( obj );
+		DAWCoreUtils.$deepAssign( this.#data, obj );
+		if ( obj.env ) {
+			this.#changeEnv( obj.env );
+		}
+		if ( obj.lfo ) {
+			this.#changeLFO( obj.lfo );
+		}
+		if ( obj.oscillators ) {
+			this.#oscsCrud( obj.oscillators );
+		}
 	}
 
 	// .........................................................................
@@ -105,9 +113,9 @@ class gswaSynth {
 		const atTime = when - off;
 		const ctx = this.$ctx;
 		const bps = this.#bps;
-		const env = this.#ctrl.data.env;
-		const lfo = this.#ctrl.data.lfo;
-		const oscs = this.#ctrl.data.oscillators;
+		const env = this.#data.env;
+		const lfo = this.#data.lfo;
+		const oscs = this.#data.oscillators;
 		const lfoVariations = [];
 		const gainLFOtarget = ctx.createGain();
 		const key = Object.freeze( {
@@ -219,7 +227,7 @@ class gswaSynth {
 				this.#stopKey( id );
 			} else {
 				key.gainEnvNode.$destroy();
-				setTimeout( this.#stopKey.bind( this, id ), ( this.#ctrl.data.env.release + .1 ) / this.#bps * 1000 );
+				setTimeout( this.#stopKey.bind( this, id ), ( this.#data.env.release + .1 ) / this.#bps * 1000 );
 			}
 		} else {
 			console.error( "gswaSynth: stopKey id invalid", id );
@@ -270,8 +278,8 @@ class gswaSynth {
 	// .........................................................................
 	#createOscNode( key, id ) {
 		const atTime = key.when - key.off;
-		const env = this.#ctrl.data.env;
-		const osc = this.#ctrl.data.oscillators[ id ];
+		const env = this.#data.env;
+		const osc = this.#data.oscillators[ id ];
 		const oscNode = this.$ctx.createOscillator();
 		const panNode = this.$ctx.createStereoPanner();
 		const gainNode = this.$ctx.createGain();
