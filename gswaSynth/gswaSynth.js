@@ -63,6 +63,7 @@ class gswaSynth {
 	#changeOsc( id, obj ) {
 		const now = this.$ctx.currentTime;
 		const objEnt = Object.entries( obj );
+		const osc = this.#data.oscillators[ id ];
 
 		this.#startedKeys.forEach( key => {
 			const nodes = key.oscNodes.get( id );
@@ -72,7 +73,8 @@ class gswaSynth {
 					case "type": this.#nodeOscSetType( nodes.oscNode, val ); break;
 					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
-					case "detune": nodes.oscNode.detune.setValueAtTime( val * 100, now ); break;
+					case "detune": nodes.oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now ); break;
+					case "detunefine": nodes.oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now ); break;
 				}
 			} );
 		} );
@@ -290,7 +292,7 @@ class gswaSynth {
 		} );
 
 		this.#nodeOscSetType( oscNode, osc.type );
-		oscNode.detune.setValueAtTime( osc.detune * 100, atTime );
+		oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, atTime );
 		oscNode.frequency.setValueAtTime( gswaSynth.#getHz( key.midi ), atTime );
 		panNode.pan.setValueAtTime( osc.pan, atTime );
 		gainNode.gain.setValueAtTime( osc.gain, atTime );
