@@ -38,7 +38,7 @@ class gswaSynth {
 		this.#bps = bpm / 60;
 	}
 	$change( obj ) {
-		DAWCoreUtils.$deepAssign( this.#data, obj );
+		DAWCoreUtils.$diffAssign( this.#data, obj );
 		if ( obj.env ) {
 			this.#changeEnv( obj.env );
 		}
