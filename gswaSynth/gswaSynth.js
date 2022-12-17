@@ -58,7 +58,7 @@ class gswaSynth {
 		} );
 	}
 	#addOsc( id ) {
-		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, id ) ) );
+		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, id, 0 ) ) );
 	}
 	#changeOsc( id, obj ) {
 		const now = this.$ctx.currentTime;
@@ -204,7 +204,7 @@ class gswaSynth {
 			speed: blc0.gainLFOSpeed,
 			variations: lfoVariations,
 		} );
-		Object.keys( oscs ).forEach( id => key.oscNodes.set( id, this.#createOscNode( key, id ) ) );
+		Object.keys( oscs ).forEach( ( id, ind ) => key.oscNodes.set( id, this.#createOscNode( key, id, ind ) ) );
 		this.#scheduleVariations( key );
 		key.gainLFOtarget
 			.connect( key.gainEnvNode.node )
@@ -278,7 +278,7 @@ class gswaSynth {
 	}
 
 	// .........................................................................
-	#createOscNode( key, id ) {
+	#createOscNode( key, id, ind ) {
 		const atTime = key.when - key.off;
 		const env = this.#data.env;
 		const osc = this.#data.oscillators[ id ];
@@ -300,7 +300,7 @@ class gswaSynth {
 			.connect( panNode )
 			.connect( gainNode )
 			.connect( key.gainLFOtarget );
-		oscNode.start( key.when );
+		oscNode.start( key.when + .0001 * ( ind + key.midi / 4 ) ); // 1.
 		if ( Number.isFinite( key.dur ) ) {
 			oscNode.stop( key.when + key.dur + env.release / this.#bps );
 		}
@@ -320,3 +320,8 @@ class gswaSynth {
 }
 
 Object.freeze( gswaSynth );
+
+/*
+1. We add a little timing to be sure we start the oscillators in the same order
+   each time, to avoid random chaos...
+*/
