@@ -279,7 +279,7 @@ class gswaSynth {
 
 	// .........................................................................
 	#createOscNode( key, osc, ind, env ) {
-		const atTime = key.when - key.off;
+		const now = this.$ctx.currentTime;
 		const oscNode = this.$ctx.createOscillator();
 		const panNode = this.$ctx.createStereoPanner();
 		const gainNode = this.$ctx.createGain();
@@ -290,10 +290,10 @@ class gswaSynth {
 		} );
 
 		this.#nodeOscSetType( oscNode, osc.type );
-		oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, atTime );
-		oscNode.frequency.setValueAtTime( gswaSynth.#getHz( key.midi ), atTime );
-		panNode.pan.setValueAtTime( osc.pan, atTime );
-		gainNode.gain.setValueAtTime( osc.gain, atTime );
+		oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now );
+		oscNode.frequency.setValueAtTime( gswaSynth.#getHz( key.midi ), now );
+		panNode.pan.setValueAtTime( osc.pan, now );
+		gainNode.gain.setValueAtTime( osc.gain, now );
 		oscNode
 			.connect( panNode )
 			.connect( gainNode )
