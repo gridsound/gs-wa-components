@@ -38,16 +38,16 @@ class gswaSynth {
 		this.#bps = bpm / 60;
 	}
 	$change( obj ) {
-		DAWCoreUtils.$diffAssign( this.#data, obj );
+		if ( obj.oscillators ) {
+			this.#oscsCrud( obj.oscillators );
+		}
 		if ( obj.env ) {
 			this.#changeEnv( obj.env );
 		}
 		if ( obj.lfo ) {
 			this.#changeLFO( obj.lfo );
 		}
-		if ( obj.oscillators ) {
-			this.#oscsCrud( obj.oscillators );
-		}
+		DAWCoreUtils.$diffAssign( this.#data, obj );
 	}
 
 	// .........................................................................
@@ -57,8 +57,8 @@ class gswaSynth {
 			key.oscNodes.delete( id );
 		} );
 	}
-	#addOsc( id ) {
-		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, id, 0 ) ) );
+	#addOsc( id, osc ) {
+		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, osc, 0, this.#data.env ) ) );
 	}
 	#changeOsc( id, obj ) {
 		const now = this.$ctx.currentTime;
@@ -73,8 +73,8 @@ class gswaSynth {
 					case "type": this.#nodeOscSetType( nodes.oscNode, val ); break;
 					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
-					case "detune": nodes.oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now ); break;
-					case "detunefine": nodes.oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now ); break;
+					case "detune": nodes.oscNode.detune.setValueAtTime( ( val + osc.detunefine ) * 100, now ); break;
+					case "detunefine": nodes.oscNode.detune.setValueAtTime( ( osc.detune + val ) * 100, now ); break;
 				}
 			} );
 		} );
@@ -204,7 +204,7 @@ class gswaSynth {
 			speed: blc0.gainLFOSpeed,
 			variations: lfoVariations,
 		} );
-		Object.keys( oscs ).forEach( ( id, ind ) => key.oscNodes.set( id, this.#createOscNode( key, id, ind ) ) );
+		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.oscNodes.set( id, this.#createOscNode( key, osc, i, env ) ) );
 		this.#scheduleVariations( key );
 		key.gainLFOtarget
 			.connect( key.gainEnvNode.node )
@@ -278,10 +278,8 @@ class gswaSynth {
 	}
 
 	// .........................................................................
-	#createOscNode( key, id, ind ) {
+	#createOscNode( key, osc, ind, env ) {
 		const atTime = key.when - key.off;
-		const env = this.#data.env;
-		const osc = this.#data.oscillators[ id ];
 		const oscNode = this.$ctx.createOscillator();
 		const panNode = this.$ctx.createStereoPanner();
 		const gainNode = this.$ctx.createGain();
@@ -308,7 +306,6 @@ class gswaSynth {
 	}
 	#destroyOscNode( nodes ) {
 		nodes.oscNode.stop();
-		// nodes.oscNode.disconnect();
 	}
 	#nodeOscSetType( oscNode, type ) {
 		if ( gswaSynth.#nativeTypes.indexOf( type ) > -1 ) {
