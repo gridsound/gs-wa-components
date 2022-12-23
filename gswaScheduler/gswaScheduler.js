@@ -26,7 +26,6 @@ class gswaScheduler {
 	#sortedData = [];
 	#dataScheduled = {};
 	#dataScheduledPerBlock = {};
-	#lastBlockId = null;
 	#streamloopId = null;
 	#streamloopBind = this.#streamloop.bind( this );
 	#ctrl = DAWCoreUtils.$createUpdateDelete.bind( null, this.data,
@@ -161,7 +160,9 @@ class gswaScheduler {
 	#getOffsetEnd() {
 		return this.looping ? this.loopB : this.#startOff + this.#startDur;
 	}
-	#updateDuration( dur ) {
+	#updateDuration() {
+		const dur = Object.values( this.data ).reduce( gswaScheduler.#updateDurationReduce, 0 ) / this.bps;
+
 		if ( dur !== this.duration ) {
 			this.duration = dur;
 			if ( this.started && !this.#startFixedDur ) {
@@ -175,6 +176,9 @@ class gswaScheduler {
 					( dur - this.#startOff - this.currentTime() + this.#startWhen ) * 1000 );
 			}
 		}
+	}
+	static #updateDurationReduce( max, blc ) {
+		return Math.max( max, blc.when + blc.duration );
 	}
 
 	// .........................................................................
@@ -302,31 +306,6 @@ class gswaScheduler {
 		}
 		return to - from;
 	}
-	#isLastBlock( id ) {
-		if ( this.#lastBlockId === id ) {
-			this.#findLastBlock();
-		} else {
-			const blc = this.data[ id ];
-			const whnEnd = ( blc.when + blc.duration ) / this.bps;
-
-			if ( whnEnd > this.duration ) {
-				this.#lastBlockId = id;
-				this.#updateDuration( whnEnd );
-			}
-		}
-	}
-	#findLastBlock() {
-		this.#updateDuration( Object.entries( this.data )
-			.reduce( ( max, [ id, blc ] ) => {
-				const whnEnd = ( blc.when + blc.duration ) / this.bps;
-
-				if ( whnEnd > max ) {
-					this.#lastBlockId = id;
-					return whnEnd;
-				}
-				return max;
-			}, 0 ) );
-	}
 
 	// .........................................................................
 	$change( obj ) {
@@ -341,10 +320,8 @@ class gswaScheduler {
 			if ( this.started ) {
 				this.#blockStop( id );
 			}
-			if ( this.#lastBlockId === id ) {
-				this.#findLastBlock();
-			}
 			delete this.#dataScheduledPerBlock[ id ];
+			this.#updateDuration();
 		}
 	}
 	#dataAddBlock( id, obj ) {
@@ -358,34 +335,21 @@ class gswaScheduler {
 			duration: 0,
 			...obj,
 		};
-		this.#isLastBlock( id );
+		this.#updateDuration();
 		this.#blockSchedule( id );
 	}
 	#dataUpdateBlock( id, obj ) {
-		Object.entries( obj ).forEach( kv => this.#dataUpdateBlockProp( id, ...kv ) );
-	}
-	#dataUpdateBlockProp( id, prop, val ) {
-		const propTime = prop === "when" || prop === "offset" || prop === "duration";
-		const propLink = prop === "prev" || prop === "next";
+		let blc = this.data[ id ];
+		let idToPlay = id;
 
-		if ( val === undefined ) {
-			delete this.data[ id ][ prop ];
-		} else {
-			this.data[ id ][ prop ] = val;
+		Object.assign( blc, obj );
+		this.#updateDuration();
+		while ( blc.prev ) {
+			idToPlay = blc.prev;
+			blc = this.data[ idToPlay ];
 		}
-		if ( propTime ) {
-			this.#isLastBlock( id );
-		}
-		if ( this.started ) {
-			if ( propTime || propLink ) {
-				this.#blockStop( id );
-				this.#blockSchedule( id );
-			} else {
-				Object.keys( this.#dataScheduledPerBlock[ id ].started ).forEach( startedId => {
-					this.ondatapropchange( startedId, prop, val );
-				} );
-			}
-		}
+		this.#blockStop( idToPlay );
+		this.#blockSchedule( idToPlay );
 	}
 }
 
