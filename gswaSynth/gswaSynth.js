@@ -107,7 +107,16 @@ class gswaSynth {
 	}
 
 	// .........................................................................
-	$startKey( blocks, when, off, dur ) {
+	$startKey( allBlocks, when, off, dur ) {
+		const blocks = allBlocks.filter( ( [ , blc ] ) => ( blc.when + blc.duration ) / this.#bps >= off ); // 1.
+		const firstWhen = allBlocks[ 0 ][ 1 ].when;
+		const firstWhe2 = blocks[ 0 ][ 1 ].when;
+		const diffWhen = firstWhe2 - firstWhen;
+		const off2 = off - diffWhen / this.#bps;
+
+		return this.#startKey2( blocks, when, off2, dur );
+	}
+	#startKey2( blocks, when, off, dur ) {
 		const id = ++gswaSynth.#startedMaxId;
 		const blc0 = blocks[ 0 ][ 1 ];
 		const blcLast = blocks[ blocks.length - 1 ][ 1 ];
@@ -298,7 +307,7 @@ class gswaSynth {
 			.connect( panNode )
 			.connect( gainNode )
 			.connect( key.gainLFOtarget );
-		oscNode.start( key.when + .0001 * ( ind + key.midi / 4 ) ); // 1.
+		oscNode.start( key.when + .0001 * ( ind + key.midi / 4 ) ); // 2.
 		if ( Number.isFinite( key.dur ) ) {
 			oscNode.stop( key.when + key.dur + env.release / this.#bps );
 		}
@@ -319,6 +328,7 @@ class gswaSynth {
 Object.freeze( gswaSynth );
 
 /*
-1. We add a little timing to be sure we start the oscillators in the same order
+1. We do not need to update blocks' `when` because only their intervals count.
+2. We add a little timing to be sure we start the oscillators in the same order
    each time, to avoid random chaos...
 */
