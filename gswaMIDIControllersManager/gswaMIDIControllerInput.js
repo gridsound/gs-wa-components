@@ -1,28 +1,19 @@
 "use strict";
 
-class gswaMIDIController {
-	constructor( name, input, output, sysexEnabled ) {
-		this.input = input;
-		this.output = output;
+class gswaMIDIControllerInput {
+	constructor( portID, name, input, sysexEnabled ) {
+		this.portID = portID;
+		this.name   = name;
+		this.input  = input;
 		this.sysexEnabled = sysexEnabled;
 		this.input.onmidimessage = this.#midiEvents.bind( this );
-		this.name = name;
 		this.listeners = {
 			onNoteOn: [],
 			onNoteOff: []
 		};
 	}
-	$getOutput() {
-		return this.output;
-	}
 	$getInput() {
 		return this.input;
-	}
-	#send( bytes ) {
-		this.output.send( bytes );
-	}
-	#sendToTarget( bytes, targetOutput ) {
-		targetOutput.send( bytes );
 	}
 	$onNoteOnAdd( callback ) {
 		this.listeners.onNoteOn.push( callback );

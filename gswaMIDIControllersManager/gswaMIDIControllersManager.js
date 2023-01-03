@@ -6,12 +6,14 @@ const MIDI_CHANNEL_NOTEOFF = 0x80;
 class gswaMIDIControllersManager {
 	#dawcore = null;
 	#uiKeys  = null;
+	#MIDIControllersInput  = new Map();
+	#MIDIControllersOutput = new Map();
 
-	constructor( midiAccess ) {
+	$initMidiAccess( midiAccess ) {
 		this.sysexEnabled = midiAccess.sysexEnabled;
-		this.MIDIControllers = new Map();
+		midiAccess.onstatechange = this.#onControllerStateChange.bind( this );
 
-		this.$detectDevices( midiAccess );
+		this.#openAlreadyConnectedControllers( midiAccess );
 	}
 	$setDAWCore( core ) {
 		this.#dawcore = core;
@@ -19,57 +21,43 @@ class gswaMIDIControllersManager {
 	$setPianorollKeys( uiKeys ) {
 		this.#uiKeys = uiKeys;
 	}
-	$detectDevices( midiAccess ) {
-		let deviceInput = null;
-		let deviceOutput = null;
-		let availableMIDIControllers = new Map();
+	#openAlreadyConnectedControllers( midiAccess ) {
+		let deviceInput;
+		let deviceOutput;
 
 		for ( let entry of midiAccess.inputs ) {
 			deviceInput = entry[ 1 ];
-
-			if ( deviceInput != null ) {
-				availableMIDIControllers.set( deviceInput.name, { input:deviceInput, output:null } );
-			}
+			deviceInput.open();
 		}
 		for ( let entry of midiAccess.outputs ) {
 			deviceOutput = entry[ 1 ];
-
-			if ( deviceOutput != null ) {
-				let device = availableMIDIControllers.get( deviceOutput.name );
-				if ( device != null ) {
-					device.output = deviceOutput;
-				}
-			}
+			deviceOutput.open();
 		}
-		availableMIDIControllers.forEach(( value, key ) => {
-			if ( value.input && value.output ) {
-				let ctrl = new gswaMIDIController( key, value.input, value.output, this.sysexEnabled );
-				this.MIDIControllers.set( key, ctrl );
-				this.$linkToPianoroll( ctrl );
-			}
-		});
 	}
 	#onControllerStateChange( event ) {
-		if ( event.port.state == "connected" && !this.MIDIControllers.has( event.port.id )) {
-			this.#addDevice( event.port, event.srcElement, event.currentTarget.sysexEnabled )
-		} else if ( event.port.state == "disconnected" ) {
+		if ( event.port.state === "connected" && event.port.connection === "open" ) {
+			this.#addController( event.port, event.currentTarget.sysexEnabled )
+		} else if ( event.port.state === "disconnected" ) {
 			this.#removeDevice( event.port );
 		}
 	}
-	#addDevice( port, srcElement, sysexEnabled ) {
-		console.log("addDevice");
-		for ( let entry of srcElement.inputs ) {
-			console.log("entry[ 1 ]");
-			console.log(entry[ 1 ]);
-		}
-		let ctrler = new gswaMIDIController( port.name, srcElement.inputs[1], srcElement.outputs[1], sysexEnabled );
+	#addController( port, sysexEnabled ) {
+		if ( port.type === "input" && !this.#MIDIControllersInput.has( port.id )) {
+			let ctrler = new gswaMIDIControllerInput( port.id, port.name, port, sysexEnabled );
 
-		this.MIDIControllers.set( port.id, ctrler );
-		this.linkToPianoroll( ctrl );
+			this.#MIDIControllersInput.set( port.id, ctrler );
+			this.$linkToPianoroll( ctrler );
+		} else if ( port.type === "output" && !this.#MIDIControllersOutput.has( port.id )) {
+			let ctrler = new gswaMIDIControllerOutput( port.id, port.name, port, sysexEnabled );
+
+			this.#MIDIControllersOutput.set( port.id, ctrler );
+		}
 	}
 	#removeDevice( port ) {
-		console.log("removeDevice");
-		this.MIDIControllers.delete( port.id );
+		let MIDIControllers = port.type === "input"	? this.#MIDIControllersInput
+													: this.#MIDIControllersOutput;
+
+		MIDIControllers.delete( port.id );
 	}
 	// ----------------- // Linkable functions
 	// These functions are used to associate controllers buttons, keys, etc to actions or instruments
@@ -88,5 +76,18 @@ class gswaMIDIControllersManager {
 	}
 	#pianorollLiveKeyPressed( MIDIControllerData ) {
 		this.#uiKeys.midiKeyDown( MIDIControllerData[1] );
+	}
+	// ---------------- // print
+	#printControllers() {
+		console.log( "Inputs" );
+		for ( const [ ctrlerID, ctrler ] of this.#MIDIControllersInput ) {
+			console.log( "ID : ", ctrlerID );
+			console.log( "Name : ", ctrler.name );
+		}
+		console.log( "Outputs" );
+		for ( const [ ctrlerID, ctrler ] of this.#MIDIControllersOutput ) {
+			console.log( "ID : ", ctrlerID );
+			console.log( "Name : ", ctrler.name );
+		}
 	}
 }
