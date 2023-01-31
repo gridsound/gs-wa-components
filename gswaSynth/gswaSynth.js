@@ -18,12 +18,12 @@ class gswaSynth {
 		Object.seal( this );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	static #getHz( key ) {
 		return 440 * ( 2 ** ( ( key - 57 ) / 12 ) );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	$setContext( ctx ) {
 		const oscs = Object.entries( this.#data.oscillators );
 
@@ -50,7 +50,7 @@ class gswaSynth {
 		DAWCoreUtils.$diffAssign( this.#data, obj );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	#removeOsc( id ) {
 		this.#startedKeys.forEach( key => {
 			this.#destroyOscNode( key.oscNodes.get( id ) );
@@ -70,11 +70,13 @@ class gswaSynth {
 
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
-					case "type": this.#nodeOscSetType( nodes.oscNode, val ); break;
+					case "type": this.#oscChangeProp( osc, nodes, "type", val, now, 0 ); break;
 					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
-					case "detune": nodes.oscNode.detune.setValueAtTime( ( val + osc.detunefine ) * 100, now ); break;
-					case "detunefine": nodes.oscNode.detune.setValueAtTime( ( osc.detune + val ) * 100, now ); break;
+					case "detune": this.#oscChangeProp( osc, nodes, "detune", ( val + osc.detunefine ) * 100, now, 0 ); break;
+					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", ( osc.detune + val ) * 100, now, 0 ); break;
+					case "unisondetune": this.#oscChangeProp( osc, nodes, "unisondetune", key.midi, now, 0 ); break;
+					case "unisonblend": this.#oscChangeProp( osc, nodes, "unisonblend", val, now, 0 ); break;
 				}
 			} );
 		} );
@@ -106,7 +108,7 @@ class gswaSynth {
 		this.#startedKeys.forEach( key => key.gainLFO.$change( nobj ) );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	$startKey( allBlocks, when, off, dur ) {
 		const blocks = allBlocks.filter( ( [ , blc ] ) => ( blc.when + blc.duration ) / this.#bps >= off ); // 1.
 		const firstWhen = allBlocks[ 0 ][ 1 ].when;
@@ -226,7 +228,7 @@ class gswaSynth {
 		return id;
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	$stopAllKeys() {
 		this.#startedKeys.forEach( ( key, id ) => this.$stopKey( id ) );
 	}
@@ -253,7 +255,7 @@ class gswaSynth {
 		this.#startedKeys.delete( id );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	#calcLowpass( val ) {
 		return this.#calcExp( val, this.#nyquist, 2 );
 	}
@@ -266,18 +268,14 @@ class gswaSynth {
 			: Math.expm1( x ) ** exp / ( ( Math.E - 1 ) ** exp ) * total;
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	#scheduleVariations( key ) {
 		key.variations.forEach( va => {
 			const when = key.when - key.off + va.when;
 			const dur = va.duration;
-			const freqArr = new Float32Array( [
-				gswaSynth.#getHz( va.midi[ 0 ] ),
-				gswaSynth.#getHz( va.midi[ 1 ] )
-			] );
 
 			if ( when > this.$ctx.currentTime && dur > 0 ) {
-				key.oscNodes.forEach( nodes => nodes.oscNode.frequency.setValueCurveAtTime( freqArr, when, dur ) );
+				key.oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
 				key.panNode.pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 				key.gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
 				key.lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
@@ -286,35 +284,69 @@ class gswaSynth {
 		} );
 	}
 
-	// .........................................................................
+	// ..........................................................................
 	#createOscNode( key, osc, ind, env ) {
 		const now = this.$ctx.currentTime;
-		const oscNode = this.$ctx.createOscillator();
+		const uniNodes = [];
 		const panNode = this.$ctx.createStereoPanner();
 		const gainNode = this.$ctx.createGain();
 		const nodes = Object.freeze( {
-			oscNode,
+			uniNodes,
 			panNode,
 			gainNode,
 		} );
 
-		this.#nodeOscSetType( oscNode, osc.type );
-		oscNode.detune.setValueAtTime( ( osc.detune + osc.detunefine ) * 100, now );
-		oscNode.frequency.setValueAtTime( gswaSynth.#getHz( key.midi ), now );
+		for ( let i = 0; i < osc.unisonvoices; ++i ) {
+			uniNodes.push( [
+				this.$ctx.createOscillator(),
+				this.$ctx.createGain(),
+			] );
+		}
+		this.#oscChangeProp( osc, nodes, "type", osc.type, now, 0 );
+		this.#oscChangeProp( osc, nodes, "detune", ( osc.detune + osc.detunefine ) * 100, now, 0 );
+		this.#oscChangeProp( osc, nodes, "frequency", key.midi, now, 0 );
+		this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
 		panNode.pan.setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
-		oscNode
+		uniNodes.forEach( ( [ uniOscNode, uniGainNode ] ) => uniOscNode
+			.connect( uniGainNode )
 			.connect( panNode )
 			.connect( gainNode )
-			.connect( key.gainLFOtarget );
-		oscNode.start( key.when + .0001 * ( ind + key.midi / 4 ) ); // 2.
+			.connect( key.gainLFOtarget ) );
+		uniNodes.forEach( n => n[ 0 ].start( key.when + .0001 * ( ind + key.midi / 4 ) ) ); // 2.
 		if ( Number.isFinite( key.dur ) ) {
-			oscNode.stop( key.when + key.dur + env.release / this.#bps );
+			uniNodes.forEach( n => n[ 0 ].stop( key.when + key.dur + env.release / this.#bps ) );
 		}
 		return nodes;
 	}
 	#destroyOscNode( nodes ) {
-		nodes.oscNode.stop();
+		nodes.uniNodes.forEach( n => n[ 0 ].stop() );
+	}
+	#oscChangeProp( osc, nodes, prop, val, when, dur ) {
+		const uniNodes = nodes.uniNodes;
+
+		switch ( prop ) {
+			case "type":
+				uniNodes.forEach( n => this.#nodeOscSetType( n[ 0 ], val ) );
+				break;
+			case "detune":
+				uniNodes.forEach( n => n[ 0 ].detune.setValueAtTime( val, when ) );
+				break;
+			case "frequency":
+				dur
+					? uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueCurveAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when, dur ) )
+					: uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when ) );
+				break;
+			case "unisondetune":
+				uniNodes.forEach( ( n, i ) => {
+					n[ 0 ].frequency.cancelScheduledValues( 0 );
+					n[ 0 ].frequency.setValueAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when );
+				} );
+				break;
+			case "unisonblend":
+				uniNodes.forEach( ( n, i ) => n[ 1 ].gain.setValueAtTime( gswaSynth.#calcUnisonGain( osc, val, i ), when ) );
+				break;
+		}
 	}
 	#nodeOscSetType( oscNode, type ) {
 		if ( gswaSynth.#nativeTypes.indexOf( type ) > -1 ) {
@@ -322,6 +354,33 @@ class gswaSynth {
 		} else {
 			oscNode.setPeriodicWave( gswaPeriodicWaves.$get( this.$ctx, type ) );
 		}
+	}
+	static #calcUnisonHz( osc, midi, v ) {
+		const detune = osc.unisonvoices > 1
+			? osc.unisondetune / -2 + v * ( osc.unisondetune / ( osc.unisonvoices - 1 ) )
+			: 0;
+
+		if ( typeof midi === "number" ) {
+			return gswaSynth.#getHz( midi + detune );
+		}
+		return new Float32Array( [
+			gswaSynth.#getHz( midi[ 0 ] + detune ),
+			gswaSynth.#getHz( midi[ 1 ] + detune ),
+		] );
+	}
+	static #calcUnisonGain( osc, blend, v ) {
+		const same = 1 / osc.unisonvoices;
+		const even = osc.unisonvoices % 2 === 0;
+		const midVoice = Math.floor( osc.unisonvoices / 2 );
+		const midGainOdd = same + ( 1 - blend ) * ( 1 - same );
+		const midGainEven = same + ( 1 - blend ) * ( .5 - same );
+		const gain = ( 1 - ( even ? midGainEven * 2 : midGainOdd ) ) / ( osc.unisonvoices - 1 - even );
+
+		return v === midVoice
+			? even ? midGainEven : midGainOdd
+			: v === midVoice - 1
+				? even ? midGainEven : gain
+				: gain;
 	}
 }
 
