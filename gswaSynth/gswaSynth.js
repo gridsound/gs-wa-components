@@ -352,7 +352,13 @@ class gswaSynth {
 		if ( gswaSynth.#nativeTypes.indexOf( type ) > -1 ) {
 			oscNode.type = type;
 		} else {
-			oscNode.setPeriodicWave( gswaPeriodicWaves.$get( this.$ctx, type ) );
+			const w = gswaPeriodicWaves.$get( this.$ctx, type );
+
+			if ( w ) {
+				oscNode.setPeriodicWave( w );
+			} else {
+				oscNode.type = "triangle";
+			}
 		}
 	}
 	static #calcUnisonHz( osc, midi, v ) {
