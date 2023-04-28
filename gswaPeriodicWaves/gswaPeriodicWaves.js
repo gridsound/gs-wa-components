@@ -13,8 +13,10 @@ class gswaPeriodicWaves {
 		if ( !p ) {
 			const w = gswaPeriodicWaves.$list.get( name );
 
-			p = ctx.createPeriodicWave( w.real, w.imag );
-			gswaPeriodicWaves.#cache.set( name, p );
+			if ( w ) {
+				p = ctx.createPeriodicWave( w.real, w.imag );
+				gswaPeriodicWaves.#cache.set( name, p );
+			}
 		}
 		return p;
 	}
