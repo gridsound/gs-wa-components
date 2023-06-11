@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>gswaMIDIParser</title>
+</head>
+<body>
+<script src="../../gs-ui-components/gsui.js"></script>
+<script src="gswaMIDIParser.js"></script>
+<script src="gswaMIDIToKeys.js"></script>
+<script>
+
+fetch( "Cymatics-DiamondsMelody40-168bpmBMin.mid" )
+	.then( res => res.arrayBuffer() )
+	.then( arr => {
+		const midi = gswaMIDIParser.$parse( new Uint8Array( arr ) );
+
+		console.log( midi );
+
+		const keys = gswaMIDIToKeys.$convert( midi );
+
+		console.log( keys );
+	} );
+
+</script>
+</body>
+</html>
