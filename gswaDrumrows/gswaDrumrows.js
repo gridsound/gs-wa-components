@@ -4,13 +4,13 @@ class gswaDrumrows {
 	static #startedMaxId = 0;
 	$onstartdrum = null;
 	$onstartdrumcut = null;
-	$getAudioBuffer = DAWCoreUtils.$noop;
-	$getChannelInput = DAWCoreUtils.$noop;
+	$getAudioBuffer = GSUnoop;
+	$getChannelInput = GSUnoop;
 	#ctx = null;
 	#startedDrums = new Map();
 	#ctrl = new DAWCoreControllers.drumrows( {
 		dataCallbacks: {
-			addDrumrow: DAWCoreUtils.$noop,
+			addDrumrow: GSUnoop,
 			removeDrumrow: this.#removeDrumrow.bind( this ),
 			changeDrumrow: this.#changeDrumrow.bind( this ),
 		},

@@ -13,11 +13,11 @@ class gswaScheduler {
 	started = false;
 	duration = 0;
 	delayStopCallback = 0;
-	currentTime = DAWCoreUtils.$noop;
-	ondatastart = DAWCoreUtils.$noop;
-	ondatastop = DAWCoreUtils.$noop;
-	ondatapropchange = DAWCoreUtils.$noop;
-	onended = DAWCoreUtils.$noop;
+	currentTime = GSUnoop;
+	ondatastart = GSUnoop;
+	ondatastop = GSUnoop;
+	ondatapropchange = GSUnoop;
+	onended = GSUnoop;
 	#startDur = 0;
 	#startOff = 0;
 	#startWhen = 0;
