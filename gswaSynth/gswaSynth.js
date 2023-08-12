@@ -7,7 +7,7 @@ class gswaSynth {
 	$output = null;
 	#nyquist = 24000;
 	#data = DAWCoreJSON.synth();
-	#oscsCrud = DAWCoreUtils.$createUpdateDelete.bind( null, this.#data.oscillators,
+	#oscsCrud = GSUcreateUpdateDelete.bind( null, this.#data.oscillators,
 		this.#addOsc.bind( this ),
 		this.#changeOsc.bind( this ),
 		this.#removeOsc.bind( this ) );
@@ -47,7 +47,7 @@ class gswaSynth {
 		if ( obj.lfo ) {
 			this.#changeLFO( obj.lfo );
 		}
-		DAWCoreUtils.$diffAssign( this.#data, obj );
+		GSUdiffAssign( this.#data, obj );
 	}
 
 	// ..........................................................................

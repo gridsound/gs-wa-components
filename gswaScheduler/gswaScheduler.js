@@ -28,7 +28,7 @@ class gswaScheduler {
 	#dataScheduledPerBlock = {};
 	#streamloopId = null;
 	#streamloopBind = this.#streamloop.bind( this );
-	#ctrl = DAWCoreUtils.$createUpdateDelete.bind( null, this.data,
+	#ctrl = GSUcreateUpdateDelete.bind( null, this.data,
 		this.#dataAddBlock.bind( this ),
 		this.#dataUpdateBlock.bind( this ),
 		this.#dataDeleteBlock.bind( this )
