@@ -290,36 +290,47 @@ class gswaSynth {
 		const uniNodes = [];
 		const panNode = this.$ctx.createStereoPanner();
 		const gainNode = this.$ctx.createGain();
-		const nodes = Object.freeze( {
+		const dur = key.dur + env.release / this.#bps;
+		const nodes = Object.seal( {
+			absn: null,
 			uniNodes,
 			panNode,
 			gainNode,
 		} );
 
-		for ( let i = 0; i < osc.unisonvoices; ++i ) {
-			uniNodes.push( [
-				this.$ctx.createOscillator(),
-				this.$ctx.createGain(),
-			] );
-		}
-		this.#oscChangeProp( osc, nodes, "type", osc.type, now, 0 );
-		this.#oscChangeProp( osc, nodes, "detune", ( osc.detune + osc.detunefine ) * 100, now, 0 );
-		this.#oscChangeProp( osc, nodes, "frequency", key.midi, now, 0 );
-		this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
 		panNode.pan.setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
-		uniNodes.forEach( ( [ uniOscNode, uniGainNode ] ) => uniOscNode
-			.connect( uniGainNode )
-			.connect( panNode )
-			.connect( gainNode )
-			.connect( key.gainLFOtarget ) );
-		uniNodes.forEach( n => n[ 0 ].start( key.when + .0001 * ( ind + key.midi / 4 ) ) ); // 2.
-		if ( Number.isFinite( key.dur ) ) {
-			uniNodes.forEach( n => n[ 0 ].stop( key.when + key.dur + env.release / this.#bps ) );
+		if ( osc.type === "noise" ) {
+			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
+			nodes.absn
+				.connect( panNode )
+				.connect( gainNode )
+				.connect( key.gainLFOtarget );
+		} else {
+			for ( let i = 0; i < osc.unisonvoices; ++i ) {
+				uniNodes.push( [
+					this.$ctx.createOscillator(),
+					this.$ctx.createGain(),
+				] );
+			}
+			this.#oscChangeProp( osc, nodes, "type", osc.type, now, 0 );
+			this.#oscChangeProp( osc, nodes, "detune", ( osc.detune + osc.detunefine ) * 100, now, 0 );
+			this.#oscChangeProp( osc, nodes, "frequency", key.midi, now, 0 );
+			this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
+			uniNodes.forEach( ( [ uniOscNode, uniGainNode ] ) => uniOscNode
+				.connect( uniGainNode )
+				.connect( panNode )
+				.connect( gainNode )
+				.connect( key.gainLFOtarget ) );
+			uniNodes.forEach( n => n[ 0 ].start( key.when + .0001 * ( ind + key.midi / 4 ) ) ); // 2.
+			if ( Number.isFinite( dur ) ) {
+				uniNodes.forEach( n => n[ 0 ].stop( key.when + dur ) );
+			}
 		}
 		return nodes;
 	}
 	#destroyOscNode( nodes ) {
+		nodes.absn?.stop();
 		nodes.uniNodes.forEach( n => n[ 0 ].stop() );
 	}
 	#oscChangeProp( osc, nodes, prop, val, when, dur ) {
