@@ -70,7 +70,7 @@ class gswaSynth {
 
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
-					case "type": this.#oscChangeProp( osc, nodes, "type", val, now, 0 ); break;
+					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
 					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
 					case "detune": this.#oscChangeProp( osc, nodes, "detune", ( val + osc.detunefine ) * 100, now, 0 ); break;
@@ -300,7 +300,7 @@ class gswaSynth {
 
 		panNode.pan.setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
-		if ( osc.type === "noise" ) {
+		if ( osc.wave === "noise" ) {
 			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
 			nodes.absn
 				.connect( panNode )
@@ -313,7 +313,7 @@ class gswaSynth {
 					this.$ctx.createGain(),
 				] );
 			}
-			this.#oscChangeProp( osc, nodes, "type", osc.type, now, 0 );
+			this.#oscChangeProp( osc, nodes, "wave", osc.wave, now, 0 );
 			this.#oscChangeProp( osc, nodes, "detune", ( osc.detune + osc.detunefine ) * 100, now, 0 );
 			this.#oscChangeProp( osc, nodes, "frequency", key.midi, now, 0 );
 			this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
@@ -337,7 +337,7 @@ class gswaSynth {
 		const uniNodes = nodes.uniNodes;
 
 		switch ( prop ) {
-			case "type":
+			case "wave":
 				uniNodes.forEach( n => this.#nodeOscSetType( n[ 0 ], val ) );
 				break;
 			case "detune":
@@ -359,11 +359,11 @@ class gswaSynth {
 				break;
 		}
 	}
-	#nodeOscSetType( oscNode, type ) {
-		if ( gswaSynth.#nativeTypes.indexOf( type ) > -1 ) {
-			oscNode.type = type;
+	#nodeOscSetType( oscNode, wave ) {
+		if ( gswaSynth.#nativeTypes.indexOf( wave ) > -1 ) {
+			oscNode.type = wave;
 		} else {
-			const w = gswaPeriodicWaves.$get( this.$ctx, type );
+			const w = gswaPeriodicWaves.$get( this.$ctx, wave );
 
 			if ( w ) {
 				oscNode.setPeriodicWave( w );
