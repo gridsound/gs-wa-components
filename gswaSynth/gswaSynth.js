@@ -5,6 +5,7 @@ class gswaSynth {
 	static #startedMaxId = 0;
 	$ctx = null;
 	$output = null;
+	$getAudioBuffer = GSUnoop;
 	#nyquist = 24000;
 	#data = DAWCoreJSON.synth();
 	#oscsCrud = GSUcreateUpdateDelete.bind( null, this.#data.oscillators,
