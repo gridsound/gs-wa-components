@@ -354,24 +354,34 @@ class gswaSynth {
 					n[ 0 ].buffer = buf;
 				} );
 			} break;
-			case "detune": {
-				const det = osc.detune + osc.detunefine;
-
-				uniNodes.forEach( osc.wave
-					? n => n[ 0 ].detune.setValueAtTime( det * 100, when )
-					: n => n[ 0 ].detune.setValueAtTime( ( det + ( val - 59 ) ) * 100, when ) );
-			} break;
+			case "detune":
+				uniNodes.forEach( ( n, i ) => {
+					n[ 0 ].detune.cancelScheduledValues( 0 );
+					n[ 0 ].detune.setValueAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when );
+				} );
+				break;
 			case "frequency":
-				if ( osc.wave ) {
+				if ( osc.source ) {
 					dur
-						? uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueCurveAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when, dur ) )
-						: uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when ) );
+						? uniNodes.forEach( ( n, i ) => n[ 0 ].detune.setValueCurveAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when, dur ) )
+						: uniNodes.forEach( ( n, i ) => n[ 0 ].detune.setValueAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when ) );
+				} else {
+					const val2 = Array.isArray( val )
+						? new Float32Array( [
+							gswaSynth.#getHz( val[ 0 ] ),
+							gswaSynth.#getHz( val[ 1 ] ),
+						] )
+						: gswaSynth.#getHz( val );
+
+					dur
+						? uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueCurveAtTime( val2, when, dur ) )
+						: uniNodes.forEach( ( n, i ) => n[ 0 ].frequency.setValueAtTime( val2, when ) );
 				}
 				break;
 			case "unisondetune":
 				uniNodes.forEach( ( n, i ) => {
-					n[ 0 ].frequency.cancelScheduledValues( 0 );
-					n[ 0 ].frequency.setValueAtTime( gswaSynth.#calcUnisonHz( osc, val, i ), when );
+					n[ 0 ].detune.cancelScheduledValues( 0 );
+					n[ 0 ].detune.setValueAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when );
 				} );
 				break;
 			case "unisonblend":
@@ -392,17 +402,23 @@ class gswaSynth {
 			}
 		}
 	}
-	static #calcUnisonHz( osc, midi, v ) {
-		const detune = osc.unisonvoices > 1
+	static #calcUnisonDetune( osc, midi, v ) {
+		const uniDetune = osc.unisonvoices > 1
 			? osc.unisondetune / -2 + v * ( osc.unisondetune / ( osc.unisonvoices - 1 ) )
 			: 0;
+		const det = ( osc.detune + osc.detunefine + uniDetune ) * 100;
 
+		if ( osc.wave ) {
+			return typeof midi === "number"
+				? det
+				: new Float32Array( [ det, det ] );
+		}
 		if ( typeof midi === "number" ) {
-			return gswaSynth.#getHz( midi + detune );
+			return det + ( midi - ( 72 - 12 ) ) * 100;
 		}
 		return new Float32Array( [
-			gswaSynth.#getHz( midi[ 0 ] + detune ),
-			gswaSynth.#getHz( midi[ 1 ] + detune ),
+			det + ( midi[ 0 ] - ( 72 - 12 ) ) * 100,
+			det + ( midi[ 1 ] - ( 72 - 12 ) ) * 100,
 		] );
 	}
 	static #calcUnisonGain( osc, blend, v ) {
