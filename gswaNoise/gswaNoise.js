@@ -2,12 +2,12 @@
 
 class gswaNoise {
 	static #buffer = null;
+	static #duration = 1;
 
 	// .........................................................................
 	static $initBuffer( ctx ) {
-		const srate = ctx.sampleRate;
-		const bufSize = 1 * srate;
-		const buf = ctx.createBuffer( 2, bufSize, srate );
+		const bufSize = gswaNoise.#duration * ctx.sampleRate;
+		const buf = ctx.createBuffer( 2, bufSize, ctx.sampleRate );
 		const chan0 = buf.getChannelData( 0 );
 		const chan1 = buf.getChannelData( 1 );
 
@@ -24,7 +24,7 @@ class gswaNoise {
 
 		absn.buffer = gswaNoise.#buffer;
 		absn.loop = true;
-		absn.start( when );
+		absn.start( when, Math.random() * gswaNoise.#duration );
 		if ( Number.isFinite( dur ) ) {
 			absn.stop( when + dur );
 		}
