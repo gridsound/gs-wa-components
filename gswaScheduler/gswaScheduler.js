@@ -344,12 +344,14 @@ class gswaScheduler {
 
 		Object.assign( blc, obj );
 		this.#updateDuration();
-		while ( blc.prev ) {
+		while ( blc?.prev ) {
 			idToPlay = blc.prev;
 			blc = this.data[ idToPlay ];
 		}
-		this.#blockStop( idToPlay );
-		this.#blockSchedule( idToPlay );
+		if ( blc ) {
+			this.#blockStop( idToPlay );
+			this.#blockSchedule( idToPlay );
+		}
 	}
 }
 
