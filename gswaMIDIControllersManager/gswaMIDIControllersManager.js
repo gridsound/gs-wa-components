@@ -65,10 +65,10 @@ class gswaMIDIControllersManager {
 
 	// ---------------- // Action functions
 	#pianoRollLiveKeyReleased( MIDIControllerData ) {
-		this.#uiKeys?.midiKeyUp( MIDIControllerData[ 1 ] );
+		this.#uiKeys?.$midiKeyUp( MIDIControllerData[ 1 ] );
 	}
 	#pianorollLiveKeyPressed( MIDIControllerData ) {
-		this.#uiKeys?.midiKeyDown( MIDIControllerData[ 1 ] );
+		this.#uiKeys?.$midiKeyDown( MIDIControllerData[ 1 ] );
 	}
 
 	// ---------------- // print
