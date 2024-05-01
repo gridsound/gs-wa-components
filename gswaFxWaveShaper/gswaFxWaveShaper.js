@@ -32,7 +32,6 @@ class gswaFxWaveShaper {
 		this.#input = ctx.createGain();
 		this.#output = ctx.createGain();
 		this.#shaper = ctx.createWaveShaper();
-		this.#shaper.oversample = "4x"; // "none|2x|4x"
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}
@@ -51,9 +50,12 @@ class gswaFxWaveShaper {
 	}
 	$change( obj ) {
 		GSUdiffAssign( this.#data, obj );
-		if ( "curve" in obj ) {
+		if ( obj.curve ) {
 			this.#dotlineSVG.$setCurve( this.#data.curve );
 			this.#shaper.curve = this.#dotlineSVG.$getCurveFloat32( 512 );
+		}
+		if ( obj.oversample ) {
+			this.#shaper.oversample = obj.oversample;
 		}
 	}
 	$liveChange( prop, val ) {
