@@ -50,15 +50,35 @@ class gswaFxWaveShaper {
 	}
 	$change( obj ) {
 		GSUdiffAssign( this.#data, obj );
-		if ( obj.curve ) {
-			this.#dotlineSVG.$setCurve( this.#data.curve );
-			this.#shaper.curve = this.#dotlineSVG.$getCurveFloat32( 512 );
+		if ( obj.symmetry !== undefined ) {
+			this.#dotlineSVG.$setDataBox( obj.symmetry ? "0 0 1 1" : "-1 -1 1 1" );
 		}
 		if ( obj.oversample ) {
 			this.#shaper.oversample = obj.oversample;
 		}
+		if ( obj.curve ) {
+			this.#setCurveData( this.#data.curve );
+		}
+	}
+	#setCurveData( curveData ) {
+		this.#dotlineSVG.$setCurve( curveData );
+
+		const graphData = this.#dotlineSVG.$getCurveFloat32( 512 );
+
+		this.#shaper.curve = this.#data.symmetry
+			? this.#addGraphSymmetry( graphData )
+			: graphData;
+	}
+	#addGraphSymmetry( curve ) {
+		const cpy = [ ...curve ].reverse();
+
+		cpy.forEach( ( v, i, arr ) => arr[ i ] *= -1 );
+		return new Float32Array( cpy.concat( ...curve ).filter( ( v, i ) => i % 2 === 0 ) );
 	}
 	$liveChange( prop, val ) {
+		if ( prop === "curve" ) {
+			this.#setCurveData( val );
+		}
 	}
 }
 
