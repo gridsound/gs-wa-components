@@ -6,18 +6,16 @@ class gswaEffects {
 	#wafxs = new Map();
 	#getChanInput = null;
 	#getChanOutput = null;
-	#ctrl = new DAWCoreControllers.effects( {
-		dataCallbacks: {
-			changeBPM: bpm => {
-				this.#bpm = bpm;
-				this.#wafxs.forEach( fx => fx.$setBPM?.( bpm ) );
-			},
-			addEffect: this.#addEffect.bind( this ),
-			removeEffect: this.#removeEffect.bind( this ),
-			changeEffect: this.#changeEffect.bind( this ),
-			connectEffectTo: this.#connectEffectTo.bind( this ),
-			changeEffectData: ( id, data ) => this.$getFx( id ).$change( data ),
+	#ctrl = new DAWCoreControllerEffects( {
+		$changeBPM: bpm => {
+			this.#bpm = bpm;
+			this.#wafxs.forEach( fx => fx.$setBPM?.( bpm ) );
 		},
+		$addEffect: this.#addEffect.bind( this ),
+		$removeEffect: this.#removeEffect.bind( this ),
+		$changeEffect: this.#changeEffect.bind( this ),
+		$connectEffectTo: this.#connectEffectTo.bind( this ),
+		$changeEffectData: ( id, data ) => this.$getFx( id ).$change( data ),
 	} );
 
 	constructor( fns ) {
@@ -32,13 +30,13 @@ class gswaEffects {
 	}
 	$setContext( ctx ) {
 		this.ctx = ctx;
-		this.#ctrl.reset();
+		this.#ctrl.$reset();
 	}
 	$change( obj ) {
-		this.#ctrl.change( obj );
+		this.#ctrl.$change( obj );
 	}
 	$clear() {
-		this.#ctrl.clear();
+		this.#ctrl.$clear();
 	}
 	$liveChangeFxProp( id, prop, val ) {
 		this.$getFx( id ).$liveChange( prop, val );
