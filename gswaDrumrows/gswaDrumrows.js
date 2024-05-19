@@ -8,12 +8,10 @@ class gswaDrumrows {
 	$getChannelInput = GSUnoop;
 	#ctx = null;
 	#startedDrums = new Map();
-	#ctrl = new DAWCoreControllers.drumrows( {
-		dataCallbacks: {
-			addDrumrow: GSUnoop,
-			removeDrumrow: this.#removeDrumrow.bind( this ),
-			changeDrumrow: this.#changeDrumrow.bind( this ),
-		},
+	#ctrl = new DAWCoreControllerDrumrows( {
+		$addDrumrow: GSUnoop,
+		$removeDrumrow: this.#removeDrumrow.bind( this ),
+		$changeDrumrow: this.#changeDrumrow.bind( this ),
 	} );
 
 	constructor() {
@@ -26,13 +24,13 @@ class gswaDrumrows {
 		this.#ctx = ctx;
 	}
 	$change( obj ) {
-		this.#ctrl.change( obj );
+		this.#ctrl.$change( obj );
 	}
 	$clear() {
-		this.#ctrl.clear();
+		this.#ctrl.$clear();
 	}
 	$getPatternDurationByRowId( rowId ) {
-		const d = this.#ctrl.data;
+		const d = this.#ctrl.$data;
 
 		return d.patterns[ d.drumrows[ rowId ].pattern ].duration;
 	}
@@ -80,7 +78,7 @@ class gswaDrumrows {
 		return this.#startDrum( drum, when, off, dur, false );
 	}
 	#startDrum( drum, when, off, durUser, live ) {
-		const data = this.#ctrl.data;
+		const data = this.#ctrl.$data;
 		const rowId = drum.row;
 		const row = data.drumrows[ rowId ];
 		const pat = data.patterns[ row.pattern ];
@@ -157,7 +155,7 @@ class gswaDrumrows {
 		const nodes = this.#startedDrums.get( +id );
 
 		if ( nodes ) {
-			const row = this.#ctrl.data.drumrows[ nodes.rowId ];
+			const row = this.#ctrl.$data.drumrows[ nodes.rowId ];
 
 			switch ( prop ) {
 				case "detune":
@@ -185,7 +183,7 @@ class gswaDrumrows {
 		} );
 	}
 	#changeDrumrow( id, prop, val ) {
-		const row = this.#ctrl.data.drumrows[ id ];
+		const row = this.#ctrl.$data.drumrows[ id ];
 
 		switch ( prop ) {
 			case "toggle":
