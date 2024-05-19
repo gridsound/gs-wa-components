@@ -6,7 +6,7 @@ class gswaFxWaveShaper {
 	#output = null;
 	#enable = false;
 	#shaper = null;
-	#data = DAWCoreJSON.effects.waveshaper();
+	#data = DAWCoreJSON_effects_waveshaper();
 	#dotlineSVG = GSUcreateElement( "gsui-dotlinesvg" );
 
 	constructor() {

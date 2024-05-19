@@ -10,7 +10,7 @@ class gswaFxFilter {
 	#responseHzIn = null;
 	#responseMagOut = null;
 	#responsePhaseOut = null;
-	#data = DAWCoreJSON.effects.filter();
+	#data = DAWCoreJSON_effects_filter();
 
 	constructor() {
 		Object.seal( this );

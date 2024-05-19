@@ -7,7 +7,7 @@ class gswaSynth {
 	$output = null;
 	$getAudioBuffer = GSUnoop;
 	#nyquist = 24000;
-	#data = DAWCoreJSON.synth();
+	#data = DAWCoreJSON_synth();
 	#oscsCrud = GSUcreateUpdateDelete.bind( null, this.#data.oscillators,
 		this.#addOsc.bind( this ),
 		this.#changeOsc.bind( this ),

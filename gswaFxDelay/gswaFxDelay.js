@@ -12,7 +12,7 @@ class gswaFxDelay {
 	#delayPanA = null;
 	#delayPanB = null;
 	#enable = false;
-	#data = DAWCoreJSON.effects.delay();
+	#data = DAWCoreJSON_effects_delay();
 
 	constructor() {
 		Object.seal( this );
