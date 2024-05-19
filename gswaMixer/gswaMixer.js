@@ -7,15 +7,13 @@ class gswaMixer {
 	$audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
 	$audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
 	#chans = {};
-	#ctrlMixer = new DAWCoreControllers.mixer( {
-		dataCallbacks: {
-			addChannel: this.#addChan.bind( this ),
-			removeChannel: this.#removeChan.bind( this ),
-			toggleChannel: this.#toggleChan.bind( this ),
-			redirectChannel: this.#redirectChan.bind( this ),
-			changePanChannel: this.#updateChanPan.bind( this ),
-			changeGainChannel: this.#updateChanGain.bind( this ),
-		},
+	#ctrlMixer = new DAWCoreControllerMixer( {
+		$addChannel: this.#addChan.bind( this ),
+		$removeChannel: this.#removeChan.bind( this ),
+		$toggleChannel: this.#toggleChan.bind( this ),
+		$redirectChannel: this.#redirectChan.bind( this ),
+		$changePanChannel: this.#updateChanPan.bind( this ),
+		$changeGainChannel: this.#updateChanGain.bind( this ),
 	} );
 
 	constructor() {
@@ -26,10 +24,10 @@ class gswaMixer {
 	$setContext( ctx ) {
 		this.$disconnect();
 		this.ctx = ctx;
-		if ( "main" in this.#ctrlMixer.data.channels ) {
-			this.#ctrlMixer.recall();
+		if ( "main" in this.#ctrlMixer.$data.channels ) {
+			this.#ctrlMixer.$recall();
 		} else {
-			this.#ctrlMixer.change( {
+			this.#ctrlMixer.$change( {
 				channels: {
 					main: {
 						toggle: true,
@@ -42,11 +40,11 @@ class gswaMixer {
 		}
 	}
 	$change( obj ) {
-		this.#ctrlMixer.change( obj );
+		this.#ctrlMixer.$change( obj );
 	}
 	$clear() {
-		this.#ctrlMixer.clear();
-		this.#ctrlMixer.change( {
+		this.#ctrlMixer.$clear();
+		this.#ctrlMixer.$change( {
 			channels: {
 				main: {
 					toggle: true,
@@ -106,7 +104,7 @@ class gswaMixer {
 			input, pan, gain, output, splitter, analyserL, analyserR,
 			analyserData: new Uint8Array( analyserL.frequencyBinCount )
 		};
-		Object.entries( this.#ctrlMixer.data.channels ).forEach( kv => {
+		Object.entries( this.#ctrlMixer.$data.channels ).forEach( kv => {
 			if ( kv[ 1 ].dest === id ) {
 				this.#redirectChan( kv[ 0 ], id );
 			}
@@ -114,18 +112,18 @@ class gswaMixer {
 	}
 	#redirectChan( id, val ) {
 		this.#chans[ id ].output.disconnect();
-		if ( val in this.#ctrlMixer.data.channels ) {
+		if ( val in this.#ctrlMixer.$data.channels ) {
 			this.#chans[ id ].output.connect( this.$getChanInput( val ) );
 		}
 	}
 	#toggleChan( id, val ) {
-		this.#chans[ id ].gain.gain.setValueAtTime( val ? this.#ctrlMixer.data.channels[ id ].gain : 0, this.ctx.currentTime );
+		this.#chans[ id ].gain.gain.setValueAtTime( val ? this.#ctrlMixer.$data.channels[ id ].gain : 0, this.ctx.currentTime );
 	}
 	#updateChanPan( id, val ) {
 		this.#chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
 	}
 	#updateChanGain( id, val ) {
-		if ( this.#ctrlMixer.data.channels[ id ].toggle ) {
+		if ( this.#ctrlMixer.$data.channels[ id ].toggle ) {
 			this.#chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
 		}
 	}
