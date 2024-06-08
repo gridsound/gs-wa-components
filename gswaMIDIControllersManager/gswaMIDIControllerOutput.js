@@ -3,10 +3,11 @@
 class gswaMIDIControllerOutput {
 	constructor( portID, name, output, sysexEnabled ) {
 		this.portID = portID;
-		this.name   = name;
+		this.name = name;
 		this.output = output;
 		this.sysexEnabled = sysexEnabled;
 	}
+
 	$getOutput() {
 		return this.output;
 	}
