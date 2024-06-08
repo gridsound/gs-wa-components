@@ -14,12 +14,6 @@ class gswaMIDIDevices {
 	$setPianorollKeys( uiKeys ) {
 		this.#uiKeys = uiKeys;
 	}
-	#pianoRollLiveKeyReleased( key ) {
-		this.#uiKeys?.$midiKeyUp( key );
-	}
-	#pianorollLiveKeyPressed( key ) {
-		this.#uiKeys?.$midiKeyDown( key );
-	}
 
 	// .........................................................................
 	#oninit( midiAcc ) {
@@ -47,8 +41,8 @@ class gswaMIDIDevices {
 			case "input":
 				if ( !this.#midiCtrlInputs.has( port.id ) ) {
 					this.#midiCtrlInputs.set( port.id, new gswaMIDIInput( port, sysexEnabled, {
-						$onNoteOn: this.#pianorollLiveKeyPressed.bind( this ),
-						$onNoteOff: this.#pianoRollLiveKeyReleased.bind( this ),
+						$onNoteOn: ( key, vel ) => this.#uiKeys?.$midiKeyDown( key, vel ),
+						$onNoteOff: key => this.#uiKeys?.$midiKeyUp( key ),
 					} ) );
 				}
 				break;

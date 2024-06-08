@@ -19,7 +19,7 @@ class gswaMIDIInput {
 			const [ msg, key, vel ] = e.data;
 
 			switch ( msg ) {
-				case 0x90: this.#onNoteOn( key ); break;
+				case 0x90: this.#onNoteOn( key, vel / 127 ); break;
 				case 0x80: this.#onNoteOff( key ); break;
 			}
 		}
