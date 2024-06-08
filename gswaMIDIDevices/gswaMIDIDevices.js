@@ -7,7 +7,7 @@ class gswaMIDIDevices {
 	#midiCtrlOutputs = new Map();
 
 	$init() {
-		return navigator.requestMIDIAccess( { sysex: true } ).then( this.#oninit.bind( this ) );
+		navigator.requestMIDIAccess?.( { sysex: true } ).then( this.#oninit.bind( this ) );
 	}
 
 	// .........................................................................
