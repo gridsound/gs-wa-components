@@ -1,18 +1,16 @@
 "use strict";
 
 class gswaMIDIControllerOutput {
-	constructor( portID, name, output, sysexEnabled ) {
-		this.portID = portID;
-		this.name = name;
-		this.output = output;
-		this.sysexEnabled = sysexEnabled;
+	#port = null;
+	#sysex = false;
+
+	constructor( output, sysex ) {
+		this.#port = output;
+		this.#sysex = sysex;
 	}
 
-	$getOutput() {
-		return this.output;
-	}
 	#send( bytes ) {
-		this.output.send( bytes );
+		this.#port.send( bytes );
 	}
 	#sendToTarget( bytes, targetOutput ) {
 		targetOutput.send( bytes );

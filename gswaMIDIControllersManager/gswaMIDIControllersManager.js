@@ -1,8 +1,5 @@
 "use strict";
 
-const MIDI_CHANNEL_NOTEON = 0x90;
-const MIDI_CHANNEL_NOTEOFF = 0x80;
-
 class gswaMIDIControllersManager {
 	#uiKeys = null;
 	#midiAccess = null;
@@ -17,19 +14,11 @@ class gswaMIDIControllersManager {
 	$setPianorollKeys( uiKeys ) {
 		this.#uiKeys = uiKeys;
 	}
-	$linkToPianoroll( midiCtrl ) {
-		midiCtrl.$onNoteOnAdd( this.#pianorollLiveKeyPressed.bind( this ) );
-		midiCtrl.$onNoteOffAdd( this.#pianoRollLiveKeyReleased.bind( this ) );
+	#pianoRollLiveKeyReleased( key ) {
+		this.#uiKeys?.$midiKeyUp( key );
 	}
-	$unlinkFromPianoroll( midiCtrl ) {
-		midiCtrl.$onNoteOnRemove( this.#pianorollLiveKeyPressed.bind( this ) );
-		midiCtrl.$onNoteOffRemove( this.#pianoRollLiveKeyReleased.bind( this ) );
-	}
-	#pianoRollLiveKeyReleased( midiCtrlData ) {
-		this.#uiKeys?.$midiKeyUp( midiCtrlData[ 1 ] );
-	}
-	#pianorollLiveKeyPressed( midiCtrlData ) {
-		this.#uiKeys?.$midiKeyDown( midiCtrlData[ 1 ] );
+	#pianorollLiveKeyPressed( key ) {
+		this.#uiKeys?.$midiKeyDown( key );
 	}
 
 	// .........................................................................
@@ -57,15 +46,15 @@ class gswaMIDIControllersManager {
 		switch ( port.type ) {
 			case "input":
 				if ( !this.#midiCtrlInputs.has( port.id ) ) {
-					const ctrl = new gswaMIDIControllerInput( port.id, port.name, port, sysexEnabled );
-
-					this.#midiCtrlInputs.set( port.id, ctrl );
-					this.$linkToPianoroll( ctrl );
+					this.#midiCtrlInputs.set( port.id, new gswaMIDIControllerInput( port, sysexEnabled, {
+						$onNoteOn: this.#pianorollLiveKeyPressed.bind( this ),
+						$onNoteOff: this.#pianoRollLiveKeyReleased.bind( this ),
+					} ) );
 				}
 				break;
 			case "output":
 				if ( !this.#midiCtrlOutputs.has( port.id ) ) {
-					this.#midiCtrlOutputs.set( port.id, new gswaMIDIControllerOutput( port.id, port.name, port, sysexEnabled ) );
+					this.#midiCtrlOutputs.set( port.id, new gswaMIDIControllerOutput( port, sysexEnabled ) );
 				}
 				break;
 		}
