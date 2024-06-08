@@ -5,14 +5,15 @@ const MIDI_CHANNEL_NOTEOFF = 0x80;
 
 class gswaMIDIControllersManager {
 	#uiKeys = null;
+	#midiAccess = null;
 	#midiCtrlInputs = new Map();
 	#midiCtrlOutputs = new Map();
 
-	$initMidiAccess( midiAccess ) {
-		this.sysexEnabled = midiAccess.sysexEnabled;
-		midiAccess.onstatechange = this.#onControllerStateChange.bind( this );
-		this.#openAlreadyConnectedControllers( midiAccess );
+	$init() {
+		return navigator.requestMIDIAccess( { sysex: true } ).then( this.#oninit.bind( this ) );
 	}
+
+	// .........................................................................
 	$setPianorollKeys( uiKeys ) {
 		this.#uiKeys = uiKeys;
 	}
@@ -24,52 +25,49 @@ class gswaMIDIControllersManager {
 		midiCtrl.$onNoteOnRemove( this.#pianorollLiveKeyPressed.bind( this ) );
 		midiCtrl.$onNoteOffRemove( this.#pianoRollLiveKeyReleased.bind( this ) );
 	}
-
-	// .........................................................................
-	#openAlreadyConnectedControllers( midiAccess ) {
-		for ( const entry of midiAccess.inputs ) {
-			entry[ 1 ].open();
-		}
-		for ( const entry of midiAccess.outputs ) {
-			entry[ 1 ].open();
-		}
-	}
-	#onControllerStateChange( e ) {
-		if ( e.port.state === "connected" && e.port.connection === "open" ) {
-			this.#addController( e.port, e.currentTarget.sysexEnabled )
-		} else if ( e.port.state === "disconnected" ) {
-			this.#removeDevice( e.port );
-		}
-	}
-	#addController( port, sysexEnabled ) {
-		if ( port.type === "input" && !this.#midiCtrlInputs.has( port.id ) ) {
-			const ctrler = new gswaMIDIControllerInput( port.id, port.name, port, sysexEnabled );
-
-			this.#midiCtrlInputs.set( port.id, ctrler );
-			this.$linkToPianoroll( ctrler );
-		} else if ( port.type === "output" && !this.#midiCtrlOutputs.has( port.id ) ) {
-			const ctrler = new gswaMIDIControllerOutput( port.id, port.name, port, sysexEnabled );
-
-			this.#midiCtrlOutputs.set( port.id, ctrler );
-		}
-	}
-	#removeDevice( port ) {
-		( port.type === "input"
-			? this.#midiCtrlInputs
-			: this.#midiCtrlOutputs ).delete( port.id );
-	}
 	#pianoRollLiveKeyReleased( midiCtrlData ) {
 		this.#uiKeys?.$midiKeyUp( midiCtrlData[ 1 ] );
 	}
 	#pianorollLiveKeyPressed( midiCtrlData ) {
 		this.#uiKeys?.$midiKeyDown( midiCtrlData[ 1 ] );
 	}
-	#printControllers() {
-		for ( const [ id, ctrl ] of this.#midiCtrlInputs ) {
-			console.log( `input: id[${ id }] name[${ ctrl.name }]` );
+
+	// .........................................................................
+	#oninit( midiAcc ) {
+		this.#midiAccess = midiAcc;
+		midiAcc.onstatechange = this.#onstatechange.bind( this );
+		midiAcc.inputs.forEach( i => i.open() );
+		midiAcc.outputs.forEach( o => o.open() );
+	}
+	#onstatechange( e ) {
+		switch ( e.port.state ) {
+			case "connected":
+				if ( e.port.connection === "open" ) {
+					this.#addDevice( e.port, e.currentTarget.sysexEnabled );
+				}
+				break;
+			case "disconnected":
+				( e.port.type === "input"
+					? this.#midiCtrlInputs
+					: this.#midiCtrlOutputs ).delete( e.port.id );
+				break;
 		}
-		for ( const [ id, ctrl ] of this.#midiCtrlOutputs ) {
-			console.log( `output: id[${ id }] name[${ ctrl.name }]` );
+	}
+	#addDevice( port, sysexEnabled ) {
+		switch ( port.type ) {
+			case "input":
+				if ( !this.#midiCtrlInputs.has( port.id ) ) {
+					const ctrl = new gswaMIDIControllerInput( port.id, port.name, port, sysexEnabled );
+
+					this.#midiCtrlInputs.set( port.id, ctrl );
+					this.$linkToPianoroll( ctrl );
+				}
+				break;
+			case "output":
+				if ( !this.#midiCtrlOutputs.has( port.id ) ) {
+					this.#midiCtrlOutputs.set( port.id, new gswaMIDIControllerOutput( port.id, port.name, port, sysexEnabled ) );
+				}
+				break;
 		}
 	}
 }
