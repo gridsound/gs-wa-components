@@ -1,6 +1,6 @@
 "use strict";
 
-class gswaMIDIControllerOutput {
+class gswaMIDIOutput {
 	#port = null;
 	#sysex = false;
 

@@ -1,6 +1,6 @@
 "use strict";
 
-class gswaMIDIControllerInput {
+class gswaMIDIInput {
 	#sysex = false;
 	#onNoteOn = null;
 	#onNoteOff = null;

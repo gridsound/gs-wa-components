@@ -1,6 +1,6 @@
 "use strict";
 
-class gswaMIDIControllersManager {
+class gswaMIDIDevices {
 	#uiKeys = null;
 	#midiAccess = null;
 	#midiCtrlInputs = new Map();
@@ -46,7 +46,7 @@ class gswaMIDIControllersManager {
 		switch ( port.type ) {
 			case "input":
 				if ( !this.#midiCtrlInputs.has( port.id ) ) {
-					this.#midiCtrlInputs.set( port.id, new gswaMIDIControllerInput( port, sysexEnabled, {
+					this.#midiCtrlInputs.set( port.id, new gswaMIDIInput( port, sysexEnabled, {
 						$onNoteOn: this.#pianorollLiveKeyPressed.bind( this ),
 						$onNoteOff: this.#pianoRollLiveKeyReleased.bind( this ),
 					} ) );
@@ -54,7 +54,7 @@ class gswaMIDIControllersManager {
 				break;
 			case "output":
 				if ( !this.#midiCtrlOutputs.has( port.id ) ) {
-					this.#midiCtrlOutputs.set( port.id, new gswaMIDIControllerOutput( port, sysexEnabled ) );
+					this.#midiCtrlOutputs.set( port.id, new gswaMIDIOutput( port, sysexEnabled ) );
 				}
 				break;
 		}
