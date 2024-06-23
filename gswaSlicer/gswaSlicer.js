@@ -8,25 +8,25 @@ class gswaSlicer {
 
 		Object.values( slices ).forEach( sli => {
 			const obj = {
-				att: ctx.sampleRate * .01,
-				rel: ctx.sampleRate * .01,
-				srcInd: bufCropA + ( sli.x - ( sli.x - sli.y ) ) * newlen | 0,
-				dstInd: sli.x * newlen | 0,
-				cpyLen: sli.w * newlen | 0,
+				$att: ctx.sampleRate * .01,
+				$rel: ctx.sampleRate * .01,
+				$srcInd: bufCropA + ( sli.x - ( sli.x - sli.y ) ) * newlen | 0,
+				$dstInd: sli.x * newlen | 0,
+				$cpyLen: sli.w * newlen | 0,
 			};
 
 			for ( let i = 0; i < bufsrc.numberOfChannels; ++i ) {
-				obj.srcArr = bufsrc.getChannelData( i );
-				obj.dstArr = newbuf.getChannelData( i );
+				obj.$srcArr = bufsrc.getChannelData( i );
+				obj.$dstArr = newbuf.getChannelData( i );
 				gswaSlicer.#copy( obj );
 			}
 		} );
 		return newbuf;
 	}
-	static #copy( { srcArr, srcInd, dstArr, dstInd, cpyLen, att, rel } ) {
-		for ( let i = 0; i < cpyLen; ++i ) {
-			dstArr[ dstInd + i ] = srcInd + i < srcArr.length
-				? srcArr[ srcInd + i ] * gswaSlicer.#env( i, cpyLen, att, rel )
+	static #copy( { $srcArr, $srcInd, $dstArr, $dstInd, $cpyLen, $att, $rel } ) {
+		for ( let i = 0; i < $cpyLen; ++i ) {
+			$dstArr[ $dstInd + i ] = $srcInd + i < $srcArr.length
+				? $srcArr[ $srcInd + i ] * gswaSlicer.#env( i, $cpyLen, $att, $rel )
 				: 0;
 		}
 	}
