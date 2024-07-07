@@ -1,9 +1,15 @@
 "use strict";
 
 class gswaMixer {
+	static fftSizeVu = 1024;
 	static fftSize = 4096;
 	ctx = null;
 	connectedTo = null;
+	#vuAnalyserL = null;
+	#vuAnalyserR = null;
+	#vuAnalyserChan = null;
+	$vuDataL = new Float32Array( gswaMixer.fftSizeVu / 2 );
+	$vuDataR = new Float32Array( gswaMixer.fftSizeVu / 2 );
 	$audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
 	$audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
 	#chans = {};
@@ -24,6 +30,10 @@ class gswaMixer {
 	$setContext( ctx ) {
 		this.$disconnect();
 		this.ctx = ctx;
+		this.#vuAnalyserL = ctx.createAnalyser();
+		this.#vuAnalyserR = ctx.createAnalyser();
+		this.#vuAnalyserL.fftSize =
+		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
 		if ( "main" in this.#ctrlMixer.$data.channels ) {
 			this.#ctrlMixer.$recall();
 		} else {
@@ -38,6 +48,9 @@ class gswaMixer {
 				},
 			} );
 		}
+		this.#vuAnalyserChan = "main";
+		this.#chans.main.splitter.connect( this.#vuAnalyserL, 0 );
+		this.#chans.main.splitter.connect( this.#vuAnalyserR, 1 );
 	}
 	$change( obj ) {
 		this.#ctrlMixer.$change( obj );
@@ -71,6 +84,20 @@ class gswaMixer {
 	}
 	$getChanOutput( id ) {
 		return this.#chans[ id ]?.pan.getInput();
+	}
+	$fillAudioDataVu( chanId ) {
+		if ( chanId !== this.#vuAnalyserChan ) {
+			const nodesOld = this.#chans[ this.#vuAnalyserChan ];
+			const nodes = this.#chans[ chanId ];
+
+			nodesOld.splitter.disconnect( this.#vuAnalyserL, 0 );
+			nodesOld.splitter.disconnect( this.#vuAnalyserR, 1 );
+			nodes.splitter.connect( this.#vuAnalyserL, 0 );
+			nodes.splitter.connect( this.#vuAnalyserR, 1 );
+			this.#vuAnalyserChan = chanId;
+		}
+		this.#vuAnalyserL.getFloatTimeDomainData( this.$vuDataL );
+		this.#vuAnalyserR.getFloatTimeDomainData( this.$vuDataR );
 	}
 	$fillAudioData( chanId ) {
 		const nodes = this.#chans[ chanId ];
