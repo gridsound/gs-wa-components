@@ -72,6 +72,7 @@ class gswaSynth {
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
+					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.midi, now, 0 ); break;
 					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
 					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
@@ -329,7 +330,11 @@ class gswaSynth {
 				.connect( panNode )
 				.connect( gainNode )
 				.connect( key.gainLFOtarget ) );
-			uniNodes.forEach( n => n[ 0 ].start( key.when + .0001 * ( ind + key.midi / 4 ) ) ); // 2.
+
+			const orderOffset = .0000001 * ind; // 2.
+			const phazeOffset = 1 / gswaSynth.#getHz( key.midi ) * osc.phaze;
+
+			uniNodes.forEach( n => n[ 0 ].start( key.when + phazeOffset + orderOffset ) );
 			if ( Number.isFinite( dur ) ) {
 				uniNodes.forEach( n => n[ 0 ].stop( key.when + dur ) );
 			}
