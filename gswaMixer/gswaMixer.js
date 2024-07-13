@@ -8,10 +8,11 @@ class gswaMixer {
 	#vuAnalyserL = null;
 	#vuAnalyserR = null;
 	#vuAnalyserChan = null;
+	#analyserType = "hz";
 	$vuDataL = new Float32Array( gswaMixer.fftSizeVu / 2 );
 	$vuDataR = new Float32Array( gswaMixer.fftSizeVu / 2 );
-	$audioDataL = new Uint8Array( gswaMixer.fftSize / 2 );
-	$audioDataR = new Uint8Array( gswaMixer.fftSize / 2 );
+	$audioDataL = new Float32Array( gswaMixer.fftSize / 2 );
+	$audioDataR = new Float32Array( gswaMixer.fftSize / 2 );
 	#chans = {};
 	#ctrlMixer = new DAWCoreControllerMixer( {
 		$addChannel: this.#addChan.bind( this ),
@@ -99,38 +100,48 @@ class gswaMixer {
 		this.#vuAnalyserL.getFloatTimeDomainData( this.$vuDataL );
 		this.#vuAnalyserR.getFloatTimeDomainData( this.$vuDataR );
 	}
+	$changeAnalyser( type ) {
+		this.#analyserType = type;
+	}
 	$fillAudioData( chanId ) {
 		const nodes = this.#chans[ chanId ];
 
-		nodes.analyserL.getByteFrequencyData( this.$audioDataL );
-		nodes.analyserR.getByteFrequencyData( this.$audioDataR );
+		switch ( this.#analyserType ) {
+			case "hz":
+				nodes.analyserL.getFloatFrequencyData( this.$audioDataL );
+				nodes.analyserR.getFloatFrequencyData( this.$audioDataR );
+				break;
+			case "td":
+				nodes.analyserL.getFloatTimeDomainData( this.$audioDataL );
+				nodes.analyserR.getFloatTimeDomainData( this.$audioDataR );
+				break;
+		}
 	}
 
 	// .........................................................................
 	#addChan( id ) {
 		const ctx = this.ctx;
-		const pan = new gswaStereoPanner( ctx );
-		const gain = ctx.createGain();
-		const input = ctx.createGain();
-		const output = ctx.createGain();
-		const splitter = ctx.createChannelSplitter( 2 );
-		const analyserL = ctx.createAnalyser();
-		const analyserR = ctx.createAnalyser();
-
-		analyserL.fftSize =
-		analyserR.fftSize = gswaMixer.fftSize;
-		analyserL.smoothingTimeConstant =
-		analyserR.smoothingTimeConstant = 0;
-		input.connect( pan.getInput() );
-		pan.connect( gain );
-		gain.connect( output );
-		gain.connect( splitter );
-		splitter.connect( analyserL, 0 );
-		splitter.connect( analyserR, 1 );
-		this.#chans[ id ] = {
-			input, pan, gain, output, splitter, analyserL, analyserR,
-			analyserData: new Uint8Array( analyserL.frequencyBinCount )
+		const chan = {
+			pan: new gswaStereoPanner( ctx ),
+			gain: ctx.createGain(),
+			input: ctx.createGain(),
+			output: ctx.createGain(),
+			splitter: ctx.createChannelSplitter( 2 ),
+			analyserL: ctx.createAnalyser(),
+			analyserR: ctx.createAnalyser(),
 		};
+
+		chan.analyserL.fftSize =
+		chan.analyserR.fftSize = gswaMixer.fftSize;
+		chan.analyserL.smoothingTimeConstant =
+		chan.analyserR.smoothingTimeConstant = 0;
+		chan.input.connect( chan.pan.getInput() );
+		chan.pan.connect( chan.gain );
+		chan.gain.connect( chan.output );
+		chan.gain.connect( chan.splitter );
+		chan.splitter.connect( chan.analyserL, 0 );
+		chan.splitter.connect( chan.analyserR, 1 );
+		this.#chans[ id ] = chan;
 		Object.entries( this.#ctrlMixer.$data.channels ).forEach( kv => {
 			if ( kv[ 1 ].dest === id ) {
 				this.#redirectChan( kv[ 0 ], id );
