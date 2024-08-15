@@ -2,7 +2,7 @@
 
 class gswaMixer {
 	static fftSizeVu = 1024;
-	static fftSize = 4096;
+	static fftSize = 1024;
 	ctx = null;
 	connectedTo = null;
 	#vuAnalyserL = null;
@@ -17,10 +17,7 @@ class gswaMixer {
 	#ctrlMixer = new DAWCoreControllerMixer( {
 		$addChannel: this.#addChan.bind( this ),
 		$removeChannel: this.#removeChan.bind( this ),
-		$toggleChannel: this.#toggleChan.bind( this ),
-		$redirectChannel: this.#redirectChan.bind( this ),
-		$changePanChannel: this.#updateChanPan.bind( this ),
-		$changeGainChannel: this.#updateChanGain.bind( this ),
+		$changeChannelProp: this.#changeChanProp.bind( this ),
 	} );
 
 	constructor() {
@@ -35,7 +32,7 @@ class gswaMixer {
 		this.#vuAnalyserR = ctx.createAnalyser();
 		this.#vuAnalyserL.fftSize =
 		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
-		if ( "main" in this.#ctrlMixer.$data.channels ) {
+		if ( "main" in this.#ctrlMixer.$getData().channels ) {
 			this.#ctrlMixer.$recall();
 		} else {
 			this.#ctrlMixer.$change( {
@@ -49,14 +46,12 @@ class gswaMixer {
 				},
 			} );
 		}
-		this.#vuAnalyserChan = "main";
-		this.#chans.main.splitter.connect( this.#vuAnalyserL, 0 );
-		this.#chans.main.splitter.connect( this.#vuAnalyserR, 1 );
 	}
 	$change( obj ) {
 		this.#ctrlMixer.$change( obj );
 	}
 	$clear() {
+		this.#vuAnalyserChan = null;
 		this.#ctrlMixer.$clear();
 		this.#ctrlMixer.$change( {
 			channels: {
@@ -88,11 +83,13 @@ class gswaMixer {
 	}
 	$fillAudioDataVu( chanId ) {
 		if ( chanId !== this.#vuAnalyserChan ) {
-			const nodesOld = this.#chans[ this.#vuAnalyserChan ];
 			const nodes = this.#chans[ chanId ];
+			const nodesOld = this.#chans[ this.#vuAnalyserChan ];
 
-			nodesOld.splitter.disconnect( this.#vuAnalyserL, 0 );
-			nodesOld.splitter.disconnect( this.#vuAnalyserR, 1 );
+			if ( nodesOld ) {
+				nodesOld.splitter.disconnect( this.#vuAnalyserL, 0 );
+				nodesOld.splitter.disconnect( this.#vuAnalyserR, 1 );
+			}
 			nodes.splitter.connect( this.#vuAnalyserL, 0 );
 			nodes.splitter.connect( this.#vuAnalyserR, 1 );
 			this.#vuAnalyserChan = chanId;
@@ -122,9 +119,10 @@ class gswaMixer {
 	#addChan( id ) {
 		const ctx = this.ctx;
 		const chan = {
-			pan: new gswaStereoPanner( ctx ),
-			gain: ctx.createGain(),
 			input: ctx.createGain(),
+			toggle: ctx.createGain(),
+			gain: ctx.createGain(),
+			pan: new gswaStereoPanner( ctx ),
 			output: ctx.createGain(),
 			splitter: ctx.createChannelSplitter( 2 ),
 			analyserL: ctx.createAnalyser(),
@@ -135,35 +133,19 @@ class gswaMixer {
 		chan.analyserR.fftSize = gswaMixer.fftSize;
 		chan.analyserL.smoothingTimeConstant =
 		chan.analyserR.smoothingTimeConstant = 0;
-		chan.input.connect( chan.pan.getInput() );
-		chan.pan.connect( chan.gain );
-		chan.gain.connect( chan.output );
-		chan.gain.connect( chan.splitter );
+		chan.input.connect( chan.toggle )
+		chan.toggle.connect( chan.gain );
+		chan.gain.connect( chan.pan.getInput() );
+		chan.pan.connect( chan.output );
+		chan.pan.connect( chan.splitter );
 		chan.splitter.connect( chan.analyserL, 0 );
 		chan.splitter.connect( chan.analyserR, 1 );
 		this.#chans[ id ] = chan;
-		Object.entries( this.#ctrlMixer.$data.channels ).forEach( kv => {
-			if ( kv[ 1 ].dest === id ) {
-				this.#redirectChan( kv[ 0 ], id );
+		GSUforEach( this.#ctrlMixer.$getData().channels, ( chan, chanId ) => {
+			if ( chan.dest === id ) {
+				this.#changeChanProp( chanId, "dest", id );
 			}
 		} );
-	}
-	#redirectChan( id, val ) {
-		this.#chans[ id ].output.disconnect();
-		if ( val in this.#ctrlMixer.$data.channels ) {
-			this.#chans[ id ].output.connect( this.$getChanInput( val ) );
-		}
-	}
-	#toggleChan( id, val ) {
-		this.#chans[ id ].gain.gain.setValueAtTime( val ? this.#ctrlMixer.$data.channels[ id ].gain : 0, this.ctx.currentTime );
-	}
-	#updateChanPan( id, val ) {
-		this.#chans[ id ].pan.setValueAtTime( val, this.ctx.currentTime );
-	}
-	#updateChanGain( id, val ) {
-		if ( this.#ctrlMixer.$data.channels[ id ].toggle ) {
-			this.#chans[ id ].gain.gain.setValueAtTime( val, this.ctx.currentTime );
-		}
 	}
 	#removeChan( id ) {
 		const nodes = this.#chans[ id ];
@@ -174,5 +156,21 @@ class gswaMixer {
 		nodes.output.disconnect();
 		nodes.splitter.disconnect();
 		delete this.#chans[ id ];
+	}
+	#changeChanProp( id, prop, val, prev ) {
+		const chan = this.#chans[ id ];
+		const now = this.ctx.currentTime;
+
+		switch ( prop ) {
+			case "toggle": chan.toggle.gain.setValueAtTime( val ? 1 : 0, now ); break;
+			case "pan": chan.pan.setValueAtTime( val, now ); break;
+			case "gain": chan.gain.gain.setValueAtTime( val, now ); break;
+			case "dest":
+				chan.output.disconnect();
+				if ( val in this.#ctrlMixer.$getData().channels ) {
+					chan.output.connect( this.$getChanInput( val ) );
+				}
+				break;
+		}
 	}
 }
