@@ -79,7 +79,7 @@ class gswaMixer {
 		return this.#chans[ id ]?.input;
 	}
 	$getChanOutput( id ) {
-		return this.#chans[ id ]?.pan.getInput();
+		return this.#chans[ id ]?.toggle;
 	}
 	$fillAudioDataVu( chanId ) {
 		if ( chanId !== this.#vuAnalyserChan ) {
