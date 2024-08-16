@@ -32,6 +32,7 @@ class gswaMixer {
 		this.#vuAnalyserR = ctx.createAnalyser();
 		this.#vuAnalyserL.fftSize =
 		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
+		this.#vuAnalyserChan = null;
 		if ( "main" in this.#ctrlMixer.$getData().channels ) {
 			this.#ctrlMixer.$recall();
 		} else {
