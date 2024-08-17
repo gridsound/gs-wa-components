@@ -23,10 +23,10 @@ class gswaSlicer {
 		} );
 		return newbuf;
 	}
-	static #copy( { $srcArr, $srcInd, $dstArr, $dstInd, $cpyLen, $att, $rel } ) {
-		for ( let i = 0; i < $cpyLen; ++i ) {
-			$dstArr[ $dstInd + i ] = $srcInd + i < $srcArr.length
-				? $srcArr[ $srcInd + i ] * gswaSlicer.#env( i, $cpyLen, $att, $rel )
+	static #copy( o ) {
+		for ( let i = 0; i < o.$cpyLen; ++i ) {
+			o.$dstArr[ o.$dstInd + i ] = o.$srcInd + i < o.$srcArr.length
+				? o.$srcArr[ o.$srcInd + i ] * gswaSlicer.#env( i, o.$cpyLen, o.$att, o.$rel )
 				: 0;
 		}
 	}
