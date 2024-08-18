@@ -259,7 +259,7 @@ class gswaScheduler {
 		}
 	}
 	#blockStart( when, from, to, offEnd, blockId, block ) {
-		if ( block.prev == null ) {
+		if ( block.prev == null && !block.mute ) {
 			const bps = this.bps;
 			const blcs = [];
 			let bWhn = block.when / bps;
