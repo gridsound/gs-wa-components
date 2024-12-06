@@ -6,7 +6,10 @@ class gswaNoise {
 
 	// .........................................................................
 	static $initBuffer( ctx ) {
-		const bufSize = gswaNoise.#duration * ctx.sampleRate;
+		gswaNoise.#buffer = gswaNoise.$createBuffer( ctx, gswaNoise.#duration );
+	}
+	static $createBuffer( ctx, dur ) {
+		const bufSize = dur * ctx.sampleRate;
 		const buf = ctx.createBuffer( 2, bufSize, ctx.sampleRate );
 		const chan0 = buf.getChannelData( 0 );
 		const chan1 = buf.getChannelData( 1 );
@@ -15,10 +18,8 @@ class gswaNoise {
 			chan0[ i ] = Math.random() * 2 - 1;
 			chan1[ i ] = Math.random() * 2 - 1;
 		}
-		gswaNoise.#buffer = buf;
+		return buf;
 	}
-
-	// .........................................................................
 	static $startABSN( ctx, when, dur ) {
 		const absn = ctx.createBufferSource();
 
