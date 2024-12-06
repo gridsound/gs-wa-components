@@ -2,7 +2,7 @@
 
 class gswaNoise {
 	static #buffer = null;
-	static #duration = 1;
+	static #duration = 4;
 
 	// .........................................................................
 	static $initBuffer( ctx ) {
