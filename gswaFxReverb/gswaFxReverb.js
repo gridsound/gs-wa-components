@@ -2,10 +2,12 @@
 
 class gswaFxReverb {
 	#ctx = null;
+	#bps = 1;
 	#input = null;
 	#output = null;
 	#dryGain = null;
 	#wetGain = null;
+	#wetDelay = null;
 	#convolver = null;
 	#enable = false;
 	#data = DAWCoreJSON_effects_reverb();
@@ -21,6 +23,10 @@ class gswaFxReverb {
 	$getOutput() {
 		return this.#output;
 	}
+	$setBPM( bpm ) {
+		this.#bps = bpm / 60;
+		this.#changeProp( "delay", this.#data.delay );
+	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {
 			this.#input.disconnect();
@@ -32,6 +38,7 @@ class gswaFxReverb {
 		this.#output = ctx.createGain();
 		this.#dryGain = ctx.createGain();
 		this.#wetGain = ctx.createGain();
+		this.#wetDelay = ctx.createDelay( 5 );
 		this.#convolver = ctx.createConvolver();
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
@@ -49,11 +56,18 @@ class gswaFxReverb {
 		if ( this.#ctx ) {
 			if ( b ) {
 				this.#input.disconnect();
-				this.#input.connect( this.#dryGain ).connect( this.#output );
-				this.#input.connect( this.#wetGain ).connect( this.#convolver ).connect( this.#output );
+				this.#input
+					.connect( this.#dryGain )
+					.connect( this.#output );
+				this.#input
+					.connect( this.#wetGain )
+					.connect( this.#wetDelay )
+					.connect( this.#convolver )
+					.connect( this.#output );
 			} else {
 				this.#dryGain.disconnect();
 				this.#wetGain.disconnect();
+				this.#wetDelay.disconnect();
 				this.#convolver.disconnect();
 				this.#input.connect( this.#output );
 			}
@@ -76,6 +90,7 @@ class gswaFxReverb {
 		switch ( prop ) {
 			case "dry": this.#dryGain.gain.setValueAtTime( val, now ); break;
 			case "wet": this.#wetGain.gain.setValueAtTime( val, now ); break;
+			case "delay": this.#wetDelay.delayTime.setValueAtTime( val / this.#bps, now ); break;
 		}
 	}
 }
