@@ -55,6 +55,7 @@ class gswaEffects {
 		switch ( fx ) {
 			case "delay": return new gswaFxDelay();
 			case "filter": return new gswaFxFilter();
+			case "reverb": return new gswaFxReverb();
 			case "waveshaper": return new gswaFxWaveShaper();
 		}
 	}
