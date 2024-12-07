@@ -11,6 +11,7 @@ class gswaFxReverb {
 	#convolver = null;
 	#wetConstant = null; // needed for Chrome (the delayNode seems to stop sending when it stop receiving).
 	#enable = false;
+	#updateBufferDeb = GSUdebounce( this.#updateBuffer.bind( this ), 100 );
 	#data = DAWCoreJSON_effects_reverb();
 
 	constructor() {
@@ -27,6 +28,7 @@ class gswaFxReverb {
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;
 		this.#changeProp( "delay", this.#data.delay );
+		this.#updateBufferDeb();
 	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {
@@ -47,14 +49,6 @@ class gswaFxReverb {
 		this.#wetConstant = ctx.createConstantSource();
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
-
-		fetch( "ir-reverb0_1-1_5-15000-1000.wav" )
-			.then( res => res.arrayBuffer() )
-			.then( arr => ctx.decodeAudioData( arr ) )
-			.then( buf => {
-				lg( "reverb IR loaded" );
-				this.#convolver.buffer = buf;
-			} );
 	}
 	$toggle( b ) {
 		this.#enable = b;
@@ -99,7 +93,12 @@ class gswaFxReverb {
 			case "dry": this.#dryGain.gain.setValueAtTime( val, now ); break;
 			case "wet": this.#wetGain.gain.setValueAtTime( val, now ); break;
 			case "delay": this.#wetDelay.delayTime.setValueAtTime( val / this.#bps, now ); break;
+			case "fadein":
+			case "decay": this.#updateBufferDeb(); break;
 		}
+	}
+	#updateBuffer() {
+		this.#convolver.buffer = gswaReverbIR.$createIR( this.#ctx, this.#data.fadein / this.#bps, this.#data.decay / this.#bps );
 	}
 }
 
