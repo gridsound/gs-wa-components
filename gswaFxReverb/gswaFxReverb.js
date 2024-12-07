@@ -38,7 +38,7 @@ class gswaFxReverb {
 		this.#output = ctx.createGain();
 		this.#dryGain = ctx.createGain();
 		this.#wetGain = ctx.createGain();
-		this.#wetDelay = ctx.createDelay( 5 );
+		this.#wetDelay = ctx.createDelay( 30 );
 		this.#convolver = ctx.createConvolver();
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
@@ -61,8 +61,8 @@ class gswaFxReverb {
 					.connect( this.#output );
 				this.#input
 					.connect( this.#wetGain )
-					.connect( this.#wetDelay )
 					.connect( this.#convolver )
+					.connect( this.#wetDelay )
 					.connect( this.#output );
 			} else {
 				this.#dryGain.disconnect();
