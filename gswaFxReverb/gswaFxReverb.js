@@ -9,6 +9,7 @@ class gswaFxReverb {
 	#wetGain = null;
 	#wetDelay = null;
 	#convolver = null;
+	#wetConstant = null; // needed for Chrome (the delayNode seems to stop sending when it stop receiving).
 	#enable = false;
 	#data = DAWCoreJSON_effects_reverb();
 
@@ -31,7 +32,10 @@ class gswaFxReverb {
 		if ( this.#ctx ) {
 			this.#input.disconnect();
 			this.#output.disconnect();
+			this.#wetGain.disconnect();
+			this.#wetDelay.disconnect();
 			this.#convolver.disconnect();
+			this.#wetConstant.disconnect();
 		}
 		this.#ctx = ctx;
 		this.#input = ctx.createGain();
@@ -40,6 +44,7 @@ class gswaFxReverb {
 		this.#wetGain = ctx.createGain();
 		this.#wetDelay = ctx.createDelay( 30 );
 		this.#convolver = ctx.createConvolver();
+		this.#wetConstant = ctx.createConstantSource();
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 
@@ -59,6 +64,8 @@ class gswaFxReverb {
 				this.#input
 					.connect( this.#dryGain )
 					.connect( this.#output );
+				this.#wetConstant
+					.connect( this.#wetGain );
 				this.#input
 					.connect( this.#wetGain )
 					.connect( this.#convolver )
@@ -69,6 +76,7 @@ class gswaFxReverb {
 				this.#wetGain.disconnect();
 				this.#wetDelay.disconnect();
 				this.#convolver.disconnect();
+				this.#wetConstant.disconnect();
 				this.#input.connect( this.#output );
 			}
 		}
