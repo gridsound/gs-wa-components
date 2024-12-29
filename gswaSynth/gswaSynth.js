@@ -220,7 +220,7 @@ class gswaSynth {
 		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.oscNodes.set( id, this.#createOscNode( key, osc, i, env ) ) );
 		this.#scheduleVariations( key );
 		key.gainLFOtarget
-			.connect( key.gainEnvNode.node )
+			.connect( key.gainEnvNode.$node )
 			.connect( key.gainNode )
 			.connect( key.panNode )
 			.connect( key.lowpassNode )

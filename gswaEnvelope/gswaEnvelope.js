@@ -1,9 +1,9 @@
 "use strict";
 
 class gswaEnvelope {
-	ctx = null;
-	node = null;
-	data = Object.seal( {
+	$node = null;
+	#ctx = null;
+	#data = Object.seal( {
 		toggle: false,
 		when: 0,
 		duration: 0,
@@ -19,13 +19,13 @@ class gswaEnvelope {
 
 	constructor( ctx ) {
 		Object.seal( this );
-		this.ctx = ctx;
-		this.node = ctx.createGain();
+		this.#ctx = ctx;
+		this.$node = ctx.createGain();
 	}
 
 	// .........................................................................
 	$start( obj ) {
-		const d = this.data;
+		const d = this.#data;
 		const def = gswaEnvelope.#defEnv;
 
 		Object.assign( d, obj );
@@ -40,9 +40,9 @@ class gswaEnvelope {
 
 	// .........................................................................
 	#start() {
-		const d = this.data;
-		const now = this.ctx.currentTime;
-		const par = this.node.gain;
+		const d = this.#data;
+		const now = this.#ctx.currentTime;
+		const par = this.$node.gain;
 		const w = d.when;
 		const dur = d.duration;
 		const env = d.toggle ? d : gswaEnvelope.#defEnv;
@@ -88,15 +88,15 @@ class gswaEnvelope {
 		}
 	}
 	#attack( top, when, dur ) {
-		this.node.gain.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
+		this.$node.gain.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
 	}
 	#release( top, when, dur ) {
-		this.node.gain.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
+		this.$node.gain.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
 	}
 	#stop() {
-		const d = this.data;
-		const now = this.ctx.currentTime;
-		const par = this.node.gain;
+		const d = this.#data;
+		const now = this.#ctx.currentTime;
+		const par = this.$node.gain;
 
 		par.cancelScheduledValues( 0 );
 		if ( Number.isFinite( d.duration ) ) {
