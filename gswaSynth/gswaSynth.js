@@ -91,7 +91,7 @@ class gswaSynth {
 			if ( "decay" in nobj ) { nobj.decay /= this.#bps; }
 			if ( "attack" in nobj ) { nobj.attack /= this.#bps; }
 			if ( "release" in nobj ) { nobj.release /= this.#bps; }
-			key.gainEnvNode.$start( nobj );
+			key.gainEnv.$start( nobj );
 		} );
 	}
 	#changeLFO( obj ) {
@@ -146,7 +146,8 @@ class gswaSynth {
 			release: blcLast.release / bps || .005,
 			variations: [],
 			oscNodes: new Map(),
-			gainEnvNode: new gswaEnvelope( ctx ),
+			gainEnv: new gswaEnvelope( ctx ),
+			gainEnvNode: ctx.createGain(),
 			gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
 			gainLFOtarget,
 			gainNode: ctx.createGain(),
@@ -193,7 +194,7 @@ class gswaSynth {
 		key.gainNode.gain.setValueAtTime( key.gain, atTime );
 		key.lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.lowpass ), atTime );
 		key.highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.highpass ), atTime );
-		key.gainEnvNode.$start( {
+		key.gainEnv.$start( {
 			toggle: env.toggle,
 			when: when - off,
 			duration: dur + off,
@@ -219,8 +220,10 @@ class gswaSynth {
 		} );
 		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.oscNodes.set( id, this.#createOscNode( key, osc, i, env ) ) );
 		this.#scheduleVariations( key );
+		key.gainEnvNode.gain.setValueAtTime( 0, 0 );
+		key.gainEnv.$node.connect( key.gainEnvNode.gain );
 		key.gainLFOtarget
-			.connect( key.gainEnvNode.$node )
+			.connect( key.gainEnvNode )
 			.connect( key.gainNode )
 			.connect( key.panNode )
 			.connect( key.lowpassNode )
@@ -241,7 +244,7 @@ class gswaSynth {
 			if ( Number.isFinite( key.dur ) ) {
 				this.#stopKey( id );
 			} else {
-				key.gainEnvNode.$destroy();
+				key.gainEnv.$destroy();
 				setTimeout( this.#stopKey.bind( this, id ), ( this.#data.env.release + .1 ) / this.#bps * 1000 );
 			}
 		} else {
@@ -253,7 +256,7 @@ class gswaSynth {
 
 		key.oscNodes.forEach( this.#destroyOscNode, this );
 		key.gainLFO.$destroy();
-		key.gainEnvNode.$destroy();
+		key.gainEnv.$destroy();
 		this.#startedKeys.delete( id );
 	}
 

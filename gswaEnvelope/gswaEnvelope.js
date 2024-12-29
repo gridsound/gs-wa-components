@@ -20,7 +20,7 @@ class gswaEnvelope {
 	constructor( ctx ) {
 		Object.seal( this );
 		this.#ctx = ctx;
-		this.$node = ctx.createGain();
+		this.$node = ctx.createConstantSource();
 	}
 
 	// .........................................................................
@@ -42,7 +42,7 @@ class gswaEnvelope {
 	#start() {
 		const d = this.#data;
 		const now = this.#ctx.currentTime;
-		const par = this.$node.gain;
+		const par = this.$node.offset;
 		const w = d.when;
 		const dur = d.duration;
 		const env = d.toggle ? d : gswaEnvelope.#defEnv;
@@ -55,6 +55,7 @@ class gswaEnvelope {
 
 		par.cancelScheduledValues( 0 );
 		par.setValueAtTime( 0, now );
+		this.$node.start();
 		if ( dur >= A + H + D ) {
 			if ( now <= w ) {
 				this.#attack( 1, w, A );
@@ -88,15 +89,15 @@ class gswaEnvelope {
 		}
 	}
 	#attack( top, when, dur ) {
-		this.$node.gain.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
+		this.$node.offset.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
 	}
 	#release( top, when, dur ) {
-		this.$node.gain.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
+		this.$node.offset.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
 	}
 	#stop() {
 		const d = this.#data;
 		const now = this.#ctx.currentTime;
-		const par = this.$node.gain;
+		const par = this.$node.offset;
 
 		par.cancelScheduledValues( 0 );
 		if ( Number.isFinite( d.duration ) ) {
