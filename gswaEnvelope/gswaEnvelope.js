@@ -2,6 +2,7 @@
 
 class gswaEnvelope {
 	$node = null;
+	#nodeStarted = false;
 	#ctx = null;
 	#data = Object.seal( {
 		toggle: false,
@@ -55,7 +56,10 @@ class gswaEnvelope {
 
 		par.cancelScheduledValues( 0 );
 		par.setValueAtTime( 0, now );
-		this.$node.start();
+		if ( !this.#nodeStarted ) {
+			this.#nodeStarted = true;
+			this.$node.start();
+		}
 		if ( dur >= A + H + D ) {
 			if ( now <= w ) {
 				this.#attack( 1, w, A );
