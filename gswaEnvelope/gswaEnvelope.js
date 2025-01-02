@@ -4,30 +4,33 @@ class gswaEnvelope {
 	$node = null;
 	#nodeStarted = false;
 	#ctx = null;
+	#defEnv = {
+		amp: 1,
+		attack: .001,
+		hold: 0,
+		decay: .001,
+		sustain: 1,
+		release: .001,
+	};
 	#data = Object.seal( {
 		toggle: false,
 		when: 0,
 		duration: 0,
-		...gswaEnvelope.#defEnv,
-	} );
-	static #defEnv = Object.freeze( {
-		attack: .01,
-		hold: 0,
-		decay: .01,
-		sustain: 1,
-		release: .01,
+		...this.#defEnv,
 	} );
 
-	constructor( ctx ) {
+	constructor( ctx, target ) {
 		Object.seal( this );
 		this.#ctx = ctx;
 		this.$node = ctx.createConstantSource();
+		this.#defEnv.amp = target === "detune" ? 0 : 1;
+		Object.freeze( this.#defEnv );
 	}
 
 	// .........................................................................
 	$start( obj ) {
 		const d = this.#data;
-		const def = gswaEnvelope.#defEnv;
+		const def = this.#defEnv;
 
 		Object.assign( d, obj );
 		d.attack = Math.max( def.attack, d.attack );
@@ -46,8 +49,9 @@ class gswaEnvelope {
 		const par = this.$node.offset;
 		const w = d.when;
 		const dur = d.duration;
-		const env = d.toggle ? d : gswaEnvelope.#defEnv;
-		const Af = gswaEnvelope.#defEnv.attack;
+		const env = d.toggle ? d : this.#defEnv;
+		const Af = this.#defEnv.attack;
+		const amp = env.amp;
 		const A = env.attack;
 		const H = env.hold;
 		const D = env.decay;
@@ -62,33 +66,33 @@ class gswaEnvelope {
 		}
 		if ( dur >= A + H + D ) {
 			if ( now <= w ) {
-				this.#attack( 1, w, A );
+				this.#attack( 1 * amp, w, A );
 			} else if ( now < w + A ) {
-				this.#attack( 1, now, w + A - now );
+				this.#attack( 1 * amp, now, w + A - now );
 			} else if ( now < w + A + H ) {
-				this.#attack( 1, now, Af );
+				this.#attack( 1 * amp, now, Af );
 			} else if ( now < w + A + H + D ) {
-				this.#attack( S, now, w + A + H + D - now );
+				this.#attack( S * amp, now, w + A + H + D - now );
 			} else if ( now < w + dur - Af ) {
-				this.#attack( S, now, Af );
+				this.#attack( S * amp, now, Af );
 			}
 			if ( now < w + A + H && S < 1 ) {
-				par.setValueCurveAtTime( new Float32Array( [ 1, S ] ), w + A + H, D );
+				par.setValueCurveAtTime( new Float32Array( [ amp, S * amp ] ), w + A + H, D );
 			}
 		} else if ( now <= w ) {
-			this.#attack( S, w, dur );
+			this.#attack( S * amp, w, dur );
 		} else if ( now <= w + dur ) {
-			this.#attack( S, now, w + dur - now );
+			this.#attack( S * amp, now, w + dur - now );
 		} else {
-			this.#attack( S, now, Af );
+			this.#attack( S * amp, now, Af );
 		}
 		if ( Number.isFinite( dur ) ) {
 			if ( now <= w + dur ) {
-				this.#release( S, w + dur, R );
+				this.#release( S * amp, w + dur, R );
 			} else if ( now < w + dur + R ) {
-				this.#release( S, now + Af, w + dur + R - now );
+				this.#release( S * amp, now + Af, w + dur + R - now );
 			} else {
-				this.#release( S, now + Af, Af );
+				this.#release( S * amp, now + Af, Af );
 			}
 		}
 	}
@@ -100,6 +104,7 @@ class gswaEnvelope {
 	}
 	#stop() {
 		const d = this.#data;
+		const env = d.toggle ? d : this.#defEnv;
 		const now = this.#ctx.currentTime;
 		const par = this.$node.offset;
 
@@ -107,8 +112,8 @@ class gswaEnvelope {
 		if ( Number.isFinite( d.duration ) ) {
 			par.setValueAtTime( 0, now );
 		} else {
-			par.setValueAtTime( d.sustain, now );
-			par.setValueCurveAtTime( new Float32Array( [ d.sustain, 0 ] ), now, d.release );
+			par.setValueAtTime( env.sustain * env.amp, now );
+			this.#release( env.sustain * env.amp, now, env.release );
 		}
 	}
 }
