@@ -38,8 +38,11 @@ class gswaEnvelope {
 		d.release = Math.max( def.release, d.release );
 		this.#start();
 	}
+	$stop( when ) {
+		this.#stop( when ?? this.#ctx.currentTime );
+	}
 	$destroy() {
-		this.#stop();
+		this.#stop( this.#ctx.currentTime );
 	}
 
 	// .........................................................................
@@ -102,18 +105,19 @@ class gswaEnvelope {
 	#release( top, when, dur ) {
 		this.$node.offset.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
 	}
-	#stop() {
+	#stop( when ) {
 		const d = this.#data;
 		const env = d.toggle ? d : this.#defEnv;
-		const now = this.#ctx.currentTime;
 		const par = this.$node.offset;
 
 		par.cancelScheduledValues( 0 );
 		if ( Number.isFinite( d.duration ) ) {
-			par.setValueAtTime( 0, now );
+			par.setValueAtTime( 0, when );
+			this.$node.stop( when );
 		} else {
-			par.setValueAtTime( env.sustain * env.amp, now );
-			this.#release( env.sustain * env.amp, now, env.release );
+			par.setValueAtTime( env.sustain * env.amp, when );
+			this.#release( env.sustain * env.amp, when, env.release );
+			this.$node.stop( when + env.release );
 		}
 	}
 }
