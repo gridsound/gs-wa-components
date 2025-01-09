@@ -136,9 +136,9 @@ class gswaMixer {
 		chan.analyserR.smoothingTimeConstant = 0;
 		chan.input.connect( chan.toggle )
 		chan.toggle.connect( chan.gain );
-		chan.gain.connect( chan.pan.getInput() );
-		chan.pan.connect( chan.output );
-		chan.pan.connect( chan.splitter );
+		chan.gain.connect( chan.pan.$getInput() );
+		chan.pan.$connect( chan.output );
+		chan.pan.$connect( chan.splitter );
 		chan.splitter.connect( chan.analyserL, 0 );
 		chan.splitter.connect( chan.analyserR, 1 );
 		this.#chans[ id ] = chan;
@@ -151,7 +151,7 @@ class gswaMixer {
 	#removeChan( id ) {
 		const nodes = this.#chans[ id ];
 
-		nodes.pan.disconnect();
+		nodes.pan.$disconnect();
 		nodes.gain.disconnect();
 		nodes.input.disconnect();
 		nodes.output.disconnect();
@@ -164,7 +164,7 @@ class gswaMixer {
 
 		switch ( prop ) {
 			case "toggle": chan.toggle.gain.setValueAtTime( val ? 1 : 0, now ); break;
-			case "pan": chan.pan.setValueAtTime( val, now ); break;
+			case "pan": chan.pan.$setValueAtTime( val, now ); break;
 			case "gain": chan.gain.gain.setValueAtTime( val, now ); break;
 			case "dest":
 				chan.output.disconnect();

@@ -67,7 +67,7 @@ class gswaSynth {
 				switch ( prop ) {
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
 					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.midi, now, 0 ); break;
-					case "pan": nodes.panNode.setValueAtTime( val, now ); break;
+					case "pan": nodes.panNode.$setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
 					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
 					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
@@ -198,7 +198,7 @@ class gswaSynth {
 		}
 		key.lowpassNode.type = "lowpass";
 		key.highpassNode.type = "highpass";
-		key.panNode.setValueAtTime( key.pan, atTime );
+		key.panNode.$setValueAtTime( key.pan, atTime );
 		key.gainNode.gain.setValueAtTime( key.gain, atTime );
 		key.lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.lowpass ), atTime );
 		key.highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.highpass ), atTime );
@@ -244,9 +244,9 @@ class gswaSynth {
 		key.gainLFOtarget
 			.connect( key.gainEnvNode )
 			.connect( key.gainNode )
-			.connect( key.panNode.getInput() );
+			.connect( key.panNode.$getInput() );
 		key.panNode
-			.connect( key.lowpassNode )
+			.$connect( key.lowpassNode )
 			.connect( key.highpassNode )
 			.connect( this.$output );
 		this.#startedKeys.set( id, key );
@@ -303,7 +303,7 @@ class gswaSynth {
 
 			if ( when > this.$ctx.currentTime && dur > 0 ) {
 				key.oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
-				key.panNode.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				key.panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 				key.gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
 				key.lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
 				key.highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
@@ -325,12 +325,12 @@ class gswaSynth {
 			gainNode,
 		} );
 
-		panNode.setValueAtTime( osc.pan, now );
+		panNode.$setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
-		panNode.connect( gainNode ).connect( key.gainLFOtarget );
+		panNode.$connect( gainNode ).connect( key.gainLFOtarget );
 		if ( osc.wave === "noise" ) {
 			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
-			nodes.absn.connect( panNode.getInput() );
+			nodes.absn.connect( panNode.$getInput() );
 		} else {
 			for ( let i = 0; i < osc.unisonvoices; ++i ) {
 				const uniGain = this.$ctx.createGain();
@@ -341,12 +341,12 @@ class gswaSynth {
 				if ( osc.source ) {
 					uniSrc
 						.connect( uniGain )
-						.connect( panNode.getInput() );
+						.connect( panNode.$getInput() );
 				} else {
 					uniSrc
 						.connect( this.$ctx.createStereoPanner() ) // 3.
 						.connect( uniGain )
-						.connect( panNode.getInput() );
+						.connect( panNode.$getInput() );
 				}
 				key.detuneEnv.$node.connect( uniSrc.detune );
 				uniNodes.push( [ uniSrc, uniGain ] );
