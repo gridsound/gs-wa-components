@@ -338,16 +338,7 @@ class gswaSynth {
 					? this.$ctx.createBufferSource()
 					: this.$ctx.createOscillator();
 
-				if ( osc.source ) {
-					uniSrc
-						.connect( uniGain )
-						.connect( panNode.$getInput() );
-				} else {
-					uniSrc
-						.connect( this.$ctx.createStereoPanner() ) // 3.
-						.connect( uniGain )
-						.connect( panNode.$getInput() );
-				}
+				uniSrc.connect( uniGain ).connect( panNode.$getInput() );
 				key.detuneEnv.$node.connect( uniSrc.detune );
 				uniNodes.push( [ uniSrc, uniGain ] );
 			}
