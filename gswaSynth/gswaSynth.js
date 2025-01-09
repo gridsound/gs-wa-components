@@ -67,7 +67,7 @@ class gswaSynth {
 				switch ( prop ) {
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
 					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.midi, now, 0 ); break;
-					case "pan": nodes.panNode.pan.setValueAtTime( val, now ); break;
+					case "pan": nodes.panNode.setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
 					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
 					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
@@ -159,7 +159,7 @@ class gswaSynth {
 			gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
 			gainLFOtarget,
 			gainNode: ctx.createGain(),
-			panNode: ctx.createStereoPanner(),
+			panNode: new gswaStereoPanner( ctx ),
 			lowpassNode: ctx.createBiquadFilter(),
 			highpassNode: ctx.createBiquadFilter(),
 		} );
@@ -198,7 +198,7 @@ class gswaSynth {
 		}
 		key.lowpassNode.type = "lowpass";
 		key.highpassNode.type = "highpass";
-		key.panNode.pan.setValueAtTime( key.pan, atTime );
+		key.panNode.setValueAtTime( key.pan, atTime );
 		key.gainNode.gain.setValueAtTime( key.gain, atTime );
 		key.lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.lowpass ), atTime );
 		key.highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.highpass ), atTime );
@@ -244,7 +244,8 @@ class gswaSynth {
 		key.gainLFOtarget
 			.connect( key.gainEnvNode )
 			.connect( key.gainNode )
-			.connect( key.panNode )
+			.connect( key.panNode.getInput() );
+		key.panNode
 			.connect( key.lowpassNode )
 			.connect( key.highpassNode )
 			.connect( this.$output );
@@ -302,7 +303,7 @@ class gswaSynth {
 
 			if ( when > this.$ctx.currentTime && dur > 0 ) {
 				key.oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
-				key.panNode.pan.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				key.panNode.setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 				key.gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
 				key.lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
 				key.highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
@@ -314,7 +315,7 @@ class gswaSynth {
 	#createOscNode( key, osc, ind, env ) {
 		const now = this.$ctx.currentTime;
 		const uniNodes = [];
-		const panNode = this.$ctx.createStereoPanner();
+		const panNode = new gswaStereoPanner( this.$ctx );
 		const gainNode = this.$ctx.createGain();
 		const dur = key.dur + env.release / this.#bps;
 		const nodes = Object.seal( {
@@ -324,12 +325,12 @@ class gswaSynth {
 			gainNode,
 		} );
 
-		panNode.pan.setValueAtTime( osc.pan, now );
+		panNode.setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
 		panNode.connect( gainNode ).connect( key.gainLFOtarget );
 		if ( osc.wave === "noise" ) {
 			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
-			nodes.absn.connect( panNode );
+			nodes.absn.connect( panNode.getInput() );
 		} else {
 			for ( let i = 0; i < osc.unisonvoices; ++i ) {
 				const uniGain = this.$ctx.createGain();
@@ -337,7 +338,16 @@ class gswaSynth {
 					? this.$ctx.createBufferSource()
 					: this.$ctx.createOscillator();
 
-				uniSrc.connect( uniGain ).connect( panNode );
+				if ( osc.source ) {
+					uniSrc
+						.connect( uniGain )
+						.connect( panNode.getInput() );
+				} else {
+					uniSrc
+						.connect( this.$ctx.createStereoPanner() ) // 3.
+						.connect( uniGain )
+						.connect( panNode.getInput() );
+				}
 				key.detuneEnv.$node.connect( uniSrc.detune );
 				uniNodes.push( [ uniSrc, uniGain ] );
 			}
@@ -467,4 +477,6 @@ Object.freeze( gswaSynth );
 1. We do not need to update blocks' `when` because only their intervals count.
 2. We add a little timing to be sure we start the oscillators in the same order
    each time, to avoid random chaos...
+3. We need a native stereoPanner to convert the mono oscillator into stereo.
+   Maybe there is a simpler way.
 */
