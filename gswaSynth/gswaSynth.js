@@ -326,20 +326,20 @@ class gswaSynth {
 
 		panNode.pan.setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
+		panNode.connect( gainNode ).connect( key.gainLFOtarget );
 		if ( osc.wave === "noise" ) {
 			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
-			nodes.absn
-				.connect( panNode )
-				.connect( gainNode )
-				.connect( key.gainLFOtarget );
+			nodes.absn.connect( panNode );
 		} else {
 			for ( let i = 0; i < osc.unisonvoices; ++i ) {
-				uniNodes.push( [
-					osc.source
-						? this.$ctx.createBufferSource()
-						: this.$ctx.createOscillator(),
-					this.$ctx.createGain(),
-				] );
+				const uniGain = this.$ctx.createGain();
+				const uniSrc = osc.source
+					? this.$ctx.createBufferSource()
+					: this.$ctx.createOscillator();
+
+				uniSrc.connect( uniGain ).connect( panNode );
+				key.detuneEnv.$node.connect( uniSrc.detune );
+				uniNodes.push( [ uniSrc, uniGain ] );
 			}
 			if ( osc.source ) {
 				this.#oscChangeProp( osc, nodes, "source", osc.source, now, 0 );
@@ -349,14 +349,6 @@ class gswaSynth {
 			}
 			this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 );
 			this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
-			uniNodes.forEach( ( [ uniOscNode, uniGainNode ] ) => {
-				key.detuneEnv.$node.connect( uniOscNode.detune );
-				uniOscNode
-					.connect( uniGainNode )
-					.connect( panNode )
-					.connect( gainNode )
-					.connect( key.gainLFOtarget );
-			} );
 
 			const orderOffset = .0000001 * ind; // 2.
 			const phazeOffset = 1 / gswaSynth.#getHz( key.midi ) * osc.phaze;
