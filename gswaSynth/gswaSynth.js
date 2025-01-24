@@ -48,12 +48,12 @@ class gswaSynth {
 	// ..........................................................................
 	#removeOsc( id ) {
 		this.#startedKeys.forEach( key => {
-			this.#destroyOscNode( key.oscNodes.get( id ) );
-			key.oscNodes.delete( id );
+			this.#destroyOscNode( key.$oscNodes.get( id ) );
+			key.$oscNodes.delete( id );
 		} );
 	}
 	#addOsc( id, osc ) {
-		this.#startedKeys.forEach( k => k.oscNodes.set( id, this.#createOscNode( k, osc, 0, this.#data.envs.gain ) ) );
+		this.#startedKeys.forEach( key => key.$oscNodes.set( id, this.#createOscNode( key, osc, 0, this.#data.envs.gain ) ) );
 	}
 	#changeOsc( id, obj ) {
 		const now = this.$ctx.currentTime;
@@ -61,17 +61,17 @@ class gswaSynth {
 		const osc = this.#data.oscillators[ id ];
 
 		this.#startedKeys.forEach( key => {
-			const nodes = key.oscNodes.get( id );
+			const nodes = key.$oscNodes.get( id );
 
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
-					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.midi, now, 0 ); break;
+					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.$midi, now, 0 ); break;
 					case "pan": nodes.panNode.$setValueAtTime( val, now ); break;
 					case "gain": nodes.gainNode.gain.setValueAtTime( val, now ); break;
-					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
-					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 ); break;
-					case "unisondetune": this.#oscChangeProp( osc, nodes, "unisondetune", key.midi, now, 0 ); break;
+					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 ); break;
+					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 ); break;
+					case "unisondetune": this.#oscChangeProp( osc, nodes, "unisondetune", key.$midi, now, 0 ); break;
 					case "unisonblend": this.#oscChangeProp( osc, nodes, "unisonblend", val, now, 0 ); break;
 				}
 			} );
@@ -81,10 +81,10 @@ class gswaSynth {
 		if ( envs ) {
 			GSUforEach( this.#startedKeys, key => {
 				if ( envs.gain ) {
-					key.gainEnv.$start( this.#changeEnv2( envs.gain ) );
+					key.$gainEnv.$start( this.#changeEnv2( envs.gain ) );
 				}
 				if ( envs.detune ) {
-					key.detuneEnv.$start( this.#changeEnv2( envs.detune ) );
+					key.$detuneEnv.$start( this.#changeEnv2( envs.detune ) );
 				}
 			} );
 		}
@@ -112,7 +112,7 @@ class gswaSynth {
 				nobj.absoluteSpeed = nobj.speed * this.#bps;
 				delete nobj.speed;
 			}
-			this.#startedKeys.forEach( key => key.gainLFO.$change( nobj ) );
+			this.#startedKeys.forEach( key => key.$gainLFO.$change( nobj ) );
 		}
 	}
 
@@ -136,32 +136,32 @@ class gswaSynth {
 		const bps = this.#bps;
 		const envG = this.#data.envs.gain;
 		const envD = this.#data.envs.detune;
-		const lfo = this.#data.lfos.gain;
+		const lfoG = this.#data.lfos.gain;
 		const oscs = this.#data.oscillators;
 		const lfoVariations = [];
 		const gainLFOtarget = ctx.createGain();
 		const key = Object.freeze( {
-			when,
-			off,
-			dur,
-			pan: blc0.pan,
-			midi: blc0.key,
-			gain: blc0.gain,
-			lowpass: blc0.lowpass,
-			highpass: blc0.highpass,
-			attack: blc0.attack / bps || .005,
-			release: blcLast.release / bps || .005,
-			variations: [],
-			oscNodes: new Map(),
-			gainEnv: new gswaEnvelope( ctx, "gain" ),
-			gainEnvNode: ctx.createGain(),
-			detuneEnv: new gswaEnvelope( ctx, "detune" ),
-			gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
-			gainLFOtarget,
-			gainNode: ctx.createGain(),
-			panNode: new gswaStereoPanner( ctx ),
-			lowpassNode: ctx.createBiquadFilter(),
-			highpassNode: ctx.createBiquadFilter(),
+			$when: when,
+			$off: off,
+			$dur: dur,
+			$pan: blc0.pan,
+			$midi: blc0.key,
+			$gain: blc0.gain,
+			$lowpass: blc0.lowpass,
+			$highpass: blc0.highpass,
+			$attack: blc0.attack / bps || .005,
+			$release: blcLast.release / bps || .005,
+			$variations: [],
+			$oscNodes: new Map(),
+			$gainEnv: new gswaEnvelope( ctx, "gain" ),
+			$gainEnvNode: ctx.createGain(),
+			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
+			$gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
+			$gainLFOtarget: gainLFOtarget,
+			$gainNode: ctx.createGain(),
+			$panNode: new gswaStereoPanner( ctx ),
+			$lowpassNode: ctx.createBiquadFilter(),
+			$highpassNode: ctx.createBiquadFilter(),
 		} );
 
 		if ( blocks.length > 1 ) {
@@ -171,7 +171,7 @@ class gswaSynth {
 					const when = ( prevWhen + prev.duration ) / bps;
 					const duration = ( blc.when - blc0when ) / bps - when;
 
-					key.variations.push( {
+					key.$variations.push( {
 						when,
 						duration,
 						pan: [ prev.pan, blc.pan ],
@@ -196,13 +196,13 @@ class gswaSynth {
 				return blc;
 			}, null );
 		}
-		key.lowpassNode.type = "lowpass";
-		key.highpassNode.type = "highpass";
-		key.panNode.$setValueAtTime( key.pan, atTime );
-		key.gainNode.gain.setValueAtTime( key.gain, atTime );
-		key.lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.lowpass ), atTime );
-		key.highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.highpass ), atTime );
-		key.gainEnv.$start( {
+		key.$lowpassNode.type = "lowpass";
+		key.$highpassNode.type = "highpass";
+		key.$panNode.$setValueAtTime( key.$pan, atTime );
+		key.$gainNode.gain.setValueAtTime( key.$gain, atTime );
+		key.$lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.$lowpass ), atTime );
+		key.$highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.$highpass ), atTime );
+		key.$gainEnv.$start( {
 			toggle: envG.toggle,
 			when: when - off,
 			duration: dur + off,
@@ -212,7 +212,7 @@ class gswaSynth {
 			sustain: envG.sustain,
 			release: envG.release / bps,
 		} );
-		key.detuneEnv.$start( {
+		key.$detuneEnv.$start( {
 			toggle: envD.toggle,
 			when: when - off,
 			duration: dur + off,
@@ -223,31 +223,31 @@ class gswaSynth {
 			sustain: envD.sustain,
 			release: envD.release / bps,
 		} );
-		key.gainLFO.$start( {
-			toggle: lfo.toggle,
+		key.$gainLFO.$start( {
+			toggle: lfoG.toggle,
 			when,
 			whenStop: Number.isFinite( dur ) ? when + dur + envG.release / bps : 0,
 			offset: off,
-			type: lfo.type,
-			delay: lfo.delay / bps,
-			attack: lfo.attack / bps,
-			absoluteAmp: lfo.amp,
-			absoluteSpeed: lfo.speed * bps,
+			type: lfoG.type,
+			delay: lfoG.delay / bps,
+			attack: lfoG.attack / bps,
+			absoluteAmp: lfoG.amp,
+			absoluteSpeed: lfoG.speed * bps,
 			amp: blc0.gainLFOAmp,
 			speed: blc0.gainLFOSpeed,
 			variations: lfoVariations,
 		} );
-		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
+		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
 		this.#scheduleVariations( key );
-		key.gainEnvNode.gain.setValueAtTime( 0, 0 );
-		key.gainEnv.$node.connect( key.gainEnvNode.gain );
-		key.gainLFOtarget
-			.connect( key.gainEnvNode )
-			.connect( key.gainNode )
-			.connect( key.panNode.$getInput() );
-		key.panNode
-			.$connect( key.lowpassNode )
-			.connect( key.highpassNode )
+		key.$gainEnvNode.gain.setValueAtTime( 0, 0 );
+		key.$gainEnv.$node.connect( key.$gainEnvNode.gain );
+		key.$gainLFOtarget
+			.connect( key.$gainEnvNode )
+			.connect( key.$gainNode )
+			.connect( key.$panNode.$getInput() );
+		key.$panNode
+			.$connect( key.$lowpassNode )
+			.connect( key.$highpassNode )
 			.connect( this.$output );
 		this.#startedKeys.set( id, key );
 		return id;
@@ -261,11 +261,11 @@ class gswaSynth {
 		const key = this.#startedKeys.get( id );
 
 		if ( key ) {
-			if ( Number.isFinite( key.dur ) ) {
+			if ( Number.isFinite( key.$dur ) ) {
 				this.#stopKey( id );
 			} else {
-				key.gainEnv.$stop();
-				key.detuneEnv.$stop();
+				key.$gainEnv.$stop();
+				key.$detuneEnv.$stop();
 				setTimeout( this.#stopKey.bind( this, id ), ( this.#data.envs.gain.release + .1 ) / this.#bps * 1000 );
 			}
 		} else {
@@ -275,10 +275,10 @@ class gswaSynth {
 	#stopKey( id ) {
 		const key = this.#startedKeys.get( id );
 
-		key.oscNodes.forEach( this.#destroyOscNode, this );
-		key.gainLFO.$destroy();
-		key.gainEnv.$destroy();
-		key.detuneEnv.$destroy();
+		key.$oscNodes.forEach( this.#destroyOscNode, this );
+		key.$gainLFO.$destroy();
+		key.$gainEnv.$destroy();
+		key.$detuneEnv.$destroy();
 		this.#startedKeys.delete( id );
 	}
 
@@ -297,16 +297,16 @@ class gswaSynth {
 
 	// ..........................................................................
 	#scheduleVariations( key ) {
-		key.variations.forEach( va => {
-			const when = key.when - key.off + va.when;
+		key.$variations.forEach( va => {
+			const when = key.$when - key.$off + va.when;
 			const dur = va.duration;
 
 			if ( when > this.$ctx.currentTime && dur > 0 ) {
-				key.oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
-				key.panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
-				key.gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
-				key.lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
-				key.highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
+				key.$oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
+				key.$panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				key.$gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
+				key.$lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
+				key.$highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
 			}
 		} );
 	}
@@ -317,7 +317,7 @@ class gswaSynth {
 		const uniNodes = [];
 		const panNode = new gswaStereoPanner( this.$ctx );
 		const gainNode = this.$ctx.createGain();
-		const dur = key.dur + env.release / this.#bps;
+		const dur = key.$dur + env.release / this.#bps;
 		const nodes = Object.seal( {
 			absn: null,
 			uniNodes,
@@ -327,9 +327,9 @@ class gswaSynth {
 
 		panNode.$setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
-		panNode.$connect( gainNode ).connect( key.gainLFOtarget );
+		panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
 		if ( osc.wave === "noise" ) {
-			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.when, dur );
+			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.$when, dur );
 			nodes.absn.connect( panNode.$getInput() );
 		} else {
 			for ( let i = 0; i < osc.unisonvoices; ++i ) {
@@ -339,24 +339,24 @@ class gswaSynth {
 					: this.$ctx.createOscillator();
 
 				uniSrc.connect( uniGain ).connect( panNode.$getInput() );
-				key.detuneEnv.$node.connect( uniSrc.detune );
+				key.$detuneEnv.$node.connect( uniSrc.detune );
 				uniNodes.push( [ uniSrc, uniGain ] );
 			}
 			if ( osc.source ) {
 				this.#oscChangeProp( osc, nodes, "source", osc.source, now, 0 );
 			} else {
 				this.#oscChangeProp( osc, nodes, "wave", osc.wave, now, 0 );
-				this.#oscChangeProp( osc, nodes, "frequency", key.midi, now, 0 );
+				this.#oscChangeProp( osc, nodes, "frequency", key.$midi, now, 0 );
 			}
-			this.#oscChangeProp( osc, nodes, "detune", key.midi, now, 0 );
+			this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 );
 			this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
 
 			const orderOffset = .0000001 * ind; // 2.
-			const phazeOffset = 1 / gswaSynth.#getHz( key.midi ) * osc.phaze;
+			const phazeOffset = 1 / gswaSynth.#getHz( key.$midi ) * osc.phaze;
 
-			uniNodes.forEach( n => n[ 0 ].start( key.when + phazeOffset + orderOffset ) );
+			uniNodes.forEach( n => n[ 0 ].start( key.$when + phazeOffset + orderOffset ) );
 			if ( Number.isFinite( dur ) ) {
-				uniNodes.forEach( n => n[ 0 ].stop( key.when + dur ) );
+				uniNodes.forEach( n => n[ 0 ].stop( key.$when + dur ) );
 			}
 		}
 		return nodes;
