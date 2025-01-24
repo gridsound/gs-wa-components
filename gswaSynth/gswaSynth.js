@@ -468,6 +468,4 @@ Object.freeze( gswaSynth );
 1. We do not need to update blocks' `when` because only their intervals count.
 2. We add a little timing to be sure we start the oscillators in the same order
    each time, to avoid random chaos...
-3. We need a native stereoPanner to convert the mono oscillator into stereo.
-   Maybe there is a simpler way.
 */
