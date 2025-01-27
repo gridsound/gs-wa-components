@@ -21,13 +21,19 @@ class gswaLFO {
 		variations: [],
 	} );
 
-	constructor( ctx, audioParam ) {
+	constructor( ctx ) {
 		this.#ctx = ctx;
-		this.#audioParam = audioParam;
 		Object.seal( this );
 	}
 
 	// .........................................................................
+	$connect( audioParam ) {
+		this.#audioParam = audioParam;
+		if ( this.#ampNode ) {
+			this.#ampNode.disconnect();
+			this.#ampNode.connect( this.#audioParam );
+		}
+	}
 	$start( d ) {
 		const data = this.#data;
 
@@ -87,7 +93,7 @@ class gswaLFO {
 		this.#setAmpAtt();
 		this.#setAmp();
 		this.#setSpeed();
-		osc.connect( ampAtt ).connect( amp ).connect( this.#audioParam );
+		osc.connect( ampAtt ).connect( amp );
 		osc.start( d.when + d.delay - d.offset );
 		if ( d.whenStop > 0 ) {
 			this.#stop( d.whenStop );

@@ -40,8 +40,8 @@ class gswaSynth {
 	}
 	$change( obj ) {
 		this.#oscsCrud( obj.oscillators );
-		this.#changeEnv( obj.envs );
-		this.#changeLFO( obj.lfos?.gain );
+		this.#changeEnvs( obj.envs );
+		this.#changeLFOs( obj.lfos );
 		GSUdiffAssign( this.#data, obj );
 	}
 
@@ -77,43 +77,51 @@ class gswaSynth {
 			} );
 		} );
 	}
-	#changeEnv( envs ) {
+	#changeEnvs( envs ) {
 		if ( envs ) {
+			const gainEnv = envs.gain && gswaSynth.#changeEnvsFormat( envs.gain, this.#bps );
+			const detuneEnv = envs.detune && gswaSynth.#changeEnvsFormat( envs.detune, this.#bps );
+
 			GSUforEach( this.#startedKeys, key => {
-				if ( envs.gain ) {
-					key.$gainEnv.$start( this.#changeEnv2( envs.gain ) );
-				}
-				if ( envs.detune ) {
-					key.$detuneEnv.$start( this.#changeEnv2( envs.detune ) );
-				}
+				gainEnv && key.$gainEnv.$start( gainEnv );
+				detuneEnv && key.$detuneEnv.$start( detuneEnv );
 			} );
 		}
 	}
-	#changeEnv2( env ) {
+	#changeLFOs( lfos ) {
+		if ( lfos ) {
+			const gainLFO = lfos.gain && gswaSynth.#changeLFOformat( lfos.gain, this.#bps );
+			// const detuneLFO = lfos.detune && gswaSynth.#changeLFOformat( lfos.detune, this.#bps );
+
+			this.#startedKeys.forEach( key => {
+				gainLFO && key.$gainLFO.$change( gainLFO );
+				// detuneLFO && key.$detuneLFO.$change( detuneLFO );
+			} );
+		}
+	}
+	static #changeEnvsFormat( env, bps ) {
 		const nobj = { ...env };
 
-		if ( "hold" in nobj ) { nobj.hold /= this.#bps; }
-		if ( "decay" in nobj ) { nobj.decay /= this.#bps; }
-		if ( "attack" in nobj ) { nobj.attack /= this.#bps; }
-		if ( "release" in nobj ) { nobj.release /= this.#bps; }
+		if ( "hold" in nobj ) { nobj.hold /= bps; }
+		if ( "decay" in nobj ) { nobj.decay /= bps; }
+		if ( "attack" in nobj ) { nobj.attack /= bps; }
+		if ( "release" in nobj ) { nobj.release /= bps; }
 		return nobj;
 	}
-	#changeLFO( obj ) {
-		if ( obj ) {
-			const nobj = { ...obj };
+	static #changeLFOformat( lfo, bps ) {
+		const nobj = { ...lfo };
 
-			if ( "delay" in nobj ) { nobj.delay /= this.#bps; }
-			if ( "attack" in nobj ) { nobj.attack /= this.#bps; }
-			if ( "amp" in nobj ) {
-				nobj.absoluteAmp = nobj.amp;
-				delete nobj.amp;
-			}
-			if ( "speed" in nobj ) {
-				nobj.absoluteSpeed = nobj.speed * this.#bps;
-				delete nobj.speed;
-			}
-			this.#startedKeys.forEach( key => key.$gainLFO.$change( nobj ) );
+		if ( "delay" in nobj ) { nobj.delay /= bps; }
+		if ( "attack" in nobj ) { nobj.attack /= bps; }
+		if ( "amp" in nobj ) {
+			nobj.absoluteAmp = nobj.amp;
+			delete nobj.amp;
 		}
+		if ( "speed" in nobj ) {
+			nobj.absoluteSpeed = nobj.speed * bps;
+			delete nobj.speed;
+		}
+		return nobj;
 	}
 
 	// ..........................................................................
@@ -139,7 +147,6 @@ class gswaSynth {
 		const lfoG = this.#data.lfos.gain;
 		const oscs = this.#data.oscillators;
 		const lfoVariations = [];
-		const gainLFOtarget = ctx.createGain();
 		const key = Object.freeze( {
 			$when: when,
 			$off: off,
@@ -156,8 +163,8 @@ class gswaSynth {
 			$gainEnv: new gswaEnvelope( ctx, "gain" ),
 			$gainEnvNode: ctx.createGain(),
 			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
-			$gainLFO: new gswaLFO( ctx, gainLFOtarget.gain ),
-			$gainLFOtarget: gainLFOtarget,
+			$gainLFO: new gswaLFO( ctx ),
+			$gainLFOtarget: ctx.createGain(),
 			$gainNode: ctx.createGain(),
 			$panNode: new gswaStereoPanner( ctx ),
 			$lowpassNode: ctx.createBiquadFilter(),
@@ -241,6 +248,7 @@ class gswaSynth {
 		this.#scheduleVariations( key );
 		key.$gainEnvNode.gain.setValueAtTime( 0, 0 );
 		key.$gainEnv.$node.connect( key.$gainEnvNode.gain );
+		key.$gainLFO.$connect( key.$gainLFOtarget.gain );
 		key.$gainLFOtarget
 			.connect( key.$gainEnvNode )
 			.connect( key.$gainNode )
