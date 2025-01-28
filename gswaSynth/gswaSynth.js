@@ -91,11 +91,11 @@ class gswaSynth {
 	#changeLFOs( lfos ) {
 		if ( lfos ) {
 			const gainLFO = lfos.gain && gswaSynth.#changeLFOformat( lfos.gain, this.#bps );
-			// const detuneLFO = lfos.detune && gswaSynth.#changeLFOformat( lfos.detune, this.#bps );
+			const detuneLFO = lfos.detune && gswaSynth.#changeLFOformat( lfos.detune, this.#bps );
 
 			this.#startedKeys.forEach( key => {
 				gainLFO && key.$gainLFO.$change( gainLFO );
-				// detuneLFO && key.$detuneLFO.$change( detuneLFO );
+				detuneLFO && key.$detuneLFO.$change( detuneLFO );
 			} );
 		}
 	}
@@ -145,6 +145,7 @@ class gswaSynth {
 		const envG = this.#data.envs.gain;
 		const envD = this.#data.envs.detune;
 		const lfoG = this.#data.lfos.gain;
+		const lfoD = this.#data.lfos.detune;
 		const oscs = this.#data.oscillators;
 		const lfoVariations = [];
 		const key = Object.freeze( {
@@ -165,6 +166,7 @@ class gswaSynth {
 			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
 			$gainLFO: new gswaLFO( ctx ),
 			$gainLFOtarget: ctx.createGain(),
+			$detuneLFO: new gswaLFO( ctx ),
 			$gainNode: ctx.createGain(),
 			$panNode: new gswaStereoPanner( ctx ),
 			$lowpassNode: ctx.createBiquadFilter(),
@@ -244,11 +246,25 @@ class gswaSynth {
 			speed: blc0.gainLFOSpeed,
 			variations: lfoVariations,
 		} );
+		key.$detuneLFO.$start( {
+			toggle: lfoD.toggle,
+			when,
+			whenStop: Number.isFinite( dur ) ? when + dur + envG.release / bps : 0,
+			offset: off,
+			type: lfoD.type,
+			delay: lfoD.delay / bps,
+			attack: lfoD.attack / bps,
+			absoluteAmp: lfoD.amp,
+			absoluteSpeed: lfoD.speed * bps,
+			amp: 1,
+			speed: 1,
+			variations: lfoVariations,
+		} );
 		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
 		this.#scheduleVariations( key );
 		key.$gainEnvNode.gain.setValueAtTime( 0, 0 );
 		key.$gainEnv.$node.connect( key.$gainEnvNode.gain );
-		key.$gainLFO.$connect( key.$gainLFOtarget.gain );
+		key.$gainLFO.$node.connect( key.$gainLFOtarget.gain );
 		key.$gainLFOtarget
 			.connect( key.$gainEnvNode )
 			.connect( key.$gainNode )
@@ -285,6 +301,7 @@ class gswaSynth {
 
 		key.$oscNodes.forEach( this.#destroyOscNode, this );
 		key.$gainLFO.$destroy();
+		key.$detuneLFO.$destroy();
 		key.$gainEnv.$destroy();
 		key.$detuneEnv.$destroy();
 		this.#startedKeys.delete( id );
@@ -348,6 +365,7 @@ class gswaSynth {
 
 				uniSrc.connect( uniGain ).connect( panNode.$getInput() );
 				key.$detuneEnv.$node.connect( uniSrc.detune );
+				key.$detuneLFO.$node.connect( uniSrc.detune );
 				uniNodes.push( [ uniSrc, uniGain ] );
 			}
 			if ( osc.source ) {
