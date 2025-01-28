@@ -1,8 +1,8 @@
 "use strict";
 
 class gswaLFO {
+	$node = null;
 	#ctx = null;
-	#audioParam = null;
 	#oscNode = null;
 	#ampNode = null;
 	#ampAttNode = null;
@@ -23,17 +23,11 @@ class gswaLFO {
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
+		this.$node = this.#ctx.createGain();
 		Object.seal( this );
 	}
 
 	// .........................................................................
-	$connect( audioParam ) {
-		this.#audioParam = audioParam;
-		if ( this.#ampNode ) {
-			this.#ampNode.disconnect();
-			this.#ampNode.connect( this.#audioParam );
-		}
-	}
 	$start( d ) {
 		const data = this.#data;
 
@@ -93,7 +87,7 @@ class gswaLFO {
 		this.#setAmpAtt();
 		this.#setAmp();
 		this.#setSpeed();
-		osc.connect( ampAtt ).connect( amp );
+		osc.connect( ampAtt ).connect( amp ).connect( this.$node );
 		osc.start( d.when + d.delay - d.offset );
 		if ( d.whenStop > 0 ) {
 			this.#stop( d.whenStop );
