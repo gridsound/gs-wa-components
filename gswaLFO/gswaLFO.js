@@ -52,7 +52,7 @@ class gswaLFO {
 	$destroy() {
 		if ( this.#oscNode ) {
 			this.#stop( 0 );
-			this.#oscNode.disconnect();
+			this.#oscNode.$disconnect();
 			this.#ampNode.disconnect();
 			this.#ampAttNode.disconnect();
 			this.#oscNode =
@@ -76,7 +76,7 @@ class gswaLFO {
 	// .........................................................................
 	#start() {
 		const d = this.#data;
-		const osc = this.#ctx.createOscillator();
+		const osc = new gswaOscillator( this.#ctx );
 		const amp = this.#ctx.createGain();
 		const ampAtt = this.#ctx.createGain();
 
@@ -87,24 +87,24 @@ class gswaLFO {
 		this.#setAmpAtt();
 		this.#setAmp();
 		this.#setSpeed();
-		osc.connect( ampAtt ).connect( amp ).connect( this.$node );
-		osc.start( d.when + d.delay - d.offset );
+		osc.$connect( ampAtt ).connect( amp ).connect( this.$node );
+		osc.$start( d.when + d.delay - d.offset );
 		if ( d.whenStop > 0 ) {
 			this.#stop( d.whenStop );
 		}
 	}
 	#stop( when ) {
-		this.#oscNode.frequency.cancelScheduledValues( when );
+		this.#oscNode.$getFrequency().cancelScheduledValues( when );
 		this.#ampNode.gain.cancelScheduledValues( when );
 		this.#ampAttNode.gain.cancelScheduledValues( when );
-		this.#oscNode.stop( when );
+		this.#oscNode.$stop( when );
 	}
 	#change( obj ) {
 		if ( "type" in obj ) {
 			this.#setType();
 		}
 		if ( "absoluteSpeed" in obj ) {
-			this.#oscNode.frequency.cancelScheduledValues( 0 );
+			this.#oscNode.$getFrequency().cancelScheduledValues( 0 );
 			this.#setSpeed();
 		}
 		if ( "absoluteAmp" in obj ) {
@@ -117,7 +117,7 @@ class gswaLFO {
 		}
 	}
 	#setType() {
-		this.#oscNode.type = this.#data.type;
+		this.#oscNode.$setType( this.#data.type );
 	}
 	#setAmpAtt() {
 		const d = this.#data;
@@ -136,7 +136,7 @@ class gswaLFO {
 		gswaLFO.#setVariations( this.#data, "absoluteAmp", "amp", this.#ampNode.gain, this.#ctx.currentTime );
 	}
 	#setSpeed() {
-		gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.#ctx.currentTime );
+		gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.$getFrequency(), this.#ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];
