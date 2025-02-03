@@ -1,7 +1,7 @@
 "use strict";
 
 class gswaPeriodicWaves {
-	static $list = new Map();
+	static #list = new Map();
 	static #cache = new Map();
 
 	static $clearCache() {
@@ -11,7 +11,7 @@ class gswaPeriodicWaves {
 		let p = gswaPeriodicWaves.#cache.get( name );
 
 		if ( !p ) {
-			const w = gswaPeriodicWaves.$list.get( name );
+			const w = gswaPeriodicWaves.#list.get( name );
 
 			if ( w ) {
 				p = ctx.createPeriodicWave( w.real, w.imag );
@@ -27,11 +27,11 @@ class gswaPeriodicWaves {
 
 			real[ 0 ] =
 			imag[ 0 ] = 0;
-			gswaPeriodicWaves.$list.set( name, Object.freeze( {
+			gswaPeriodicWaves.#list.set( name, Object.freeze( {
 				real: new Float32Array( real ),
 				imag: new Float32Array( imag ),
 			} ) );
 		} );
-		return gswaPeriodicWaves.$list;
+		return gswaPeriodicWaves.#list;
 	}
 }
