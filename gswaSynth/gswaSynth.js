@@ -396,7 +396,7 @@ class gswaSynth {
 
 		switch ( prop ) {
 			case "wave":
-				uniNodes.forEach( n => this.#nodeOscSetType( n[ 0 ], val ) );
+				uniNodes.forEach( n => n[ 0 ].$setType( val ) );
 				break;
 			case "source": {
 				const buf = this.$getAudioBuffer( val );
@@ -438,19 +438,6 @@ class gswaSynth {
 			case "unisonblend":
 				uniNodes.forEach( ( n, i ) => n[ 1 ].gain.setValueAtTime( gswaSynth.#calcUnisonGain( osc, val, i ), when ) );
 				break;
-		}
-	}
-	#nodeOscSetType( oscNode, wave ) {
-		if ( gswaSynth.#nativeTypes.indexOf( wave ) > -1 ) {
-			oscNode.$setType( wave );
-		} else {
-			const w = gswaPeriodicWaves.$get( this.$ctx, wave );
-
-			if ( w ) {
-				oscNode.$setPeriodicWave( w );
-			} else {
-				oscNode.$setType( "triangle" );
-			}
 		}
 	}
 	static #calcUnisonDetune( osc, midi, v ) {

@@ -1,9 +1,11 @@
 "use strict";
 
 class gswaOscillator {
+	#ctx = null;
 	#osc = null;
 
 	constructor( ctx ) {
+		this.#ctx = ctx;
 		this.#osc = ctx.createOscillator();
 	}
 
@@ -12,12 +14,23 @@ class gswaOscillator {
 	$start( ...args ) { return this.#osc.start( ...args ); }
 	$connect( ...args ) { return this.#osc.connect( ...args ); }
 	$disconnect( ...args ) { return this.#osc.disconnect( ...args ); }
-	$setPeriodicWave( ...args ) { return this.#osc.setPeriodicWave( ...args ); }
 
 	// .........................................................................
 	$getDetune() { return this.#osc.detune; }
 	$getFrequency() { return this.#osc.frequency; }
-	$setType( type ) {
-		this.#osc.type = type;
+
+	// .........................................................................
+	$setType( w ) {
+		if ( w === "sine" || w === "triangle" || w === "sawtooth" || w === "square" ) {
+			this.#osc.type = w;
+		} else {
+			const pw = gswaPeriodicWaves.$get( this.#ctx, w );
+
+			if ( w ) {
+				this.#osc.setPeriodicWave( pw );
+			} else {
+				this.#osc.type = "sine";
+			}
+		}
 	}
 }
