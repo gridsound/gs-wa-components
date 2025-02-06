@@ -10,17 +10,18 @@ class gswaOscillator {
 	}
 
 	// .........................................................................
-	$stop( ...args ) { return this.#osc.stop( ...args ); }
-	$start( ...args ) { return this.#osc.start( ...args ); }
-	$connect( ...args ) { return this.#osc.connect( ...args ); }
-	$disconnect( ...args ) { return this.#osc.disconnect( ...args ); }
+	stop( ...args ) { return this.#osc.stop( ...args ); }
+	start( ...args ) { return this.#osc.start( ...args ); }
+	connect( ...args ) { return this.#osc.connect( ...args ); }
+	disconnect( ...args ) { return this.#osc.disconnect( ...args ); }
 
 	// .........................................................................
-	$getDetune() { return this.#osc.detune; }
-	$getFrequency() { return this.#osc.frequency; }
+	get type() { return this.#osc.type; }
+	get detune() { return this.#osc.detune; }
+	get frequency() { return this.#osc.frequency; }
 
 	// .........................................................................
-	$setType( w ) {
+	set type( w ) {
 		if ( w === "sine" || w === "triangle" || w === "sawtooth" || w === "square" ) {
 			this.#osc.type = w;
 		} else {
