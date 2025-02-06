@@ -26,7 +26,7 @@ class gswaOscillator {
 		} else {
 			const pw = gswaPeriodicWaves.$get( this.#ctx, w );
 
-			if ( w ) {
+			if ( pw ) {
 				this.#osc.setPeriodicWave( pw );
 			} else {
 				this.#osc.type = "sine";
