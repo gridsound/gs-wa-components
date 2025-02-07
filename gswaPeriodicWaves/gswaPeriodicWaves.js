@@ -14,7 +14,7 @@ class gswaPeriodicWaves {
 			const w = gswaPeriodicWaves.#list.get( name );
 
 			if ( w ) {
-				p = ctx.createPeriodicWave( w.real, w.imag );
+				p = ctx.createPeriodicWave( w.real, w.imag, { disableNormalization: name === "square" } );
 				gswaPeriodicWaves.#cache.set( name, p );
 			}
 		}
