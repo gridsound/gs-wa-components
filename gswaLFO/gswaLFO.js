@@ -120,13 +120,12 @@ class gswaLFO {
 		const d = this.#data;
 		const now = this.#ctx.currentTime;
 		const atTime = d.when + d.delay - d.offset;
-		const absAmp = Math.abs( d.absoluteAmp );
 
 		if ( now <= atTime && d.attack > 0 ) {
 			this.#ampAttNode.gain.setValueAtTime( 0, now );
-			this.#ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, absAmp ] ), atTime, d.attack );
+			this.#ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), atTime, d.attack );
 		} else {
-			this.#ampAttNode.gain.setValueAtTime( absAmp, now );
+			this.#ampAttNode.gain.setValueAtTime( 1, now );
 		}
 	}
 	#setAmp() {
