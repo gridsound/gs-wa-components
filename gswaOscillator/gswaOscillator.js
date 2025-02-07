@@ -22,7 +22,7 @@ class gswaOscillator {
 
 	// .........................................................................
 	set type( w ) {
-		if ( w === "sine" || w === "triangle" || w === "sawtooth" || w === "square" ) {
+		if ( w === "sine" || w === "triangle" || w === "sawtooth" ) { // 1.
 			this.#osc.type = w;
 		} else {
 			const pw = gswaPeriodicWaves.$get( this.#ctx, w );
@@ -35,3 +35,9 @@ class gswaOscillator {
 		}
 	}
 }
+
+/*
+1. Square is not considered as a native wave because of its normalization.
+   This normalization is a problem only when the oscillator is used as an LFO.
+   This means the square would never be fully -1 neither +1.
+*/
