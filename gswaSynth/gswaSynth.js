@@ -253,7 +253,7 @@ class gswaSynth {
 			type: lfoD.type,
 			delay: lfoD.delay / bps,
 			attack: lfoD.attack / bps,
-			absoluteAmp: lfoD.amp,
+			absoluteAmp: lfoD.amp * 100,
 			absoluteSpeed: lfoD.speed * bps,
 			amp: 1,
 			speed: 1,
