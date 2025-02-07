@@ -1,7 +1,6 @@
 "use strict";
 
 class gswaSynth {
-	static #nativeTypes = Object.freeze( [ "sine", "triangle", "sawtooth", "square" ] );
 	static #startedMaxId = 0;
 	$ctx = null;
 	$output = null;
