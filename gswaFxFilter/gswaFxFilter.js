@@ -86,7 +86,7 @@ class gswaFxFilter {
 			this.#responseMagOut = new Float32Array( w );
 			this.#responsePhaseOut = new Float32Array( w );
 			for ( let i = 0; i < w; ++i ) {
-				Hz[ i ] = nyquist * ( 2 ** ( i / w * 11 - 11 ) );
+				Hz[ i ] = GSUXtoHz( i / w ) * nyquist;
 			}
 		}
 	}
