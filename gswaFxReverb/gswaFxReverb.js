@@ -9,7 +9,7 @@ class gswaFxReverb {
 	#wetGain = null;
 	#wetDelay = null;
 	#convolver = null;
-	#wetConstant = null; // needed for Chrome (the delayNode seems to stop sending when it stop receiving).
+	#wetConstant = null; // 1.
 	#enable = false;
 	#updateBufferDeb = GSUdebounce( this.#updateBuffer.bind( this ), 100 );
 	#data = DAWCoreJSON_effects_reverb();
@@ -103,3 +103,7 @@ class gswaFxReverb {
 }
 
 Object.freeze( gswaFxReverb );
+
+/*
+1. Needed for Chrome, the delayNode seems to stop sending when it stop receiving.
+*/
