@@ -5,6 +5,8 @@ class gswaFxFilter {
 	#input = null;
 	#output = null;
 	#filter = null;
+	#analyser = null;
+	#analyserData = new Float32Array( 512 );
 	#enable = false;
 	#responseSize = -1;
 	#responseHzIn = null;
@@ -23,6 +25,10 @@ class gswaFxFilter {
 	$getOutput() {
 		return this.#output;
 	}
+	$getAnalyserData() {
+		this.#analyser.getFloatFrequencyData( this.#analyserData );
+		return this.#analyserData;
+	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {
 			this.#input.disconnect();
@@ -33,6 +39,9 @@ class gswaFxFilter {
 		this.#input = ctx.createGain();
 		this.#output = ctx.createGain();
 		this.#filter = ctx.createBiquadFilter();
+		this.#analyser = ctx.createAnalyser();
+		this.#analyser.fftSize = this.#analyserData.length * 2;
+		this.#analyser.smoothingTimeConstant = 0;
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}
@@ -43,6 +52,7 @@ class gswaFxFilter {
 				this.#input.disconnect();
 				this.#input.connect( this.#filter );
 				this.#filter.connect( this.#output );
+				this.#filter.connect( this.#analyser );
 			} else {
 				this.#filter.disconnect();
 				this.#input.connect( this.#output );
