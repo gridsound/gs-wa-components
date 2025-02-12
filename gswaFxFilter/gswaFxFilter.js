@@ -5,6 +5,7 @@ class gswaFxFilter {
 	#input = null;
 	#output = null;
 	#filter = null;
+	#constant = null; // 1.
 	#analyser = null;
 	#analyserData = new Float32Array( 512 );
 	#enable = false;
@@ -34,11 +35,13 @@ class gswaFxFilter {
 			this.#input.disconnect();
 			this.#output.disconnect();
 			this.#filter.disconnect();
+			this.#constant.disconnect();
 		}
 		this.#ctx = ctx;
 		this.#input = ctx.createGain();
 		this.#output = ctx.createGain();
 		this.#filter = ctx.createBiquadFilter();
+		this.#constant = ctx.createConstantSource();
 		this.#analyser = ctx.createAnalyser();
 		this.#analyser.fftSize = this.#analyserData.length * 2;
 		this.#analyser.smoothingTimeConstant = 0;
@@ -51,9 +54,11 @@ class gswaFxFilter {
 			if ( b ) {
 				this.#input.disconnect();
 				this.#input.connect( this.#filter );
+				this.#constant.connect( this.#filter );
 				this.#filter.connect( this.#output );
 				this.#filter.connect( this.#analyser );
 			} else {
+				this.#constant.disconnect();
 				this.#filter.disconnect();
 				this.#input.connect( this.#output );
 			}
@@ -103,3 +108,9 @@ class gswaFxFilter {
 }
 
 Object.freeze( gswaFxFilter );
+
+/*
+1. Without this constant node `getFrequencyResponse` will not send new data.
+   So if we remove this, when the effect doesn't has any input then moving the
+   frequency slider or Q or Gain will not update the curve.
+*/
