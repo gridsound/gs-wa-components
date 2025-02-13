@@ -89,8 +89,8 @@ class gswaSynth {
 	}
 	#changeLFOs( lfos ) {
 		if ( lfos ) {
-			const gainLFO = lfos.gain && gswaSynth.#changeLFOformat( lfos.gain, this.#bps );
-			const detuneLFO = lfos.detune && gswaSynth.#changeLFOformat( lfos.detune, this.#bps );
+			const gainLFO = lfos.gain && gswaSynth.#changeLFOformat( "gain", lfos.gain, this.#bps );
+			const detuneLFO = lfos.detune && gswaSynth.#changeLFOformat( "detune", lfos.detune, this.#bps );
 
 			this.#startedKeys.forEach( key => {
 				gainLFO && key.$gainLFO.$change( gainLFO );
@@ -107,13 +107,16 @@ class gswaSynth {
 		if ( "release" in nobj ) { nobj.release /= bps; }
 		return nobj;
 	}
-	static #changeLFOformat( lfo, bps ) {
+	static #changeLFOformat( target, lfo, bps ) {
 		const nobj = { ...lfo };
 
 		if ( "delay" in nobj ) { nobj.delay /= bps; }
 		if ( "attack" in nobj ) { nobj.attack /= bps; }
 		if ( "amp" in nobj ) {
 			nobj.absoluteAmp = nobj.amp;
+			if ( target === "detune" ) {
+				nobj.absoluteAmp *= 100;
+			}
 			delete nobj.amp;
 		}
 		if ( "speed" in nobj ) {
