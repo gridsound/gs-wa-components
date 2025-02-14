@@ -149,7 +149,8 @@ class gswaSynth {
 		const lfoG = this.#data.lfos.gain;
 		const lfoD = this.#data.lfos.detune;
 		const oscs = this.#data.oscillators;
-		const lfoVariations = [];
+		const gainLFOvariations = [];
+		const detuneLFOvariations = [];
 		const key = Object.freeze( {
 			$when: when,
 			$off: off,
@@ -197,7 +198,7 @@ class gswaSynth {
 							this.#calcHighpass( blc.highpass ),
 						],
 					} );
-					lfoVariations.push( {
+					gainLFOvariations.push( {
 						when,
 						duration,
 						amp: [ prev.gainLFOAmp, blc.gainLFOAmp ],
@@ -246,7 +247,7 @@ class gswaSynth {
 			absoluteSpeed: lfoG.speed * bps,
 			amp: blc0.gainLFOAmp,
 			speed: blc0.gainLFOSpeed,
-			variations: lfoVariations,
+			variations: gainLFOvariations,
 		} );
 		key.$detuneLFO.$start( {
 			toggle: lfoD.toggle,
@@ -260,7 +261,7 @@ class gswaSynth {
 			absoluteSpeed: lfoD.speed * bps,
 			amp: 1,
 			speed: 1,
-			variations: lfoVariations,
+			variations: detuneLFOvariations,
 		} );
 		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
 		this.#scheduleVariations( key );
