@@ -12,7 +12,7 @@ class gswaFxReverb {
 	#wetConstant = null; // 1.
 	#enable = false;
 	#updateBufferDeb = GSUdebounce( this.#updateBuffer.bind( this ), 100 );
-	#data = DAWCoreJSON_effects_reverb();
+	#data = GSUgetModel( "fx.reverb" );
 
 	constructor() {
 		Object.seal( this );

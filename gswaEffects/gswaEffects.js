@@ -49,7 +49,7 @@ class gswaEffects {
 		this.#wafxs.set( id, wafx );
 		wafx.$setContext( this.ctx );
 		wafx.$setBPM?.( this.#bpm );
-		wafx.$change( DAWCoreJSON_effects[ fx.type ]() );
+		wafx.$change( GSUgetModel( `fx.${ fx.type }` ) );
 	}
 	static #addEffectCreate( fx ) {
 		switch ( fx ) {
