@@ -39,9 +39,9 @@ class gswaSynth {
 	}
 	$change( obj ) {
 		this.#oscsCrud( obj.oscillators );
+		GSUdiffAssign( this.#data, obj );
 		this.#changeEnvs( obj.envs );
 		this.#changeLFOs( obj.lfos );
-		GSUdiffAssign( this.#data, obj );
 	}
 
 	// ..........................................................................
