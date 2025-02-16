@@ -43,8 +43,8 @@ class gswaNoise {
 	// .........................................................................
 	static #loopWhite( bufSize, chan0, chan1 ) {
 		for ( let i = 0; i < bufSize; ++i ) {
-			chan0[ i ] = Math.random() * 2 - 1;
-			chan1[ i ] = Math.random() * 2 - 1;
+			chan0[ i ] = ( Math.random() * 2 - 1 ) * .5;
+			chan1[ i ] = ( Math.random() * 2 - 1 ) * .5;
 		}
 	}
 	static #loopPink( bufSize, chan0, chan1 ) {
