@@ -40,6 +40,7 @@ class gswaSynth {
 	$change( obj ) {
 		this.#oscsCrud( obj.oscillators );
 		GSUdiffAssign( this.#data, obj );
+		this.#changeNoise( obj.noise );
 		this.#changeEnvs( obj.envs );
 		this.#changeLFOs( obj.lfos );
 	}
@@ -75,6 +76,27 @@ class gswaSynth {
 				}
 			} );
 		} );
+	}
+	#changeNoise( obj ) {
+		if ( obj ) {
+			const now = this.$ctx.currentTime;
+
+			GSUforEach( this.#startedKeys, key => {
+				if ( obj.toggle || "color" in obj ) {
+					this.#destroyNoiseNodes( key );
+					this.#createNoiseNodes( key );
+				} else if ( obj.toggle === false ) {
+					this.#destroyNoiseNodes( key );
+				} else if ( this.#data.noise.toggle ) {
+					if ( "gain" in obj ) {
+						key.$noiseNodes.gainNode.gain.setValueAtTime( obj.gain, now );
+					}
+					if ( "pan" in obj ) {
+						key.$noiseNodes.panNode.$setValueAtTime( obj.pan, now );
+					}
+				}
+			} );
+		}
 	}
 	#changeEnvs( envs ) {
 		if ( envs ) {
@@ -163,6 +185,7 @@ class gswaSynth {
 			$attack: blc0.attack / bps || .005,
 			$release: blcLast.release / bps || .005,
 			$variations: [],
+			$noiseNodes: {},
 			$oscNodes: new Map(),
 			$gainEnv: new gswaEnvelope( ctx, "gain" ),
 			$gainEnvNode: ctx.createGain(),
@@ -263,6 +286,7 @@ class gswaSynth {
 			speed: 1,
 			variations: detuneLFOvariations,
 		} );
+		this.#createNoiseNodes( key );
 		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
 		this.#scheduleVariations( key );
 		key.$gainEnvNode.gain.setValueAtTime( 0, 0 );
@@ -302,6 +326,7 @@ class gswaSynth {
 	#stopKey( id ) {
 		const key = this.#startedKeys.get( id );
 
+		this.#destroyNoiseNodes( key );
 		key.$oscNodes.forEach( this.#destroyOscNode, this );
 		key.$gainLFO.$destroy();
 		key.$detuneLFO.$destroy();
@@ -340,6 +365,28 @@ class gswaSynth {
 	}
 
 	// ..........................................................................
+	#createNoiseNodes( key ) {
+		const d = this.#data;
+
+		if ( d.noise.toggle ) {
+			const now = this.$ctx.currentTime;
+			const dur = key.$dur + d.envs.gain.release / this.#bps;
+			const panNode = new gswaStereoPanner( this.$ctx );
+			const gainNode = this.$ctx.createGain();
+			const absn = gswaNoise.$startABSN( this.$ctx, key.$when, dur, d.noise.color );
+
+			key.$noiseNodes.absn = absn;
+			key.$noiseNodes.panNode = panNode;
+			key.$noiseNodes.gainNode = gainNode;
+			panNode.$setValueAtTime( d.noise.pan, now );
+			gainNode.gain.setValueAtTime( d.noise.gain, now );
+			absn.connect( panNode.$getInput() );
+			panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
+		}
+	}
+	#destroyNoiseNodes( key ) {
+		key.$noiseNodes.absn?.stop();
+	}
 	#createOscNode( key, osc, ind, env ) {
 		const now = this.$ctx.currentTime;
 		const uniNodes = [];
@@ -347,7 +394,6 @@ class gswaSynth {
 		const gainNode = this.$ctx.createGain();
 		const dur = key.$dur + env.release / this.#bps;
 		const nodes = Object.seal( {
-			absn: null,
 			uniNodes,
 			panNode,
 			gainNode,
@@ -356,42 +402,36 @@ class gswaSynth {
 		panNode.$setValueAtTime( osc.pan, now );
 		gainNode.gain.setValueAtTime( osc.gain, now );
 		panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
-		if ( osc.wave === "noise" ) {
-			nodes.absn = gswaNoise.$startABSN( this.$ctx, key.$when, dur );
-			nodes.absn.connect( panNode.$getInput() );
+		for ( let i = 0; i < osc.unisonvoices; ++i ) {
+			const uniGain = this.$ctx.createGain();
+			const uniSrc = osc.source
+				? this.$ctx.createBufferSource()
+				: ( new gswaOscillator( this.$ctx ) );
+
+			uniSrc.connect( uniGain ).connect( panNode.$getInput() );
+			key.$detuneEnv.$node.connect( uniSrc.detune );
+			key.$detuneLFO.$node.connect( uniSrc.detune );
+			uniNodes.push( [ uniSrc, uniGain ] );
+		}
+		if ( osc.source ) {
+			this.#oscChangeProp( osc, nodes, "source", osc.source, now, 0 );
 		} else {
-			for ( let i = 0; i < osc.unisonvoices; ++i ) {
-				const uniGain = this.$ctx.createGain();
-				const uniSrc = osc.source
-					? this.$ctx.createBufferSource()
-					: ( new gswaOscillator( this.$ctx ) );
+			this.#oscChangeProp( osc, nodes, "wave", osc.wave, now, 0 );
+			this.#oscChangeProp( osc, nodes, "frequency", key.$midi, now, 0 );
+		}
+		this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 );
+		this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
 
-				uniSrc.connect( uniGain ).connect( panNode.$getInput() );
-				key.$detuneEnv.$node.connect( uniSrc.detune );
-				key.$detuneLFO.$node.connect( uniSrc.detune );
-				uniNodes.push( [ uniSrc, uniGain ] );
-			}
-			if ( osc.source ) {
-				this.#oscChangeProp( osc, nodes, "source", osc.source, now, 0 );
-			} else {
-				this.#oscChangeProp( osc, nodes, "wave", osc.wave, now, 0 );
-				this.#oscChangeProp( osc, nodes, "frequency", key.$midi, now, 0 );
-			}
-			this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 );
-			this.#oscChangeProp( osc, nodes, "unisonblend", osc.unisonblend, now, 0 );
+		const orderOffset = .0000001 * ind; // 2.
+		const phazeOffset = 1 / gswaSynth.#getHz( key.$midi ) * osc.phaze;
 
-			const orderOffset = .0000001 * ind; // 2.
-			const phazeOffset = 1 / gswaSynth.#getHz( key.$midi ) * osc.phaze;
-
-			uniNodes.forEach( n => n[ 0 ].start( key.$when + phazeOffset + orderOffset ) );
-			if ( Number.isFinite( dur ) ) {
-				uniNodes.forEach( n => n[ 0 ].stop( key.$when + dur ) );
-			}
+		uniNodes.forEach( n => n[ 0 ].start( key.$when + phazeOffset + orderOffset ) );
+		if ( Number.isFinite( dur ) ) {
+			uniNodes.forEach( n => n[ 0 ].stop( key.$when + dur ) );
 		}
 		return nodes;
 	}
 	#destroyOscNode( nodes ) {
-		nodes.absn?.stop();
 		nodes.uniNodes.forEach( n => n[ 0 ].stop() );
 	}
 	#oscChangeProp( osc, nodes, prop, val, when, dur ) {
