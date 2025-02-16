@@ -19,7 +19,7 @@ class gswaNoise {
 		gswaNoise.#buffers.pink = gswaNoise.$createBuffer( ctx, gswaNoise.#duration, "pink" );
 		gswaNoise.#buffers.brown = gswaNoise.$createBuffer( ctx, gswaNoise.#duration, "brown" );
 	}
-	static $createBuffer( ctx, dur, color = "brown" ) {
+	static $createBuffer( ctx, dur, color = "white" ) {
 		const bufSize = dur * ctx.sampleRate;
 		const buf = ctx.createBuffer( 2, bufSize, ctx.sampleRate );
 		const chan0 = buf.getChannelData( 0 );
@@ -28,7 +28,7 @@ class gswaNoise {
 		gswaNoise.#loops[ color ]( bufSize, chan0, chan1 );
 		return buf;
 	}
-	static $startABSN( ctx, when, dur, color = "brown" ) {
+	static $startABSN( ctx, when, dur, color = "white" ) {
 		const absn = ctx.createBufferSource();
 
 		absn.buffer = gswaNoise.#buffers[ color ];
