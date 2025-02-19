@@ -1,17 +1,33 @@
 "use strict";
 
 class gswaOscillator {
+	static $nbCreated = 0;
+	static $weakMap = new WeakMap();
+	static $runningMap = new Map();
 	#ctx = null;
 	#osc = null;
+	#id = ++gswaOscillator.$nbCreated;
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
 		this.#osc = ctx.createOscillator();
+		gswaOscillator.$weakMap.set( this.#osc, 1 );
 	}
 
 	// .........................................................................
-	stop( ...args ) { return this.#osc.stop( ...args ); }
-	start( ...args ) { return this.#osc.start( ...args ); }
+	stop( when ) {
+		gswaOscillator.$runningMap.set( this.#id, when || 0 );
+		gswaOscillator.$runningMap.forEach( ( when, id ) => {
+			if ( when !== true && when <= this.#ctx.currentTime ) {
+				gswaOscillator.$runningMap.delete( id );
+			}
+		} );
+		return this.#osc.stop( when );
+	}
+	start( when ) {
+		gswaOscillator.$runningMap.set( this.#id, true );
+		return this.#osc.start( when );
+	}
 	connect( ...args ) { return this.#osc.connect( ...args ); }
 	disconnect( ...args ) { return this.#osc.disconnect( ...args ); }
 
