@@ -7,12 +7,9 @@ class gswaFxWaveShaper {
 	#enable = false;
 	#shaper = null;
 	#data = GSUgetModel( "fx.waveshaper" );
-	#dotlineSVG = GSUcreateElement( "gsui-dotlinesvg" );
 
 	constructor() {
 		Object.seal( this );
-		this.#dotlineSVG.$setSVGSize( 100, 100 );
-		this.#dotlineSVG.$setDataBox( "-1 -1 1 1" );
 	}
 
 	// .........................................................................
@@ -50,9 +47,6 @@ class gswaFxWaveShaper {
 	}
 	$change( obj ) {
 		GSUdiffAssign( this.#data, obj );
-		if ( obj.symmetry !== undefined ) {
-			this.#dotlineSVG.$setDataBox( obj.symmetry ? "0 0 1 1" : "-1 -1 1 1" );
-		}
 		if ( obj.oversample ) {
 			this.#shaper.oversample = obj.oversample;
 		}
@@ -60,10 +54,8 @@ class gswaFxWaveShaper {
 			this.#setCurveData( this.#data.curve );
 		}
 	}
-	#setCurveData( curveData ) {
-		this.#dotlineSVG.$setCurve( curveData );
-
-		const graphData = this.#dotlineSVG.$getCurveFloat32( 512 );
+	#setCurveData( curveDots ) {
+		const graphData = new Float32Array( GSUsampleDottedCurve( curveDots, 512 ) );
 
 		this.#shaper.curve = this.#data.symmetry
 			? this.#addGraphSymmetry( graphData )
