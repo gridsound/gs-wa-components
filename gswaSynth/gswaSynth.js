@@ -65,6 +65,12 @@ class gswaSynth {
 
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
+					case "waveCustom":
+						nodes.uniNodes.forEach( n => {
+							n[ 0 ].type = "sine";
+							n[ 0 ].type = osc.wave;
+						} );
+						break;
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
 					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.$midi, now, 0 ); break;
 					case "pan": nodes.panNode.$setValueAtTime( val, now ); break;
