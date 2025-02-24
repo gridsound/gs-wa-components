@@ -38,8 +38,8 @@ class gswaSynth {
 		this.#bps = bpm / 60;
 	}
 	$change( obj ) {
-		GSUdiffAssign( this.#data, obj );
 		this.#oscsCrud( obj.oscillators );
+		GSUdiffAssign( this.#data, obj );
 		this.#changeNoise( obj.noise );
 		this.#changeEnvs( obj.envs );
 		this.#changeLFOs( obj.lfos );
