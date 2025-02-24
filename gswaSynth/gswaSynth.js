@@ -38,8 +38,8 @@ class gswaSynth {
 		this.#bps = bpm / 60;
 	}
 	$change( obj ) {
-		this.#oscsCrud( obj.oscillators );
 		GSUdiffAssign( this.#data, obj );
+		this.#oscsCrud( obj.oscillators );
 		this.#changeNoise( obj.noise );
 		this.#changeEnvs( obj.envs );
 		this.#changeLFOs( obj.lfos );
@@ -444,9 +444,7 @@ class gswaSynth {
 			case "source": {
 				const buf = this.$getAudioBuffer( val );
 
-				uniNodes.forEach( n => {
-					n[ 0 ].buffer = buf;
-				} );
+				uniNodes.forEach( n => n[ 0 ].buffer = buf );
 			} break;
 			case "detune":
 				uniNodes.forEach( ( n, i ) => {
