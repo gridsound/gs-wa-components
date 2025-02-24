@@ -4,6 +4,12 @@ class gswaPeriodicWaves {
 	static #list = new Map();
 	static #cache = new Map();
 
+	static $debug() {
+		return {
+			gswaPeriodicWaves_nbList: gswaPeriodicWaves.#list.size,
+			gswaPeriodicWaves_nbCache: gswaPeriodicWaves.#cache.size,
+		};
+	}
 	static $clearCache() {
 		gswaPeriodicWaves.#cache.clear();
 	}
