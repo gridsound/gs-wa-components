@@ -35,7 +35,7 @@ class gswaPeriodicWaves {
 		return gswaPeriodicWaves.#list;
 	}
 	static $loadCustom( name, points ) {
-		const curve = GSUsampleDottedCurve( points, 2 ** 11 );
+		const curve = GSUsampleDotLine( points, 2 ** 11 ).map( d => d[ 1 ] );
 		const wave = GSUifft( {
 			real: curve.reverse(),
 			imag: GSUnewArray( curve.length, 0 ),
