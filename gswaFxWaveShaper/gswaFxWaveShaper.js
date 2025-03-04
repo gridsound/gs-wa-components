@@ -55,7 +55,7 @@ class gswaFxWaveShaper {
 		}
 	}
 	#setCurveData( curveDots ) {
-		const graphData = new Float32Array( GSUsampleDottedCurve( curveDots, 512 ) );
+		const graphData = new Float32Array( GSUsampleDotLine( curveDots, 512 ).map( d => d[ 1 ] ) );
 
 		this.#shaper.curve = this.#data.symmetry
 			? this.#addGraphSymmetry( graphData )
