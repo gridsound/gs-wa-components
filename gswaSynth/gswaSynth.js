@@ -410,9 +410,7 @@ class gswaSynth {
 		panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
 		for ( let i = 0; i < osc.unisonvoices; ++i ) {
 			const uniGain = this.$ctx.createGain();
-			const uniSrc = osc.source
-				? this.$ctx.createBufferSource()
-				: ( new gswaOscillator( this.$ctx ) );
+			const uniSrc = new gswaOscillator( this.$ctx, osc.source ? "buffer" : "oscillator" );
 
 			uniSrc.connect( uniGain ).connect( panNode.$getInput() );
 			key.$detuneEnv.$node.connect( uniSrc.detune );
