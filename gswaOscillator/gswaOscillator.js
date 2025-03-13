@@ -5,13 +5,15 @@ class gswaOscillator {
 	static $weakMap = new WeakMap();
 	static $runningMap = new Map();
 	#ctx = null;
-	#osc = null;
+	#src = null;
 	#id = ++gswaOscillator.$nbCreated;
 
-	constructor( ctx ) {
+	constructor( ctx, mode ) {
 		this.#ctx = ctx;
-		this.#osc = ctx.createOscillator();
-		gswaOscillator.$weakMap.set( this.#osc, 1 );
+		this.#src = mode === "buffer"
+			? ctx.createBufferSource()
+			: ctx.createOscillator();
+		gswaOscillator.$weakMap.set( this.#src, 1 );
 	}
 
 	// .........................................................................
@@ -22,31 +24,32 @@ class gswaOscillator {
 				gswaOscillator.$runningMap.delete( id );
 			}
 		} );
-		return this.#osc.stop( when );
+		return this.#src.stop( when );
 	}
 	start( when ) {
 		gswaOscillator.$runningMap.set( this.#id, true );
-		return this.#osc.start( when );
+		return this.#src.start( when );
 	}
-	connect( ...args ) { return this.#osc.connect( ...args ); }
-	disconnect( ...args ) { return this.#osc.disconnect( ...args ); }
+	connect( ...args ) { return this.#src.connect( ...args ); }
+	disconnect( ...args ) { return this.#src.disconnect( ...args ); }
 
 	// .........................................................................
-	get type() { return this.#osc.type; }
-	get detune() { return this.#osc.detune; }
-	get frequency() { return this.#osc.frequency; }
+	get type() { return this.#src.type; }
+	get detune() { return this.#src.detune; }
+	get frequency() { return this.#src.frequency; }
+	set buffer( buf ) { this.#src.buffer = buf; }
 
 	// .........................................................................
 	set type( w ) {
 		if ( w === "sine" || w === "triangle" || w === "sawtooth" ) { // 1.
-			this.#osc.type = w;
+			this.#src.type = w;
 		} else {
 			const pw = gswaPeriodicWaves.$get( this.#ctx, w );
 
 			if ( pw ) {
-				this.#osc.setPeriodicWave( pw );
+				this.#src.setPeriodicWave( pw );
 			} else {
-				this.#osc.type = "sine";
+				this.#src.type = "sine";
 			}
 		}
 	}
