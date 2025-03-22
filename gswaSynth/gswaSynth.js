@@ -108,10 +108,15 @@ class gswaSynth {
 		if ( envs ) {
 			const gainEnv = envs.gain && gswaSynth.#changeEnvsFormat( envs.gain, this.#bps );
 			const detuneEnv = envs.detune && gswaSynth.#changeEnvsFormat( envs.detune, this.#bps );
+			const lowpassEnv = envs.lowpass && gswaSynth.#changeEnvsFormat( envs.lowpass, this.#bps );
 
 			GSUforEach( this.#startedKeys, key => {
 				gainEnv && key.$gainEnv.$start( gainEnv );
 				detuneEnv && key.$detuneEnv.$start( detuneEnv );
+				lowpassEnv && key.$lowpassEnv.$start( lowpassEnv );
+				if ( envs.lowpass && "q" in envs.lowpass ) {
+					key.$lowpassEnvNode.Q.setValueAtTime( envs.lowpass.q, 0 );
+				}
 			} );
 		}
 	}
@@ -174,6 +179,7 @@ class gswaSynth {
 		const bps = this.#bps;
 		const envG = this.#data.envs.gain;
 		const envD = this.#data.envs.detune;
+		const envLP = this.#data.envs.lowpass;
 		const lfoG = this.#data.lfos.gain;
 		const lfoD = this.#data.lfos.detune;
 		const oscs = this.#data.oscillators;
@@ -196,6 +202,8 @@ class gswaSynth {
 			$gainEnv: new gswaEnvelope( ctx, "gain" ),
 			$gainEnvNode: ctx.createGain(),
 			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
+			$lowpassEnv: new gswaEnvelope( ctx, "lowpass" ),
+			$lowpassEnvNode: ctx.createBiquadFilter(),
 			$gainLFO: new gswaLFO( ctx ),
 			$gainLFOtarget: ctx.createGain(),
 			$detuneLFO: new gswaLFO( ctx ),
@@ -264,6 +272,17 @@ class gswaSynth {
 			sustain: envD.sustain,
 			release: envD.release / bps,
 		} );
+		key.$lowpassEnv.$start( {
+			toggle: envLP.toggle,
+			when: when - off,
+			duration: dur + off,
+			amp: 144 * 100,
+			attack: envLP.attack / bps,
+			hold: envLP.hold / bps,
+			decay: envLP.decay / bps,
+			sustain: envLP.sustain,
+			release: envLP.release / bps,
+		} );
 		key.$gainLFO.$start( {
 			toggle: lfoG.toggle,
 			when,
@@ -298,8 +317,20 @@ class gswaSynth {
 		key.$gainEnvNode.gain.setValueAtTime( 0, 0 );
 		key.$gainEnv.$node.connect( key.$gainEnvNode.gain );
 		key.$gainLFO.$node.connect( key.$gainLFOtarget.gain );
-		key.$gainLFOtarget
-			.connect( key.$gainEnvNode )
+		key.$lowpassEnvNode.type = "lowpass";
+		key.$lowpassEnvNode.frequency.setValueAtTime( 10, 0 );
+		key.$lowpassEnvNode.Q.setValueAtTime( envLP.q, 0 );
+		key.$lowpassEnvNode.detune.setValueAtTime( 0, 0 );
+		key.$lowpassEnv.$node.connect( key.$lowpassEnvNode.detune );
+		if ( envLP.toggle ) {
+			key.$gainLFOtarget
+				.connect( key.$lowpassEnvNode )
+				.connect( key.$gainEnvNode );
+		} else {
+			key.$gainLFOtarget
+				.connect( key.$gainEnvNode )
+		}
+		key.$gainEnvNode
 			.connect( key.$gainNode )
 			.connect( key.$panNode.$getInput() );
 		key.$panNode
@@ -323,6 +354,7 @@ class gswaSynth {
 			} else {
 				key.$gainEnv.$stop();
 				key.$detuneEnv.$stop();
+				key.$lowpassEnv.$stop();
 				setTimeout( this.#stopKey.bind( this, id ), ( this.#data.envs.gain.release + .1 ) / this.#bps * 1000 );
 			}
 		} else {
@@ -338,6 +370,7 @@ class gswaSynth {
 		key.$detuneLFO.$destroy();
 		key.$gainEnv.$destroy();
 		key.$detuneEnv.$destroy();
+		key.$lowpassEnv.$destroy();
 		this.#startedKeys.delete( id );
 	}
 
