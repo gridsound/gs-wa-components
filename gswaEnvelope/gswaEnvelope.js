@@ -60,47 +60,39 @@ class gswaEnvelope {
 		const D = env.decay;
 		const S = env.sustain;
 		const R = env.release;
+		let Rmax = amp * S;
 
 		par.cancelScheduledValues( 0 );
-		par.setValueAtTime( 0, now );
+		if ( now < w + A + H + D ) {
+			const dots = [
+				{ x: 0,         y: 0 },
+				{ x: A,         y: amp },
+				{ x: A + H,     y: amp },
+				{ x: A + H + D, y: Rmax },
+			];
+			const offset = now - w;
+			const xa = Math.max( 0, offset );
+			const xb = Math.min( dur, A + H + D );
+			const dotsSampled = GSUsampleDotLine( dots, 128, xa, xb ).map( d => d[ 1 ] );
+
+			Rmax = dotsSampled.at( -1 );
+			par.setValueCurveAtTime( new Float32Array( dotsSampled ), offset > 0 ? now : w, xb - xa );
+		} else {
+			par.setValueAtTime( Rmax, now );
+		}
 		if ( !this.#nodeStarted ) {
 			this.#nodeStarted = true;
 			this.$node.start();
 		}
-		if ( dur >= A + H + D ) {
-			if ( now <= w ) {
-				this.#attack( 1 * amp, w, A );
-			} else if ( now < w + A ) {
-				this.#attack( 1 * amp, now, w + A - now );
-			} else if ( now < w + A + H ) {
-				this.#attack( 1 * amp, now, Af );
-			} else if ( now < w + A + H + D ) {
-				this.#attack( S * amp, now, w + A + H + D - now );
-			} else if ( now < w + dur - Af ) {
-				this.#attack( S * amp, now, Af );
-			}
-			if ( now < w + A + H && S < 1 ) {
-				par.setValueCurveAtTime( new Float32Array( [ amp, S * amp ] ), w + A + H, D );
-			}
-		} else if ( now <= w ) {
-			this.#attack( S * amp, w, dur );
-		} else if ( now <= w + dur ) {
-			this.#attack( S * amp, now, w + dur - now );
-		} else {
-			this.#attack( S * amp, now, Af );
-		}
 		if ( Number.isFinite( dur ) ) {
 			if ( now <= w + dur ) {
-				this.#release( S * amp, w + dur, R );
+				this.#release( Rmax, w + dur, R );
 			} else if ( now < w + dur + R ) {
-				this.#release( S * amp, now + Af, w + dur + R - now );
+				this.#release( Rmax, now + Af, w + dur + R - now );
 			} else {
-				this.#release( S * amp, now + Af, Af );
+				this.#release( Rmax, now + Af, Af );
 			}
 		}
-	}
-	#attack( top, when, dur ) {
-		this.$node.offset.setValueCurveAtTime( new Float32Array( [ 0, top ] ), when, dur );
 	}
 	#release( top, when, dur ) {
 		this.$node.offset.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
