@@ -31,8 +31,9 @@ class gswaEnvelope {
 	$start( obj ) {
 		const d = this.#data;
 		const def = this.#defEnv;
+		const { q, ...obj2 } = obj;
 
-		Object.assign( d, obj );
+		Object.assign( d, obj2 );
 		d.attack = Math.max( def.attack, d.attack );
 		d.decay = Math.max( def.decay, d.decay );
 		d.release = Math.max( def.release, d.release );
