@@ -104,10 +104,8 @@ class gswaEnvelope {
 
 		par.cancelScheduledValues( 0 );
 		if ( Number.isFinite( d.duration ) ) {
-			par.setValueAtTime( 0, when );
 			this.$node.stop( when );
 		} else {
-			par.setValueAtTime( env.sustain * env.amp, when );
 			this.#release( env.sustain * env.amp, when, env.release );
 			this.$node.stop( when + env.release );
 		}
