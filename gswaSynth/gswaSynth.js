@@ -185,6 +185,7 @@ class gswaSynth {
 		const oscs = this.#data.oscillators;
 		const gainLFOvariations = [];
 		const detuneLFOvariations = [];
+		const maxDetune = 144 * 100;
 		const key = Object.freeze( {
 			$when: when,
 			$off: off,
@@ -227,12 +228,12 @@ class gswaSynth {
 						midi: [ prev.key, blc.key ],
 						gain: [ prev.gain, blc.gain ],
 						lowpass: [
-							this.#calcLowpass( prev.lowpass ),
-							this.#calcLowpass( blc.lowpass ),
+							prev.lowpass * maxDetune,
+							blc.lowpass * maxDetune,
 						],
 						highpass: [
-							this.#calcHighpass( prev.highpass ),
-							this.#calcHighpass( blc.highpass ),
+							-prev.highpass * maxDetune,
+							-blc.highpass * maxDetune,
 						],
 					} );
 					gainLFOvariations.push( {
@@ -249,8 +250,10 @@ class gswaSynth {
 		key.$highpassNode.type = "highpass";
 		key.$panNode.$setValueAtTime( key.$pan, atTime );
 		key.$gainNode.gain.setValueAtTime( key.$gain, atTime );
-		key.$lowpassNode.frequency.setValueAtTime( this.#calcLowpass( key.$lowpass ), atTime );
-		key.$highpassNode.frequency.setValueAtTime( this.#calcHighpass( key.$highpass ), atTime );
+		key.$lowpassNode.frequency.setValueAtTime( 10, atTime );
+		key.$highpassNode.frequency.setValueAtTime( this.#nyquist, atTime );
+		key.$lowpassNode.detune.setValueAtTime( key.$lowpass * maxDetune, atTime );
+		key.$highpassNode.detune.setValueAtTime( -key.$highpass * maxDetune, atTime );
 		key.$gainEnv.$start( {
 			toggle: envG.toggle,
 			when: when - off,
@@ -276,7 +279,7 @@ class gswaSynth {
 			toggle: envLP.toggle,
 			when: when - off,
 			duration: dur + off,
-			amp: 144 * 100,
+			amp: maxDetune,
 			attack: envLP.attack / bps,
 			hold: envLP.hold / bps,
 			decay: envLP.decay / bps,
@@ -375,19 +378,6 @@ class gswaSynth {
 	}
 
 	// ..........................................................................
-	#calcLowpass( val ) {
-		return this.#calcExp( val, this.#nyquist, 2 );
-	}
-	#calcHighpass( val ) {
-		return this.#calcExp( 1 - val, this.#nyquist, 3 );
-	}
-	#calcExp( x, total, exp ) {
-		return exp === 0
-			? x
-			: Math.expm1( x ) ** exp / ( ( Math.E - 1 ) ** exp ) * total;
-	}
-
-	// ..........................................................................
 	#scheduleVariations( key ) {
 		key.$variations.forEach( va => {
 			const when = key.$when - key.$off + va.when;
@@ -397,8 +387,8 @@ class gswaSynth {
 				key.$oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
 				key.$panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 				key.$gainNode.gain.setValueCurveAtTime( new Float32Array( va.gain ), when, dur );
-				key.$lowpassNode.frequency.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
-				key.$highpassNode.frequency.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
+				key.$lowpassNode.detune.setValueCurveAtTime( new Float32Array( va.lowpass ), when, dur );
+				key.$highpassNode.detune.setValueCurveAtTime( new Float32Array( va.highpass ), when, dur );
 			}
 		} );
 	}
