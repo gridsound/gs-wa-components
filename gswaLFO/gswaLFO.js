@@ -150,17 +150,17 @@ class gswaLFO {
 
 				if ( !started ) {
 					started = absVal * ab[ 0 ];
-					nodeParam.setValueAtTime( started, now );
+					GSUsetValueAtTime( nodeParam, started, now );
 				}
-				nodeParam.setValueCurveAtTime( new Float32Array( [
+				GSUsetValueCurveAtTime( nodeParam, [
 					absVal * ab[ 0 ],
 					absVal * ab[ 1 ],
-				] ), when, dur );
+				], when, dur );
 			}
 		} );
 		if ( !started ) {
 			started = absVal * d[ prop ];
-			nodeParam.setValueAtTime( started, now );
+			GSUsetValueAtTime( nodeParam, started, now );
 		}
 		return started;
 	}
