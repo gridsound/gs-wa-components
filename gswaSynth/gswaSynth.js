@@ -390,7 +390,7 @@ class gswaSynth {
 
 			if ( when > this.$ctx.currentTime ) {
 				key.$oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
-				key.$panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
+				key.$panNode.$setValueCurveAtTime( va.pan, when, dur );
 				GSUsetValueCurveAtTime( key.$gainNode.gain, va.gain, when, dur );
 				GSUsetValueCurveAtTime( key.$lowpassNode.detune, va.lowpass, when, dur );
 				GSUsetValueCurveAtTime( key.$highpassNode.detune, va.highpass, when, dur );
