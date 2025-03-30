@@ -161,13 +161,18 @@ class gswaSynth {
 
 	// ..........................................................................
 	$startKey( allBlocks, when, off, dur ) {
-		const blocks = allBlocks.filter( ( [ , blc ] ) => ( blc.when + blc.duration ) / this.#bps >= off ); // 1.
-		const firstWhen = allBlocks[ 0 ][ 1 ].when;
-		const firstWhe2 = blocks[ 0 ][ 1 ].when;
-		const diffWhen = firstWhe2 - firstWhen;
-		const off2 = off - diffWhen / this.#bps;
+		if ( allBlocks.length > 0 ) {
+			const blocks = allBlocks.filter( ( [ , blc ] ) => ( blc.when + blc.duration ) / this.#bps >= off ); // 1.
 
-		return this.#startKey2( blocks, when, off2, dur );
+			if ( blocks.length > 0 ) {
+				const firstWhen = allBlocks[ 0 ][ 1 ].when;
+				const firstWhe2 = blocks[ 0 ][ 1 ].when;
+				const diffWhen = firstWhe2 - firstWhen;
+				const off2 = off - diffWhen / this.#bps;
+
+				return this.#startKey2( blocks, when, off2, dur );
+			}
+		}
 	}
 	#startKey2( blocks, when, off, dur ) {
 		const id = ++gswaSynth.#startedMaxId;
