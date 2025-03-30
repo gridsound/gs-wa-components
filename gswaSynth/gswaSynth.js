@@ -386,9 +386,9 @@ class gswaSynth {
 	#scheduleVariations( key ) {
 		key.$variations.forEach( va => {
 			const when = key.$when - key.$off + va.when;
-			const dur = va.duration;
+			const dur = Math.max( .00001, va.duration );
 
-			if ( when > this.$ctx.currentTime && dur > 0 ) {
+			if ( when > this.$ctx.currentTime ) {
 				key.$oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
 				key.$panNode.$setValueCurveAtTime( new Float32Array( va.pan ), when, dur );
 				GSUsetValueCurveAtTime( key.$gainNode.gain, va.gain, when, dur );
