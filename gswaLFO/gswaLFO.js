@@ -143,9 +143,9 @@ class gswaLFO {
 
 		d.variations.forEach( va => {
 			const when = d.when - d.offset + va.when;
-			const dur = va.duration;
+			const dur = Math.max( .00001, va.duration );
 
-			if ( when > now && dur > 0 ) {
+			if ( when > now ) {
 				const ab = va[ prop ];
 
 				if ( !started ) {
