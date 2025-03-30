@@ -26,9 +26,18 @@ class gswaOscillator {
 		} );
 		return this.#src.stop( when );
 	}
-	start( when ) {
+	start( when, Hz ) {
+		const now = this.#ctx.currentTime;
+
 		gswaOscillator.$runningMap.set( this.#id, true );
-		return this.#src.start( when );
+		if ( when >= now || !Number.isFinite( Hz ) ) {
+			this.#src.start( when );
+		} else {
+			const periods = ( now - when ) * Hz;
+			const diff = Math.ceil( periods ) - periods;
+
+			this.#src.start( now + diff / Hz );
+		}
 	}
 	connect( ...args ) { return this.#src.connect( ...args ); }
 	disconnect( ...args ) { return this.#src.disconnect( ...args ); }
