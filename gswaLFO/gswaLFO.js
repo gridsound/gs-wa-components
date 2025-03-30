@@ -75,20 +75,23 @@ class gswaLFO {
 
 	// .........................................................................
 	#start() {
-		const d = this.#data;
-
 		this.#oscNode = new gswaOscillator( this.#ctx );
 		this.#ampNode = this.#ctx.createGain();
 		this.#ampAttNode = this.#ctx.createGain();
+		this.#oscNode.connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
 		this.#setType();
 		this.#setAmpAtt();
 		this.#setAmp();
-		this.#setSpeed();
-		this.#oscNode.connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
-		this.#oscNode.start( d.when + d.delay - d.offset );
-		if ( d.whenStop > 0 ) {
-			this.#stop( d.whenStop );
+		this.#start2();
+		if ( this.#data.whenStop > 0 ) {
+			this.#stop( this.#data.whenStop );
 		}
+	}
+	#start2() {
+		const d = this.#data;
+		const Hz = this.#setSpeed();
+
+		this.#oscNode.start( d.when + d.delay - d.offset, Hz );
 	}
 	#stop( when ) {
 		this.#oscNode.frequency.cancelScheduledValues( when );
@@ -132,11 +135,11 @@ class gswaLFO {
 		gswaLFO.#setVariations( this.#data, "absoluteAmp", "amp", this.#ampNode.gain, this.#ctx.currentTime );
 	}
 	#setSpeed() {
-		gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.#ctx.currentTime );
+		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.#ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];
-		let started = false;
+		let started = null;
 
 		d.variations.forEach( va => {
 			const when = d.when - d.offset + va.when;
@@ -146,8 +149,8 @@ class gswaLFO {
 				const ab = va[ prop ];
 
 				if ( !started ) {
-					started = true;
-					nodeParam.setValueAtTime( absVal * ab[ 0 ], now );
+					started = absVal * ab[ 0 ];
+					nodeParam.setValueAtTime( started, now );
 				}
 				nodeParam.setValueCurveAtTime( new Float32Array( [
 					absVal * ab[ 0 ],
@@ -156,8 +159,10 @@ class gswaLFO {
 			}
 		} );
 		if ( !started ) {
-			nodeParam.setValueAtTime( absVal * d[ prop ], now );
+			started = absVal * d[ prop ];
+			nodeParam.setValueAtTime( started, now );
 		}
+		return started;
 	}
 }
 
