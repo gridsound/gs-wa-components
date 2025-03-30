@@ -35,12 +35,12 @@ class gswaStereoPanner {
 		return this.#right.gain.value - this.#left.gain.value;
 	}
 	$setValueAtTime( value, when ) {
-		this.#left.gain.setValueAtTime( gswaStereoPanner.#calcL( value ), when );
-		this.#right.gain.setValueAtTime( gswaStereoPanner.#calcR( value ), when );
+		GSUsetValueAtTime( this.#left.gain, gswaStereoPanner.#calcL( value ), when );
+		GSUsetValueAtTime( this.#right.gain, gswaStereoPanner.#calcR( value ), when );
 	}
 	$setValueCurveAtTime( arr, when, dur ) {
-		this.#left.gain.setValueCurveAtTime( arr.map( gswaStereoPanner.#calcL ), when, dur );
-		this.#right.gain.setValueCurveAtTime( arr.map( gswaStereoPanner.#calcR ), when, dur );
+		GSUsetValueCurveAtTime( this.#left.gain, arr.map( gswaStereoPanner.#calcL ), when, dur );
+		GSUsetValueCurveAtTime( this.#right.gain, arr.map( gswaStereoPanner.#calcR ), when, dur );
 	}
 
 	// .........................................................................
