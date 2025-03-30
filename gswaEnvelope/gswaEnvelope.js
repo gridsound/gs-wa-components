@@ -63,7 +63,6 @@ class gswaEnvelope {
 		const R = env.release;
 		let Rmax = amp * S;
 
-		par.cancelScheduledValues( 0 );
 		if ( now < w + A + H + D ) {
 			const dots = [
 				{ x: 0,         y: 0 },
@@ -77,9 +76,9 @@ class gswaEnvelope {
 			const dotsSampled = GSUsampleDotLine( dots, 128, xa, xb ).map( d => d[ 1 ] );
 
 			Rmax = dotsSampled.at( -1 );
-			par.setValueCurveAtTime( new Float32Array( dotsSampled ), offset > 0 ? now : w, xb - xa );
+			GSUsetValueCurveAtTime( par, dotsSampled, offset > 0 ? now : w, xb - xa );
 		} else {
-			par.setValueAtTime( Rmax, now );
+			GSUsetValueAtTime( par, Rmax, now );
 		}
 		if ( !this.#nodeStarted ) {
 			this.#nodeStarted = true;
@@ -96,7 +95,7 @@ class gswaEnvelope {
 		}
 	}
 	#release( top, when, dur ) {
-		this.$node.offset.setValueCurveAtTime( new Float32Array( [ top, 0 ] ), when, dur );
+		GSUsetValueCurveAtTime( this.$node.offset, [ top, 0 ], when, dur );
 	}
 	#stop( when ) {
 		const d = this.#data;
