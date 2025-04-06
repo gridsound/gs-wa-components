@@ -52,7 +52,7 @@ class gswaLFO {
 	$destroy() {
 		if ( this.#oscNode ) {
 			this.#stop( 0 );
-			this.#oscNode.disconnect();
+			this.#oscNode.$disconnect();
 			this.#ampNode.disconnect();
 			this.#ampAttNode.disconnect();
 			this.#oscNode =
@@ -78,7 +78,7 @@ class gswaLFO {
 		this.#oscNode = new gswaOscillator( this.#ctx );
 		this.#ampNode = this.#ctx.createGain();
 		this.#ampAttNode = this.#ctx.createGain();
-		this.#oscNode.connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
+		this.#oscNode.$connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
 		this.#setType();
 		this.#setAmpAtt();
 		this.#setAmp();
@@ -91,20 +91,20 @@ class gswaLFO {
 		const d = this.#data;
 		const Hz = this.#setSpeed();
 
-		this.#oscNode.start( d.when + d.delay - d.offset, Hz );
+		this.#oscNode.$start( d.when + d.delay - d.offset, Hz );
 	}
 	#stop( when ) {
-		this.#oscNode.frequency.cancelScheduledValues( when );
+		this.#oscNode.$frequency.cancelScheduledValues( when );
 		this.#ampNode.gain.cancelScheduledValues( when );
 		this.#ampAttNode.gain.cancelScheduledValues( when );
-		this.#oscNode.stop( when );
+		this.#oscNode.$stop( when );
 	}
 	#change( obj ) {
 		if ( "type" in obj ) {
 			this.#setType();
 		}
 		if ( "absoluteSpeed" in obj ) {
-			this.#oscNode.frequency.cancelScheduledValues( 0 );
+			this.#oscNode.$frequency.cancelScheduledValues( 0 );
 			this.#setSpeed();
 		}
 		if ( "absoluteAmp" in obj ) {
@@ -117,7 +117,7 @@ class gswaLFO {
 		}
 	}
 	#setType() {
-		this.#oscNode.type = this.#data.type;
+		this.#oscNode.$type = this.#data.type;
 	}
 	#setAmpAtt() {
 		const d = this.#data;
@@ -135,7 +135,7 @@ class gswaLFO {
 		gswaLFO.#setVariations( this.#data, "absoluteAmp", "amp", this.#ampNode.gain, this.#ctx.currentTime );
 	}
 	#setSpeed() {
-		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.#ctx.currentTime );
+		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.$frequency, this.#ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];

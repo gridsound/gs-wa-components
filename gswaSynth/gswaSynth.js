@@ -67,8 +67,8 @@ class gswaSynth {
 				switch ( prop ) {
 					case "waveCustom":
 						nodes.uniNodes.forEach( n => {
-							n[ 0 ].type = "sine";
-							n[ 0 ].type = osc.wave;
+							n[ 0 ].$type = "sine"; // 3.
+							n[ 0 ].$type = osc.wave;
 						} );
 						break;
 					case "wave": this.#oscChangeProp( osc, nodes, "wave", val, now, 0 ); break;
@@ -440,9 +440,9 @@ class gswaSynth {
 			const uniGain = this.$ctx.createGain();
 			const uniSrc = new gswaOscillator( this.$ctx, osc.source ? "buffer" : "oscillator" );
 
-			uniSrc.connect( uniGain ).connect( panNode.$getInput() );
-			key.$detuneEnv.$node.connect( uniSrc.detune );
-			key.$detuneLFO.$node.connect( uniSrc.detune );
+			uniSrc.$connect( uniGain ).connect( panNode.$getInput() );
+			key.$detuneEnv.$node.connect( uniSrc.$detune );
+			key.$detuneLFO.$node.connect( uniSrc.$detune );
 			uniNodes.push( [ uniSrc, uniGain ] );
 		}
 		if ( osc.source ) {
@@ -457,14 +457,14 @@ class gswaSynth {
 		const orderOffset = .0000001 * ind; // 2.
 		const phazeOffset = 1 / gswaSynth.#getHz( key.$midi ) * osc.phaze;
 
-		uniNodes.forEach( n => n[ 0 ].start( key.$when + phazeOffset + orderOffset ) );
+		uniNodes.forEach( n => n[ 0 ].$start( key.$when + phazeOffset + orderOffset ) );
 		if ( Number.isFinite( dur ) ) {
-			uniNodes.forEach( n => n[ 0 ].stop( key.$when + dur ) );
+			uniNodes.forEach( n => n[ 0 ].$stop( key.$when + dur ) );
 		}
 		return nodes;
 	}
 	#destroyOscNode( nodes ) {
-		nodes.uniNodes.forEach( n => n[ 0 ].stop() );
+		nodes.uniNodes.forEach( n => n[ 0 ].$stop() );
 	}
 	#oscChangeProp( osc, nodes, prop, val, when, dur ) {
 		const uniNodes = nodes.uniNodes;
@@ -473,17 +473,17 @@ class gswaSynth {
 			case "source": {
 				const buf = this.$getAudioBuffer( val );
 
-				uniNodes.forEach( n => n[ 0 ].buffer = buf );
+				uniNodes.forEach( n => n[ 0 ].$buffer = buf );
 			} break;
-			case "wave": uniNodes.forEach( n => n[ 0 ].type = val ); break;
+			case "wave": uniNodes.forEach( n => n[ 0 ].$type = val ); break;
 			case "detune":
-			case "unisondetune": uniNodes.forEach( ( n, i ) => GSUsetValueAtTime( n[ 0 ].detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when ) ); break;
+			case "unisondetune": uniNodes.forEach( ( n, i ) => GSUsetValueAtTime( n[ 0 ].$detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when ) ); break;
 			case "unisonblend":  uniNodes.forEach( ( n, i ) => GSUsetValueAtTime( n[ 1 ].gain,   gswaSynth.#calcUnisonGain(   osc, val, i ), when ) ); break;
 			case "frequency":
 				if ( osc.source ) {
 					dur
-						? uniNodes.forEach( ( n, i ) => GSUsetValueCurveAtTime( n[ 0 ].detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when, dur ) )
-						: uniNodes.forEach( ( n, i ) => GSUsetValueAtTime(      n[ 0 ].detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when ) );
+						? uniNodes.forEach( ( n, i ) => GSUsetValueCurveAtTime( n[ 0 ].$detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when, dur ) )
+						: uniNodes.forEach( ( n, i ) => GSUsetValueAtTime(      n[ 0 ].$detune, gswaSynth.#calcUnisonDetune( osc, val, i ), when ) );
 				} else {
 					const val2 = Array.isArray( val )
 						? [
@@ -493,8 +493,8 @@ class gswaSynth {
 						: gswaSynth.#getHz( val );
 
 					dur
-						? uniNodes.forEach( n => GSUsetValueCurveAtTime( n[ 0 ].frequency, val2, when, dur ) )
-						: uniNodes.forEach( n => GSUsetValueAtTime(      n[ 0 ].frequency, val2, when ) );
+						? uniNodes.forEach( n => GSUsetValueCurveAtTime( n[ 0 ].$frequency, val2, when, dur ) )
+						: uniNodes.forEach( n => GSUsetValueAtTime(      n[ 0 ].$frequency, val2, when ) );
 				}
 				break;
 		}
@@ -540,4 +540,5 @@ Object.freeze( gswaSynth );
 1. We do not need to update blocks' `when` because only their intervals count.
 2. We add a little timing to be sure we start the oscillators in the same order
    each time, to avoid random chaos...
+3. Forcing the wave change.
 */

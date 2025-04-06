@@ -17,7 +17,7 @@ class gswaOscillator {
 	}
 
 	// .........................................................................
-	stop( when ) {
+	$stop( when ) {
 		gswaOscillator.$runningMap.set( this.#id, when || 0 );
 		gswaOscillator.$runningMap.forEach( ( when, id ) => {
 			if ( when !== true && when <= this.#ctx.currentTime ) {
@@ -26,7 +26,7 @@ class gswaOscillator {
 		} );
 		return this.#src.stop( when );
 	}
-	start( when, Hz ) {
+	$start( when, Hz ) {
 		const now = this.#ctx.currentTime;
 
 		gswaOscillator.$runningMap.set( this.#id, true );
@@ -39,17 +39,17 @@ class gswaOscillator {
 			this.#src.start( now + diff / Hz );
 		}
 	}
-	connect( ...args ) { return this.#src.connect( ...args ); }
-	disconnect( ...args ) { return this.#src.disconnect( ...args ); }
+	$connect( ...args ) { return this.#src.connect( ...args ); }
+	$disconnect( ...args ) { return this.#src.disconnect( ...args ); }
 
 	// .........................................................................
-	get type() { return this.#src.type; }
-	get detune() { return this.#src.detune; }
-	get frequency() { return this.#src.frequency; }
-	set buffer( buf ) { this.#src.buffer = buf; }
+	get $type() { return this.#src.type; }
+	get $detune() { return this.#src.detune; }
+	get $frequency() { return this.#src.frequency; }
+	set $buffer( buf ) { this.#src.buffer = buf; }
 
 	// .........................................................................
-	set type( w ) {
+	set $type( w ) {
 		if ( w === "sine" || w === "triangle" || w === "sawtooth" ) { // 1.
 			this.#src.type = w;
 		} else {
