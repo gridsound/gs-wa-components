@@ -5,19 +5,10 @@ class gswaCrossfadeProc extends AudioWorkletProcessor {
 	#srcMap = {};
 
 	static get parameterDescriptors() {
-		return [ {
-			name: "start",
-			defaultValue: 0,
-			minValue: 0,
-			maxValue: 2,
-			automationRate: "a-rate",
-		}, {
-			name: "index",
-			defaultValue: 0,
-			minValue: 0,
-			maxValue: 100,
-			automationRate: "a-rate",
-		} ];
+		return [
+			{ name: "start", automationRate: "a-rate", defaultValue: 0, minValue: 0, maxValue: 2 },
+			{ name: "index", automationRate: "a-rate", defaultValue: 0, minValue: 0, maxValue: 1 },
+		];
 	}
 
 	constructor( opts ) {
@@ -38,11 +29,12 @@ class gswaCrossfadeProc extends AudioWorkletProcessor {
 	static #process2( outputs, srcMap, ind ) {
 		outputs.forEach( ( output, i ) => {
 			const chan = output[ 0 ];
+			const onlyOne = srcMap.length < 2;
 
-			if ( ind.length > 1 ) {
+			if ( ind.length > 1 && !onlyOne ) {
 				chan.forEach( ( _, j ) => chan[ j ] = gswaCrossfadeProc.#calc( srcMap, i, ind[ j ] ) );
 			} else {
-				const val = gswaCrossfadeProc.#calc( srcMap, i, ind[ 0 ] );
+				const val = gswaCrossfadeProc.#calc( srcMap, i, onlyOne ? 0 : ind[ 0 ] );
 
 				chan.forEach( ( _, j ) => chan[ j ] = val );
 			}
@@ -50,7 +42,7 @@ class gswaCrossfadeProc extends AudioWorkletProcessor {
 	}
 	static #calc( srcMap, srcI, t ) {
 		const srcPos = srcMap[ srcI ];
-		const srcPrevPos = srcI === 0 ? 0 : srcMap[ srcI - 1 ];
+		const srcPrevPos = srcI === 0                 ? 0 : srcMap[ srcI - 1 ];
 		const srcNextPos = srcI === srcMap.length - 1 ? 1 : srcMap[ srcI + 1 ];
 
 		return (
