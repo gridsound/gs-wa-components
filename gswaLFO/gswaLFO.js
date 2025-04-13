@@ -94,7 +94,7 @@ class gswaLFO {
 		this.#oscNode.$start( d.when + d.delay - d.offset, Hz );
 	}
 	#stop( when ) {
-		this.#oscNode.$frequency.cancelScheduledValues( when );
+		this.#oscNode.$frequency0.cancelScheduledValues( when );
 		this.#ampNode.gain.cancelScheduledValues( when );
 		this.#ampAttNode.gain.cancelScheduledValues( when );
 		this.#oscNode.$stop( when );
@@ -104,15 +104,12 @@ class gswaLFO {
 			this.#setType();
 		}
 		if ( "absoluteSpeed" in obj ) {
-			this.#oscNode.$frequency.cancelScheduledValues( 0 );
 			this.#setSpeed();
 		}
 		if ( "absoluteAmp" in obj ) {
-			this.#ampNode.gain.cancelScheduledValues( 0 );
 			this.#setAmp();
 		}
 		if ( "when" in obj || "offset" in obj || "delay" in obj || "attack" in obj ) {
-			this.#ampAttNode.gain.cancelScheduledValues( 0 );
 			this.#setAmpAtt();
 		}
 	}
@@ -121,21 +118,20 @@ class gswaLFO {
 	}
 	#setAmpAtt() {
 		const d = this.#data;
-		const now = this.#ctx.currentTime;
 		const atTime = d.when + d.delay - d.offset;
 
-		if ( now <= atTime && d.attack > 0 ) {
-			this.#ampAttNode.gain.setValueAtTime( 0, now );
-			this.#ampAttNode.gain.setValueCurveAtTime( new Float32Array( [ 0, 1 ] ), atTime, d.attack );
+		if ( this.#ctx.currentTime <= atTime && d.attack > 0 ) {
+			GSUsetValueAtTime( this.#ampAttNode.gain, 0, 0 );
+			GSUsetValueCurveAtTime( this.#ampAttNode.gain, [ 0, 1 ], atTime, d.attack );
 		} else {
-			this.#ampAttNode.gain.setValueAtTime( 1, now );
+			GSUsetValueAtTime( this.#ampAttNode.gain, 1, 0 );
 		}
 	}
 	#setAmp() {
 		gswaLFO.#setVariations( this.#data, "absoluteAmp", "amp", this.#ampNode.gain, this.#ctx.currentTime );
 	}
 	#setSpeed() {
-		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.$frequency, this.#ctx.currentTime );
+		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.$frequency0, this.#ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];

@@ -3,6 +3,7 @@
 class gswaPeriodicWaves {
 	static #list = new Map();
 	static #cache = new Map();
+	static #wavetableList = new Map();
 
 	static $debug() {
 		return {
@@ -26,15 +27,66 @@ class gswaPeriodicWaves {
 		}
 		return p;
 	}
+	static $getWavetable( ctx, name ) {
+		return gswaPeriodicWaves.#wavetableList.get( name )
+			.map( wname => gswaPeriodicWaves.$get( ctx, wname ) );
+	}
 	static $delete( name ) {
+		const wt = gswaPeriodicWaves.#wavetableList.get( name );
+
+		if ( wt ) {
+			wt.forEach( wname => gswaPeriodicWaves.#deleteWave( `${ name }.${ i }` ) );
+			gswaPeriodicWaves.#wavetableList.delete( name );
+		} else {
+			gswaPeriodicWaves.#deleteWave( name );
+		}
+	}
+	static $loadWaves( waves ) {
+		waves.forEach( w => gswaPeriodicWaves.#loadWaveImagReal( ...w ) );
+		return gswaPeriodicWaves.#list;
+	}
+	static $addWavetable( name, obj ) {
+		const wt = [];
+		const ret = [];
+		const objEnt = Object.entries( obj ).sort( ( a, b ) => a[ 1 ].index - b[ 1 ].index );
+
+		objEnt.forEach( kv => {
+			const wname = `${ name }.${ kv[ 0 ] }`;
+
+			wt.push( wname );
+			ret.push( gswaPeriodicWaves.#loadWaveDots( wname, kv[ 1 ].curve ) );
+		} );
+		gswaPeriodicWaves.#wavetableList.set( name, wt );
+		return ret;
+	}
+	static $updateWavetable( name, obj, objSource ) {
+		if ( !gswaPeriodicWaves.#wavetableList.has( name ) ) {
+			return gswaPeriodicWaves.$addWavetable( name, obj );
+		}
+		GSUforEach( obj, ( w, wId ) => {
+			const wname = `${ name }.${ wId }`;
+
+			if ( !w ) {
+				gswaPeriodicWaves.#deleteWave( wname );
+			} else if ( w.curve ) {
+				gswaPeriodicWaves.#deleteWave( wname );
+				gswaPeriodicWaves.#loadWaveDots( wname, objSource[ wId ].curve );
+			}
+		} );
+
+		const objEnt = Object.entries( objSource ).sort( ( a, b ) => a[ 1 ].index - b[ 1 ].index );
+		const wt = objEnt.map( kv => `${ name }.${ kv[ 0 ] }` );
+
+		gswaPeriodicWaves.#wavetableList.set( name, wt );
+		return [ gswaPeriodicWaves.#list.get( wt[ 0 ] ) ];
+	}
+
+	// .........................................................................
+	static #deleteWave( name ) {
 		gswaPeriodicWaves.#list.delete( name );
 		gswaPeriodicWaves.#cache.delete( name );
 	}
-	static $loadWaves( waves ) {
-		waves.forEach( w => gswaPeriodicWaves.#loadWave( ...w ) );
-		return gswaPeriodicWaves.#list;
-	}
-	static $loadCustom( name, points ) {
+	static #loadWaveDots( name, points ) {
 		const curve = GSUsampleDotLine( points, 2 ** 11 ).map( d => d[ 1 ] );
 		const wave = GSUifft( {
 			real: curve.reverse(),
@@ -42,10 +94,10 @@ class gswaPeriodicWaves {
 		} );
 
 		gswaPeriodicWaves.#cache.delete( name );
-		gswaPeriodicWaves.#loadWave( name, wave, "noFirstZero" );
+		gswaPeriodicWaves.#loadWaveImagReal( name, wave, "noFirstZero" );
 		return wave;
 	}
-	static #loadWave( name, wave, noFirstZero ) {
+	static #loadWaveImagReal( name, wave, noFirstZero ) {
 		const imag = wave.imag || wave.real.map( () => 0 );
 		const real = wave.real || wave.imag.map( () => 0 );
 
