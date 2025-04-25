@@ -35,7 +35,7 @@ class gswaPeriodicWaves {
 		const wt = gswaPeriodicWaves.#wavetableList.get( name );
 
 		if ( wt ) {
-			wt.forEach( wname => gswaPeriodicWaves.#deleteWave( `${ name }.${ i }` ) );
+			wt.forEach( wname => gswaPeriodicWaves.#deleteWave( wname ) );
 			gswaPeriodicWaves.#wavetableList.delete( name );
 		} else {
 			gswaPeriodicWaves.#deleteWave( name );
