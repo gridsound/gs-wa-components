@@ -13,7 +13,6 @@ class gswaOscillator {
 	#bufDur = 0;
 	#output = null;
 	#waCrossfade = null;
-	#wavetableData = {};
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
@@ -61,7 +60,6 @@ class gswaOscillator {
 				} );
 				if ( this.#type === "oscTable" ) {
 					this.#waCrossfade.$start( when );
-					this.#waCrossfade.$setIndexCurve( [ 0, 1 ], when, 1 );
 				}
 				break;
 		}
