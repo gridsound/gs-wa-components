@@ -89,6 +89,12 @@ class gswaOscillator {
 	$setFrequencyCurveAtTime( val, when, dur ) {
 		GSUforEach( this.#srcs, src => GSUsetValueCurveAtTime( src.frequency, val, when, dur ) );
 	}
+	$setWavetableAtTime( val, when, dur ) {
+		this.#waCrossfade.$setIndex( val, when );
+	}
+	$setWavetableCurveAtTime( val, when, dur ) {
+		this.#waCrossfade.$setIndexCurve( val, when, dur );
+	}
 
 	// .........................................................................
 	set $buffer( buf ) {
