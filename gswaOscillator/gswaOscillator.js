@@ -102,9 +102,13 @@ class gswaOscillator {
 			console.error( "gswaOscillator: multiple $buffer set" );
 			return;
 		}
+
+		const absn = this.#ctx.createBufferSource();
+
+		absn.buffer = buf;
+		absn.connect( this.#output );
 		this.#type = "buffer";
-		this.#srcs = [ ctx.createBufferSource() ];
-		this.#srcs[ 0 ].buffer = buf;
+		this.#srcs = [ absn ];
 		this.#bufDur = buf.duration;
 	}
 	set $type( w ) {
