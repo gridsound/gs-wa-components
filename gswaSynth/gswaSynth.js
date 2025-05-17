@@ -13,6 +13,7 @@ class gswaSynth {
 		this.#removeOsc.bind( this ) );
 	#bps = 1;
 	#startedKeys = new Map();
+	#wtCurvesMap = new Map();
 
 	constructor() {
 		Object.seal( this );
@@ -40,20 +41,57 @@ class gswaSynth {
 	$change( obj ) {
 		this.#oscsCrud( obj.oscillators );
 		GSUdiffAssign( this.#data, obj );
+		this.#changeWtCurves( obj.oscillators );
 		this.#changeNoise( obj.noise );
 		this.#changeEnvs( obj.envs );
 		this.#changeLFOs( obj.lfos );
 	}
+	#changeWtCurves( oscsObj ) {
+		GSUforEach( oscsObj, ( osc, id ) => {
+			GSUforEach( osc?.waveCustom?.wtposCurves, ( wtposCurve, curveId ) => {
+				const cid = `${ id }.${ curveId }`;
+
+				if ( !wtposCurve ) {
+					this.#wtCurvesMap.delete( cid );
+				} else {
+					const dataWTposCurve = this.#data.oscillators[ id ].waveCustom.wtposCurves[ curveId ];
+
+					if ( !this.#wtCurvesMap.has( cid ) ) {
+						this.#wtCurvesMap.set( cid, [] );
+					}
+					if ( "curve" in wtposCurve ) {
+						this.#wtCurvesMap.get( cid )[ 0 ] = GSUsampleDotLine( dataWTposCurve.curve, 512 ).map( d => d[ 1 ] );
+					}
+					if ( "duration" in wtposCurve ) {
+						this.#wtCurvesMap.get( cid )[ 1 ] = wtposCurve.duration;
+					}
+				}
+			} );
+		} );
+	}
 
 	// ..........................................................................
 	#removeOsc( id ) {
+		this.#wtCurvesMap.forEach( ( c, cid ) => {
+			if ( cid.startsWith( `${ id }.` ) ) {
+				this.#wtCurvesMap.delete( cid );
+			}
+		} );
 		this.#startedKeys.forEach( key => {
 			this.#destroyOscNode( key.$oscNodes.get( id ) );
 			key.$oscNodes.delete( id );
 		} );
 	}
 	#addOsc( id, osc ) {
-		this.#startedKeys.forEach( key => key.$oscNodes.set( id, this.#createOscNode( key, osc, 0, this.#data.envs.gain ) ) );
+		GSUforEach( osc.waveCustom?.wtposCurves, ( wtposCurve, curveId ) => {
+			this.#wtCurvesMap.set( `${ id }.${ curveId }`, [
+				GSUsampleDotLine( wtposCurve.curve, 512 ).map( d => d[ 1 ] ),
+				wtposCurve.duration,
+			] );
+		} );
+		this.#startedKeys.forEach( key => {
+			key.$oscNodes.set( id, this.#createOscNode( key, id, osc, 0, this.#data.envs.gain ) );
+		} );
 	}
 	#changeOsc( id, obj ) {
 		const now = this.$ctx.currentTime;
@@ -322,7 +360,7 @@ class gswaSynth {
 			variations: detuneLFOvariations,
 		} );
 		this.#createNoiseNodes( key );
-		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, osc, i, envG ) ) );
+		Object.entries( oscs ).forEach( ( [ id, osc ], i ) => key.$oscNodes.set( id, this.#createOscNode( key, id, osc, i, envG ) ) );
 		this.#scheduleVariations( key );
 		GSUsetValueAtTime( key.$gainEnvNode.gain, 0, 0 );
 		GSUsetValueAtTime( key.$lowpassEnvNode.frequency, 10, 0 );
@@ -423,7 +461,7 @@ class gswaSynth {
 	#destroyNoiseNodes( key ) {
 		key.$noiseNodes.absn?.stop();
 	}
-	#createOscNode( key, osc, ind, env ) {
+	#createOscNode( key, oscId, osc, ind, env ) {
 		const now = this.$ctx.currentTime;
 		const uniNodes = [];
 		const panNode = new gswaStereoPanner( this.$ctx );
@@ -461,7 +499,16 @@ class gswaSynth {
 		const orderOffset = .0000001 * ind; // 2.
 		const phazeOffset = 1 / gswaSynth.#getHz( key.$midi ) * osc.phaze;
 
-		uniNodes.forEach( n => n[ 0 ].$start( key.$when + phazeOffset + orderOffset ) );
+		uniNodes.forEach( n => {
+			const when = key.$when + phazeOffset + orderOffset;
+
+			if ( osc.waveCustom ) {
+				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.0` );
+
+				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
+			}
+			n[ 0 ].$start( when );
+		} );
 		if ( Number.isFinite( dur ) ) {
 			uniNodes.forEach( n => n[ 0 ].$stop( key.$when + dur ) );
 		}
