@@ -220,7 +220,6 @@ class gswaSynth {
 		const blcLast = blocks[ blocks.length - 1 ][ 1 ];
 		const blc0when = blc0.when;
 		const atTime = when - off;
-		const ctx = this.$ctx;
 		const bps = this.#bps;
 		const envG = this.#data.envs.gain;
 		const envD = this.#data.envs.detune;
@@ -231,31 +230,7 @@ class gswaSynth {
 		const gainLFOvariations = [];
 		const detuneLFOvariations = [];
 		const maxDetune = 144 * 100;
-		const key = Object.freeze( {
-			$when: when,
-			$off: off,
-			$dur: dur,
-			$pan: blc0.pan,
-			$midi: blc0.key,
-			$gain: blc0.gain,
-			$lowpass: blc0.lowpass,
-			$highpass: blc0.highpass,
-			$variations: [],
-			$noiseNodes: {},
-			$oscNodes: new Map(),
-			$gainEnv: new gswaEnvelope( ctx, "gain" ),
-			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
-			$lowpassEnv: new gswaEnvelope( ctx, "lowpass" ),
-			$gainEnvNode: ctx.createGain(),
-			$lowpassEnvNode: ctx.createBiquadFilter(),
-			$gainLFO: new gswaLFO( ctx ),
-			$detuneLFO: new gswaLFO( ctx ),
-			$gainLFOtarget: ctx.createGain(),
-			$gainNode: ctx.createGain(),
-			$panNode: new gswaStereoPanner( ctx ),
-			$lowpassNode: ctx.createBiquadFilter(),
-			$highpassNode: ctx.createBiquadFilter(),
-		} );
+		const key = gswaSynth.#createKey( this.$ctx, when, off, dur, blc0 );
 
 		if ( blocks.length > 1 ) {
 			blocks.reduce( ( prev, [ , blc ] ) => {
@@ -385,6 +360,33 @@ class gswaSynth {
 			.connect( this.$output );
 		this.#startedKeys.set( id, key );
 		return id;
+	}
+	static #createKey( ctx, when, off, dur, blc0 ) {
+		return Object.freeze( {
+			$when: when,
+			$off: off,
+			$dur: dur,
+			$pan: blc0.pan,
+			$midi: blc0.key,
+			$gain: blc0.gain,
+			$lowpass: blc0.lowpass,
+			$highpass: blc0.highpass,
+			$variations: [],
+			$noiseNodes: {},
+			$oscNodes: new Map(),
+			$gainEnv: new gswaEnvelope( ctx, "gain" ),
+			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
+			$lowpassEnv: new gswaEnvelope( ctx, "lowpass" ),
+			$gainEnvNode: ctx.createGain(),
+			$lowpassEnvNode: ctx.createBiquadFilter(),
+			$gainLFO: new gswaLFO( ctx ),
+			$detuneLFO: new gswaLFO( ctx ),
+			$gainLFOtarget: ctx.createGain(),
+			$gainNode: ctx.createGain(),
+			$panNode: new gswaStereoPanner( ctx ),
+			$lowpassNode: ctx.createBiquadFilter(),
+			$highpassNode: ctx.createBiquadFilter(),
+		} );
 	}
 
 	// ..........................................................................
