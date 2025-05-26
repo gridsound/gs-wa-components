@@ -557,11 +557,11 @@ class gswaSynth {
 		const det = ( osc.detune + osc.detunefine + uniDetune ) * 100;
 
 		if ( osc.wave ) {
-			return typeof midi === "number"
+			return GSUisNum( midi )
 				? det
 				: [ det, det ];
 		}
-		if ( typeof midi === "number" ) {
+		if ( GSUisNum( midi ) ) {
 			return det + ( midi - ( 72 - 12 ) ) * 100;
 		}
 		return [
