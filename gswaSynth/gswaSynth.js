@@ -60,7 +60,7 @@ class gswaSynth {
 						this.#wtCurvesMap.set( cid, [] );
 					}
 					if ( "curve" in wtposCurve ) {
-						this.#wtCurvesMap.get( cid )[ 0 ] = GSUsampleDotLine( dataWTposCurve.curve, 512 ).map( d => d[ 1 ] );
+						this.#wtCurvesMap.get( cid )[ 0 ] = GSUmathSampleDotLine( dataWTposCurve.curve, 512 ).map( d => d[ 1 ] );
 					}
 					if ( "duration" in wtposCurve ) {
 						this.#wtCurvesMap.get( cid )[ 1 ] = wtposCurve.duration;
@@ -85,7 +85,7 @@ class gswaSynth {
 	#addOsc( id, osc ) {
 		GSUforEach( osc.waveCustom?.wtposCurves, ( wtposCurve, curveId ) => {
 			this.#wtCurvesMap.set( `${ id }.${ curveId }`, [
-				GSUsampleDotLine( wtposCurve.curve, 512 ).map( d => d[ 1 ] ),
+				GSUmathSampleDotLine( wtposCurve.curve, 512 ).map( d => d[ 1 ] ),
 				wtposCurve.duration,
 			] );
 		} );

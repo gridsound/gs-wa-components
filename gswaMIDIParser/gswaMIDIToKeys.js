@@ -32,7 +32,7 @@ class gswaMIDIToKeys {
 				case 9:
 					keys[ keyId ] = {
 						key: e.data[ 0 ] - 12,
-						gain: GSUroundNum( e.data[ 1 ] / 127, 2 ),
+						gain: GSUmathFix( e.data[ 1 ] / 127, 2 ),
 						when: dTime,
 					};
 					++keyId;
@@ -41,11 +41,11 @@ class gswaMIDIToKeys {
 					const kkey = e.data[ 0 ] - 12;
 					const key = Object.values( keys ).find( k => k.key === kkey && k.duration === undefined );
 
-					key.duration = GSUroundNum( ( dTime - key.when ) / timeDiv, 2 );
-					key.when = GSUroundNum( key.when / timeDiv, 2 );
+					key.duration = GSUmathFix( ( dTime - key.when ) / timeDiv, 2 );
+					key.when = GSUmathFix( key.when / timeDiv, 2 );
 				} break;
 			}
 		} );
-		return [ keys, GSUroundNum( dTime / timeDiv, 2 ), name ];
+		return [ keys, GSUmathFix( dTime / timeDiv, 2 ), name ];
 	}
 }

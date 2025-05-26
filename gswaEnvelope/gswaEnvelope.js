@@ -73,7 +73,7 @@ class gswaEnvelope {
 			const offset = now - w;
 			const xa = Math.max( 0, offset );
 			const xb = Math.min( dur, A + H + D );
-			const dotsSampled = GSUsampleDotLine( dots, 128, xa, xb ).map( d => d[ 1 ] );
+			const dotsSampled = GSUmathSampleDotLine( dots, 128, xa, xb ).map( d => d[ 1 ] );
 
 			Rmax = dotsSampled.at( -1 );
 			GSUsetValueCurveAtTime( par, dotsSampled, offset > 0 ? now : w, xb - xa );
