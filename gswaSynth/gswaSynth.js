@@ -371,6 +371,7 @@ class gswaSynth {
 			$gain: blc0.gain,
 			$lowpass: blc0.lowpass,
 			$highpass: blc0.highpass,
+			$wtposCurves: { ...blc0.wtposCurves },
 			$variations: [],
 			$noiseNodes: {},
 			$oscNodes: new Map(),
@@ -503,7 +504,7 @@ class gswaSynth {
 			const when = key.$when + phazeOffset + orderOffset;
 
 			if ( osc.waveCustom ) {
-				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.0` );
+				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.${ key.$wtposCurves[ oscId ] || 0 }` );
 
 				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
 			}
