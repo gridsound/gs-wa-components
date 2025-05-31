@@ -48,13 +48,13 @@ class gswaSynth {
 	}
 	#changeWtCurves( oscsObj ) {
 		GSUforEach( oscsObj, ( osc, id ) => {
-			GSUforEach( osc?.waveCustom?.wtposCurves, ( wtposCurve, curveId ) => {
+			GSUforEach( osc?.wavetable?.wtposCurves, ( wtposCurve, curveId ) => {
 				const cid = `${ id }.${ curveId }`;
 
 				if ( !wtposCurve ) {
 					this.#wtCurvesMap.delete( cid );
 				} else {
-					const dataWTposCurve = this.#data.oscillators[ id ].waveCustom.wtposCurves[ curveId ];
+					const dataWTposCurve = this.#data.oscillators[ id ].wavetable.wtposCurves[ curveId ];
 
 					if ( !this.#wtCurvesMap.has( cid ) ) {
 						this.#wtCurvesMap.set( cid, [] );
@@ -83,7 +83,7 @@ class gswaSynth {
 		} );
 	}
 	#addOsc( id, osc ) {
-		GSUforEach( osc.waveCustom?.wtposCurves, ( wtposCurve, curveId ) => {
+		GSUforEach( osc.wavetable?.wtposCurves, ( wtposCurve, curveId ) => {
 			this.#wtCurvesMap.set( `${ id }.${ curveId }`, [
 				GSUmathSampleDotLine( wtposCurve.curve, 512 ).map( d => d[ 1 ] ),
 				wtposCurve.duration,
@@ -104,7 +104,7 @@ class gswaSynth {
 			if ( obj.wave ) {
 				this.#oscChangeProp( osc, nodes, "wave", obj.wave, now, 0 );
 			}
-			if ( obj.waveCustom ) {
+			if ( obj.wavetable ) {
 				nodes.uniNodes.forEach( n => {
 					n[ 0 ].$type = "sine"; // 3.
 					n[ 0 ].$type = osc.wave;
@@ -503,7 +503,7 @@ class gswaSynth {
 		uniNodes.forEach( n => {
 			const when = key.$when + phazeOffset + orderOffset;
 
-			if ( osc.waveCustom ) {
+			if ( osc.wavetable ) {
 				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.${ key.$wtposCurves[ oscId ] || 0 }` );
 
 				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
