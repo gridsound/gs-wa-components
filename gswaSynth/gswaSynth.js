@@ -404,7 +404,7 @@ class gswaSynth {
 				key.$gainEnv.$stop();
 				key.$detuneEnv.$stop();
 				key.$lowpassEnv.$stop();
-				setTimeout( this.#stopKey.bind( this, id ), ( this.#data.envs.gain.release + .1 ) / this.#bps * 1000 );
+				GSUsetTimeout( this.#stopKey.bind( this, id ), ( this.#data.envs.gain.release + .1 ) / this.#bps );
 			}
 		} else {
 			console.error( "gswaSynth: stopKey id invalid", id );

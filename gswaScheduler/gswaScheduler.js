@@ -140,9 +140,7 @@ class gswaScheduler {
 			? dur
 			: this.duration - off;
 		if ( this.isStreaming && !this.looping ) {
-			this.#timeoutIdEnded = setTimeout(
-				this.onended.bind( this ),
-				this.#startDur * 1000 );
+			this.#timeoutIdEnded = GSUsetTimeout( this.onended.bind( this ), this.#startDur );
 		}
 		this.isStreaming
 			? this.#streamloopOn()
@@ -172,8 +170,8 @@ class gswaScheduler {
 				clearTimeout( this.#timeoutIdEnded );
 			}
 			if ( this.started && this.isStreaming && !this.looping ) {
-				this.#timeoutIdEnded = setTimeout( this.onended.bind( this ),
-					( dur - this.#startOff - this.currentTime() + this.#startWhen ) * 1000 );
+				this.#timeoutIdEnded = GSUsetTimeout( this.onended.bind( this ),
+					dur - this.#startOff - this.currentTime() + this.#startWhen );
 			}
 		}
 	}
@@ -193,7 +191,7 @@ class gswaScheduler {
 	// .........................................................................
 	#streamloopOn() {
 		if ( !this.#streamloopId ) {
-			this.#streamloopId = setInterval( this.#streamloopBind, 100 );
+			this.#streamloopId = GSUsetInterval( this.#streamloopBind, .1 );
 			this.#streamloop();
 		}
 	}

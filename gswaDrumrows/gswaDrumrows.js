@@ -69,7 +69,7 @@ class gswaDrumrows {
 					const fn = this.$onstartdrumcut.bind( null, nodes.rowId );
 					const time = whenCutStart - this.#ctx.currentTime;
 
-					nodes.startDrumcutTimeoutId = setTimeout( fn, time * 1000 );
+					nodes.startDrumcutTimeoutId = GSUsetTimeout( fn, time );
 				}
 			}
 		} );
@@ -112,9 +112,7 @@ class gswaDrumrows {
 			panRow.$connect( dest );
 			absn.start( when, off, dur );
 			if ( this.$onstartdrum ) {
-				const timeoutMs = ( when - this.#ctx.currentTime ) * 1000;
-
-				nodes.startDrumTimeoutId = setTimeout( () => this.$onstartdrum( rowId ), timeoutMs );
+				nodes.startDrumTimeoutId = GSUsetTimeout( () => this.$onstartdrum( rowId ), when - this.#ctx.currentTime );
 			}
 		}
 		this.#startedDrums.set( id, nodes );
