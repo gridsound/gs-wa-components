@@ -138,8 +138,8 @@ class gswaDrumrows {
 	}
 	#stopDrum( id, nodes ) {
 		this.#startedDrums.delete( id );
-		clearTimeout( nodes.startDrumTimeoutId );
-		clearTimeout( nodes.startDrumcutTimeoutId );
+		GSUclearTimeout( nodes.startDrumTimeoutId );
+		GSUclearTimeout( nodes.startDrumcutTimeoutId );
 		if ( nodes.absn ) {
 			nodes.absn.stop();
 			nodes.gainCut.disconnect();
