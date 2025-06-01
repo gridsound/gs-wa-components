@@ -150,7 +150,7 @@ class gswaScheduler {
 		if ( this.started ) {
 			this.#startOff = this.#getCurrentOffset();
 			this.started = false;
-			clearTimeout( this.#timeoutIdEnded );
+			GSUclearTimeout( this.#timeoutIdEnded );
 			this.#streamloopOff();
 			Object.keys( this.#dataScheduledPerBlock ).forEach( this.#blockStop, this );
 		}
@@ -167,7 +167,7 @@ class gswaScheduler {
 				this.#startDur = dur;
 			}
 			if ( this.looping || !this.#startFixedDur ) {
-				clearTimeout( this.#timeoutIdEnded );
+				GSUclearTimeout( this.#timeoutIdEnded );
 			}
 			if ( this.started && this.isStreaming && !this.looping ) {
 				this.#timeoutIdEnded = GSUsetTimeout( this.onended.bind( this ),
@@ -197,7 +197,7 @@ class gswaScheduler {
 	}
 	#streamloopOff() {
 		if ( this.#streamloopId ) {
-			clearInterval( this.#streamloopId );
+			GSUclearInterval( this.#streamloopId );
 			this.#streamloopId = null;
 		}
 	}
