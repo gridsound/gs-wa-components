@@ -11,7 +11,7 @@ class gswaFxReverb {
 	#convolver = null;
 	#wetConstant = null; // 1.
 	#enable = false;
-	#updateBufferDeb = GSUdebounce( this.#updateBuffer.bind( this ), 100 );
+	#updateBufferDeb = GSUdebounce( this.#updateBuffer.bind( this ), .1 );
 	#data = GSUgetModel( "fx.reverb" );
 
 	constructor() {
