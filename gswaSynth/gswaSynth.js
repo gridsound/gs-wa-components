@@ -537,7 +537,7 @@ class gswaSynth {
 						? uniNodes.forEach( ( n, i ) => n[ 0 ].$setDetuneCurveAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when, dur ) )
 						: uniNodes.forEach( ( n, i ) => n[ 0 ].$setDetuneAtTime(      gswaSynth.#calcUnisonDetune( osc, val, i ), when ) );
 				} else {
-					const val2 = Array.isArray( val )
+					const val2 = GSUisArr( val )
 						? [
 							gswaSynth.#getHz( val[ 0 ] ),
 							gswaSynth.#getHz( val[ 1 ] ),
