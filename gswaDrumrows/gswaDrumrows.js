@@ -112,7 +112,7 @@ class gswaDrumrows {
 			panRow.$connect( dest );
 			absn.start( when, off, dur );
 			if ( this.$onstartdrum ) {
-				nodes.startDrumTimeoutId = GSUsetTimeout( () => this.$onstartdrum( rowId ), when - this.#ctx.currentTime );
+				nodes.startDrumTimeoutId = GSUsetTimeout( () => this.$onstartdrum( rowId ), Math.max( 0, when - this.#ctx.currentTime ) );
 			}
 		}
 		this.#startedDrums.set( id, nodes );
