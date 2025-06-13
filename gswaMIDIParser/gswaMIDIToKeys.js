@@ -2,17 +2,22 @@
 
 class gswaMIDIToKeys {
 	static $convert( obj ) {
-		if ( obj.tracks.length === 1 ) {
-			const [ keys, dur, name ] = gswaMIDIToKeys.#convert( obj.tracks[ 0 ].events, obj.timeDivision );
+		if ( obj ) {
+			const tracks = obj.tracks.filter( tr => tr.events.some( ev => ev.type !== 255 ) );
+			const track0 = tracks[ 0 ];
 
-			return {
-				patterns: {
-					0: { name, keys: 0, duration: dur },
-				},
-				keys: {
-					0: keys,
-				}
-			};
+			if ( track0 ) {
+				const [ keys, dur, name ] = gswaMIDIToKeys.#convert( track0.events, obj.timeDivision );
+
+				return {
+					patterns: {
+						0: { name, keys: 0, duration: dur },
+					},
+					keys: {
+						0: keys,
+					}
+				};
+			}
 		}
 	}
 	static #convert( ev, timeDiv ) {
