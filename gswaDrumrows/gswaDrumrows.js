@@ -94,9 +94,9 @@ class gswaDrumrows {
 		};
 
 		if ( buffer ) {
-			const absn = this.#ctx.createBufferSource();
-			const gainRow = this.#ctx.createGain();
-			const gainCut = this.#ctx.createGain();
+			const absn = GSUaudioBufferSource( this.#ctx );
+			const gainRow = GSUaudioGain( this.#ctx );
+			const gainCut = GSUaudioGain( this.#ctx );
 			const panRow = new gswaStereoPanner( this.#ctx );
 			const dest = this.$getChannelInput( pat.dest );
 

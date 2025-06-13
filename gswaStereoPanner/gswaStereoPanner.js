@@ -9,11 +9,11 @@ class gswaStereoPanner {
 
 	constructor( ctx ) {
 		Object.freeze( this );
-		this.#stereo = ctx.createStereoPanner(); // 1.
-		this.#splitter = ctx.createChannelSplitter( 2 );
-		this.#left = ctx.createGain();
-		this.#right = ctx.createGain();
-		this.#merger = ctx.createChannelMerger( 2 );
+		this.#stereo = GSUaudioStereoPanner( ctx ); // 1.
+		this.#splitter = GSUaudioChannelSplitter( ctx, 2 );
+		this.#left = GSUaudioGain( ctx );
+		this.#right = GSUaudioGain( ctx );
+		this.#merger = GSUaudioChannelMerger( ctx, 2 );
 		this.#stereo.connect( this.#splitter );
 		this.#splitter.connect( this.#left, 0 );
 		this.#splitter.connect( this.#right, 1 );

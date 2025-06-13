@@ -16,7 +16,7 @@ class gswaOscillator {
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
-		this.#output = ctx.createGain();
+		this.#output = GSUaudioGain( ctx );
 		gswaOscillator.$weakMap.set( this, 1 );
 	}
 
@@ -103,7 +103,7 @@ class gswaOscillator {
 			return;
 		}
 
-		const absn = this.#ctx.createBufferSource();
+		const absn = GSUaudioBufferSource( this.#ctx );
 
 		absn.buffer = buf;
 		absn.connect( this.#output );
@@ -127,7 +127,7 @@ class gswaOscillator {
 
 	// .........................................................................
 	#readyForSingleWave( ctx, w ) {
-		const osc = ctx.createOscillator();
+		const osc = GSUaudioOscillator( ctx );
 
 		osc.connect( this.#output );
 		gswaOscillator.#setOscWave( ctx, osc, w );
@@ -135,7 +135,7 @@ class gswaOscillator {
 	}
 	#readyForWavetable( ctx, wtname ) {
 		this.#srcs = gswaPeriodicWaves.$getWavetable( ctx, wtname ).map( ( pw, i ) => {
-			const osc = ctx.createOscillator();
+			const osc = GSUaudioOscillator( ctx );
 
 			osc.setPeriodicWave( pw );
 			return osc;

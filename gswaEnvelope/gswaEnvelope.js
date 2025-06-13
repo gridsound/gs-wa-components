@@ -22,7 +22,7 @@ class gswaEnvelope {
 	constructor( ctx, target ) {
 		Object.seal( this );
 		this.#ctx = ctx;
-		this.$node = ctx.createConstantSource();
+		this.$node = GSUaudioConstantSource( ctx );
 		this.#defEnv.amp = target === "detune" ? 0 : 1;
 		Object.freeze( this.#defEnv );
 	}

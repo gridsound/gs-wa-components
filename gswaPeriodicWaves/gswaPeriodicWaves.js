@@ -21,7 +21,7 @@ class gswaPeriodicWaves {
 			const w = gswaPeriodicWaves.#list.get( name );
 
 			if ( w ) {
-				p = ctx.createPeriodicWave( w.real, w.imag, { disableNormalization: name === "square" || name.startsWith( "custom" ) } );
+				p = GSUaudioPeriodicWave( ctx, w.real, w.imag, { disableNormalization: name === "square" || name.startsWith( "custom" ) } );
 				gswaPeriodicWaves.#cache.set( name, p );
 			}
 		}

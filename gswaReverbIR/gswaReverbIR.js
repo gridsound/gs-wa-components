@@ -5,7 +5,7 @@ class gswaReverbIR {
 		const dur = fadein + decay;
 		const buf = dur > 0
 			? gswaNoise.$createBuffer( ctx, dur )
-			: ctx.createBuffer( 2, 1, ctx.sampleRate );
+			: GSUaudioBuffer( ctx, 2, 1, ctx.sampleRate );
 
 		if ( dur > 0 ) {
 			const len = buf.length;

@@ -28,8 +28,8 @@ class gswaMixer {
 	$setContext( ctx ) {
 		this.$disconnect();
 		this.ctx = ctx;
-		this.#vuAnalyserL = ctx.createAnalyser();
-		this.#vuAnalyserR = ctx.createAnalyser();
+		this.#vuAnalyserL = GSUaudioAnalyser( ctx );
+		this.#vuAnalyserR = GSUaudioAnalyser( ctx );
 		this.#vuAnalyserL.fftSize =
 		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
 		this.#vuAnalyserChan = null;
@@ -120,14 +120,14 @@ class gswaMixer {
 	#addChan( id ) {
 		const ctx = this.ctx;
 		const chan = {
-			input: ctx.createGain(),
-			toggle: ctx.createGain(),
-			gain: ctx.createGain(),
+			input: GSUaudioGain( ctx ),
+			toggle: GSUaudioGain( ctx ),
+			gain: GSUaudioGain( ctx ),
 			pan: new gswaStereoPanner( ctx ),
-			output: ctx.createGain(),
-			splitter: ctx.createChannelSplitter( 2 ),
-			analyserL: ctx.createAnalyser(),
-			analyserR: ctx.createAnalyser(),
+			output: GSUaudioGain( ctx ),
+			splitter: GSUaudioChannelSplitter( ctx, 2 ),
+			analyserL: GSUaudioAnalyser( ctx ),
+			analyserR: GSUaudioAnalyser( ctx ),
 		};
 
 		chan.analyserL.fftSize =

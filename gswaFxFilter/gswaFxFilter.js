@@ -38,11 +38,11 @@ class gswaFxFilter {
 			this.#constant.disconnect();
 		}
 		this.#ctx = ctx;
-		this.#input = ctx.createGain();
-		this.#output = ctx.createGain();
-		this.#filter = ctx.createBiquadFilter();
-		this.#constant = ctx.createConstantSource();
-		this.#analyser = ctx.createAnalyser();
+		this.#input = GSUaudioGain( ctx );
+		this.#output = GSUaudioGain( ctx );
+		this.#filter = GSUaudioBiquadFilter( ctx );
+		this.#constant = GSUaudioConstantSource( ctx );
+		this.#analyser = GSUaudioAnalyser( ctx );
 		this.#analyser.fftSize = this.#analyserData.length * 2;
 		this.#analyser.smoothingTimeConstant = 0;
 		this.$toggle( this.#enable );

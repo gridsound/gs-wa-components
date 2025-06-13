@@ -21,7 +21,7 @@ class gswaNoise {
 	}
 	static $createBuffer( ctx, dur, color = "white" ) {
 		const bufSize = dur * ctx.sampleRate;
-		const buf = ctx.createBuffer( 2, bufSize, ctx.sampleRate );
+		const buf = GSUaudioBuffer( ctx, 2, bufSize, ctx.sampleRate );
 		const chan0 = buf.getChannelData( 0 );
 		const chan1 = buf.getChannelData( 1 );
 
@@ -29,7 +29,7 @@ class gswaNoise {
 		return buf;
 	}
 	static $startABSN( ctx, when, dur, color = "white" ) {
-		const absn = ctx.createBufferSource();
+		const absn = GSUaudioBufferSource( ctx );
 
 		absn.buffer = gswaNoise.#buffers[ color ];
 		absn.loop = true;

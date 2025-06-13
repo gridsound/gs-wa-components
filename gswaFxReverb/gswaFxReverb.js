@@ -40,13 +40,13 @@ class gswaFxReverb {
 			this.#wetConstant.disconnect();
 		}
 		this.#ctx = ctx;
-		this.#input = ctx.createGain();
-		this.#output = ctx.createGain();
-		this.#dryGain = ctx.createGain();
-		this.#wetGain = ctx.createGain();
-		this.#wetDelay = ctx.createDelay( 30 );
-		this.#convolver = ctx.createConvolver();
-		this.#wetConstant = ctx.createConstantSource();
+		this.#input = GSUaudioGain( ctx );
+		this.#output = GSUaudioGain( ctx );
+		this.#dryGain = GSUaudioGain( ctx );
+		this.#wetGain = GSUaudioGain( ctx );
+		this.#wetDelay = GSUaudioDelay( ctx, 30 );
+		this.#convolver = GSUaudioConvolver( ctx );
+		this.#wetConstant = GSUaudioConstantSource( ctx );
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}

@@ -31,7 +31,7 @@ class gswaSynth {
 		this.$stopAllKeys();
 		this.$ctx = ctx;
 		this.#nyquist = ctx.sampleRate / 2;
-		this.$output = ctx.createGain();
+		this.$output = GSUaudioGain( ctx );
 		oscs.forEach( kv => this.#removeOsc( kv[ 0 ] ) );
 		oscs.forEach( kv => this.#addOsc( ...kv ) );
 	}
@@ -378,15 +378,15 @@ class gswaSynth {
 			$gainEnv: new gswaEnvelope( ctx, "gain" ),
 			$detuneEnv: new gswaEnvelope( ctx, "detune" ),
 			$lowpassEnv: new gswaEnvelope( ctx, "lowpass" ),
-			$gainEnvNode: ctx.createGain(),
-			$lowpassEnvNode: ctx.createBiquadFilter(),
+			$gainEnvNode: GSUaudioGain( ctx ),
+			$lowpassEnvNode: GSUaudioBiquadFilter( ctx ),
 			$gainLFO: new gswaLFO( ctx ),
 			$detuneLFO: new gswaLFO( ctx ),
-			$gainLFOtarget: ctx.createGain(),
-			$gainNode: ctx.createGain(),
+			$gainLFOtarget: GSUaudioGain( ctx ),
+			$gainNode: GSUaudioGain( ctx ),
 			$panNode: new gswaStereoPanner( ctx ),
-			$lowpassNode: ctx.createBiquadFilter(),
-			$highpassNode: ctx.createBiquadFilter(),
+			$lowpassNode: GSUaudioBiquadFilter( ctx ),
+			$highpassNode: GSUaudioBiquadFilter( ctx ),
 		} );
 	}
 
@@ -447,7 +447,7 @@ class gswaSynth {
 			const now = this.$ctx.currentTime;
 			const dur = key.$dur + d.envs.gain.release / this.#bps;
 			const panNode = new gswaStereoPanner( this.$ctx );
-			const gainNode = this.$ctx.createGain();
+			const gainNode = GSUaudioGain( this.$ctx );
 			const absn = gswaNoise.$startABSN( this.$ctx, key.$when, dur, d.noise.color );
 
 			key.$noiseNodes.absn = absn;
@@ -466,7 +466,7 @@ class gswaSynth {
 		const now = this.$ctx.currentTime;
 		const uniNodes = [];
 		const panNode = new gswaStereoPanner( this.$ctx );
-		const gainNode = this.$ctx.createGain();
+		const gainNode = GSUaudioGain( this.$ctx );
 		const dur = key.$dur + env.release / this.#bps;
 		const nodes = Object.seal( {
 			uniNodes,
@@ -478,7 +478,7 @@ class gswaSynth {
 		GSUsetValueAtTime( gainNode.gain, osc.gain, now );
 		panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
 		for ( let i = 0; i < osc.unisonvoices; ++i ) {
-			const uniGain = this.$ctx.createGain();
+			const uniGain = GSUaudioGain( this.$ctx );
 			const uniSrc = new gswaOscillator( this.$ctx );
 
 			uniSrc.$connect( uniGain ).connect( panNode.$getInput() );

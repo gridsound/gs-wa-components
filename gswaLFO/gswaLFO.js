@@ -23,7 +23,7 @@ class gswaLFO {
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
-		this.$node = this.#ctx.createGain();
+		this.$node = GSUaudioGain( this.#ctx );
 		Object.seal( this );
 	}
 
@@ -76,8 +76,8 @@ class gswaLFO {
 	// .........................................................................
 	#start() {
 		this.#oscNode = new gswaOscillator( this.#ctx );
-		this.#ampNode = this.#ctx.createGain();
-		this.#ampAttNode = this.#ctx.createGain();
+		this.#ampNode = GSUaudioGain( this.#ctx );
+		this.#ampAttNode = GSUaudioGain( this.#ctx );
 		this.#oscNode.$connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
 		this.#setType();
 		this.#setAmpAtt();

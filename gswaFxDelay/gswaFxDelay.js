@@ -36,14 +36,14 @@ class gswaFxDelay {
 			this.#delayA.disconnect();
 		}
 		this.#ctx = ctx;
-		this.#input = ctx.createGain();
-		this.#output = ctx.createGain();
-		this.#delayGainA = ctx.createGain();
-		this.#delayGainB = ctx.createGain();
-		this.#delayPanA = ctx.createStereoPanner();
-		this.#delayPanB = ctx.createStereoPanner();
-		this.#delayA = ctx.createDelay( 20 );
-		this.#delayB = ctx.createDelay( 20 );
+		this.#input = GSUaudioGain( ctx );
+		this.#output = GSUaudioGain( ctx );
+		this.#delayGainA = GSUaudioGain( ctx );
+		this.#delayGainB = GSUaudioGain( ctx );
+		this.#delayPanA = GSUaudioStereoPanner( ctx );
+		this.#delayPanB = GSUaudioStereoPanner( ctx );
+		this.#delayA = GSUaudioDelay( ctx, 20 );
+		this.#delayB = GSUaudioDelay( ctx, 20 );
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}

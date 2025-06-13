@@ -26,9 +26,9 @@ class gswaFxWaveShaper {
 			this.#shaper.disconnect();
 		}
 		this.#ctx = ctx;
-		this.#input = ctx.createGain();
-		this.#output = ctx.createGain();
-		this.#shaper = ctx.createWaveShaper();
+		this.#input = GSUaudioGain( ctx );
+		this.#output = GSUaudioGain( ctx );
+		this.#shaper = GSUaudioWaveShaper( ctx );
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}

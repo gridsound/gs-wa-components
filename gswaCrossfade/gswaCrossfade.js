@@ -19,10 +19,10 @@ class gswaCrossfade {
 			},
 		} );
 
-		this.#dest = ctx.createGain();
+		this.#dest = GSUaudioGain( ctx );
 		this.#node = node;
 		GSUforEach( sourceMap, ( s, i ) => {
-			const gain = ctx.createGain();
+			const gain = GSUaudioGain( ctx );
 
 			gain.gain.setValueAtTime( 0, 0 );
 			node.connect( gain.gain, i );
