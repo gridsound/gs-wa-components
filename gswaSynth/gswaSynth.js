@@ -503,7 +503,7 @@ class gswaSynth {
 		uniNodes.forEach( n => {
 			const when = key.$when + phazeOffset + orderOffset;
 
-			if ( osc.wavetable ) {
+			if ( osc.wavetable && GSUisWavetableName( osc.wave ) ) {
 				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.${ key.$wtposCurves[ oscId ] || 0 }` );
 
 				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
