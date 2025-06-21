@@ -34,6 +34,7 @@ class gswaFxDelay {
 			this.#input.disconnect();
 			this.#output.disconnect();
 			this.#delayA.disconnect();
+			this.#delayB.disconnect();
 		}
 		this.#ctx = ctx;
 		this.#input = GSUaudioGain( ctx );
