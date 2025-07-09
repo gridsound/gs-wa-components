@@ -87,7 +87,7 @@ class gswaPeriodicWaves {
 		gswaPeriodicWaves.#cache.delete( name );
 	}
 	static #loadWaveDots( name, points ) {
-		const curve = GSUmathSampleDotLine( points, 2 ** 11 ).map( d => d[ 1 ] );
+		const curve = GSUarrayResize( points, 2 ** 11 );
 		const wave = GSUmathIFFT( {
 			real: curve.reverse(),
 			imag: GSUnewArray( curve.length, 0 ),
