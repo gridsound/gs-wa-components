@@ -102,14 +102,15 @@ class gswaOscillator {
 			console.error( "gswaOscillator: multiple $buffer set" );
 			return;
 		}
+		if ( buf ) {
+			const absn = GSUaudioBufferSource( this.#ctx );
 
-		const absn = GSUaudioBufferSource( this.#ctx );
-
-		absn.buffer = buf;
-		absn.connect( this.#output );
-		this.#type = "buffer";
-		this.#srcs = [ absn ];
-		this.#bufDur = buf.duration;
+			absn.buffer = buf;
+			absn.connect( this.#output );
+			this.#type = "buffer";
+			this.#srcs = [ absn ];
+			this.#bufDur = buf.duration;
+		}
 	}
 	set $type( w ) {
 		if ( this.#type ) {
