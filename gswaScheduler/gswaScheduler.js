@@ -17,12 +17,10 @@ class gswaScheduler {
 	ondatastart = GSUnoop;
 	ondatastop = GSUnoop;
 	ondatapropchange = GSUnoop;
-	onended = GSUnoop;
 	#startDur = 0;
 	#startOff = 0;
 	#startWhen = 0;
 	#startFixedDur = 0;
-	#timeoutIdEnded = null;
 	#sortedData = [];
 	#dataScheduled = {};
 	#dataScheduledPerBlock = {};
@@ -139,9 +137,6 @@ class gswaScheduler {
 		this.#startDur = this.#startFixedDur
 			? dur
 			: this.duration - off;
-		if ( this.isStreaming && !this.looping ) {
-			this.#timeoutIdEnded = GSUsetTimeout( this.onended.bind( this ), this.#startDur );
-		}
 		this.isStreaming
 			? this.#streamloopOn()
 			: this.#fullStart();
@@ -150,7 +145,6 @@ class gswaScheduler {
 		if ( this.started ) {
 			this.#startOff = this.#getCurrentOffset();
 			this.started = false;
-			GSUclearTimeout( this.#timeoutIdEnded );
 			this.#streamloopOff();
 			Object.keys( this.#dataScheduledPerBlock ).forEach( this.#blockStop, this );
 		}
@@ -165,13 +159,6 @@ class gswaScheduler {
 			this.duration = dur;
 			if ( this.started && !this.#startFixedDur ) {
 				this.#startDur = dur;
-			}
-			if ( this.looping || !this.#startFixedDur ) {
-				GSUclearTimeout( this.#timeoutIdEnded );
-			}
-			if ( this.started && this.isStreaming && !this.looping ) {
-				this.#timeoutIdEnded = GSUsetTimeout( this.onended.bind( this ),
-					dur - this.#startOff - this.currentTime() + this.#startWhen );
 			}
 		}
 	}
