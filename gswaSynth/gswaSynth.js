@@ -416,13 +416,15 @@ class gswaSynth {
 	#stopKey( id ) {
 		const key = this.#startedKeys.get( id );
 
-		this.#destroyNoiseNodes( key );
-		key.$oscNodes.forEach( this.#destroyOscNode, this );
-		key.$gainLFO.$destroy();
-		key.$detuneLFO.$destroy();
-		key.$gainEnv.$destroy();
-		key.$detuneEnv.$destroy();
-		key.$lowpassEnv.$destroy();
+		if ( key ) {
+			this.#destroyNoiseNodes( key );
+			key.$oscNodes.forEach( this.#destroyOscNode, this );
+			key.$gainLFO.$destroy();
+			key.$detuneLFO.$destroy();
+			key.$gainEnv.$destroy();
+			key.$detuneEnv.$destroy();
+			key.$lowpassEnv.$destroy();
+		}
 		this.#startedKeys.delete( id );
 	}
 
