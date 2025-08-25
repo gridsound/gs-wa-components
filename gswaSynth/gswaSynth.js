@@ -200,6 +200,9 @@ class gswaSynth {
 	}
 
 	// ..........................................................................
+	$getKeyNode( id ) {
+		return this.#startedKeys.get( id );
+	}
 	$startKey( allBlocks, when, off, dur ) {
 		if ( allBlocks.length > 0 ) {
 			const blocks = allBlocks.filter( ( [ , blc ] ) => ( blc.when + blc.duration ) / this.#bps >= off ); // 1.
