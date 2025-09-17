@@ -51,9 +51,9 @@ class gswaOpusConverter {
 		this.#blobName = this.#newName( name );
 		this.#worker.postMessage( {
 			command: "encode",
-			args: [ this.#blobName, "encoded.opus" ],
+			args: [ "usercmp", "encoded.opus" ],
 			outData: { "encoded.opus": { "MIME": "audio/ogg" } },
-			fileData: { [ this.#blobName ]: new Uint8Array( buf ) },
+			fileData: { [ "usercmp" ]: new Uint8Array( buf ) },
 		} );
 	}
 	#onmessage( e ) {
