@@ -19,7 +19,7 @@ class gswaOpusConverter {
 	}
 	$destroy() {
 		this.#worker.terminate();
-		this.#reject();
+		this.#reject?.();
 	}
 	$convert( obj, name ) {
 		return new Promise( ( res, rej ) => {
