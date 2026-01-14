@@ -244,7 +244,7 @@ class gswaScheduler {
 		}
 	}
 	#blockStart( when, from, to, offEnd, blockId, block ) {
-		if ( block.prev == null && !block.mute ) {
+		if ( !block.prev && !block.mute ) {
 			const bps = this.bps;
 			const blcs = [];
 			let bWhn = block.when / bps;
@@ -255,7 +255,7 @@ class gswaScheduler {
 				blcs.push( [ id, blc ] );
 				bDur = blc.when / bps - bWhn + blc.duration / bps;
 				id = blc.next;
-				blc = id != null ? this.data[ id ] : null;
+				blc = id ? this.data[ id ] : null;
 			}
 			if ( from <= bWhn + bDur && bWhn < to ) {
 				const startWhen = this.#startWhen;
