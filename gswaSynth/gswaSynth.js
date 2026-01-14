@@ -220,7 +220,6 @@ class gswaSynth {
 	#startKey2( blocks, when, off, dur ) {
 		const id = ++gswaSynth.#startedMaxId;
 		const blc0 = blocks[ 0 ][ 1 ];
-		const blcLast = blocks[ blocks.length - 1 ][ 1 ];
 		const blc0when = blc0.when;
 		const atTime = when - off;
 		const bps = this.#bps;
@@ -352,7 +351,7 @@ class gswaSynth {
 				.connect( key.$gainEnvNode );
 		} else {
 			key.$gainLFOtarget
-				.connect( key.$gainEnvNode )
+				.connect( key.$gainEnvNode );
 		}
 		key.$gainEnvNode
 			.connect( key.$gainNode )

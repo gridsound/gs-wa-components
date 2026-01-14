@@ -15,7 +15,7 @@ class gswaMIDIToKeys {
 					},
 					keys: {
 						0: keys,
-					}
+					},
 				};
 			}
 		}

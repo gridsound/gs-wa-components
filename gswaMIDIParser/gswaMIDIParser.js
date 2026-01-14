@@ -28,17 +28,16 @@ class gswaMIDIParser {
 
 		if ( a < 128 ) {
 			return a * 256 + b; // ticks per beat mode
-		} else {
-			return [
-				a - 128, // frames per second mode
-				b, // ticks in each frame
-			];
 		}
+		return [
+			a - 128, // frames per second mode
+			b, // ticks in each frame
+		];
 	}
 
 	// .........................................................................
 	static #parseTracks( MIDI ) {
-		for( let t = 0; t < MIDI.nbTracks; ++t ) {
+		for ( let t = 0; t < MIDI.nbTracks; ++t ) {
 			const events = [];
 			const ret = gswaMIDIParser.#parseTrackEvents( events );
 
@@ -93,8 +92,7 @@ class gswaMIDIParser {
 					gswaMIDIParser.#rdInt1(),
 				];
 				break;
-			case 0xd: // Program change
-			case 0xd: // Channel aftertouch
+			case 0xd: // Channel aftertouch / Program change
 				event.data = gswaMIDIParser.#rdInt1();
 				break;
 			case 0xf: // Exclusive events
@@ -109,9 +107,6 @@ class gswaMIDIParser {
 		ev.type = 0xff;
 		ev.metaType = metaType;
 		switch ( ev.metaType ) {
-			default:
-				console.error( "gswaMIDIParser: unsupported meta event", ev );
-				return;
 			case 0x2f: // End of track
 				return false;
 			case 0x01: // Text event
@@ -151,6 +146,7 @@ class gswaMIDIParser {
 				ev.data = gswaMIDIParser.#rdInt2();
 				return;
 		}
+		console.error( "gswaMIDIParser: unsupported meta event", ev );
 	}
 
 	// .........................................................................

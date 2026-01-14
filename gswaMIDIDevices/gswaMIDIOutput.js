@@ -1,5 +1,6 @@
 "use strict";
 
+/* eslint-disable no-unused-private-class-members */
 class gswaMIDIOutput {
 	#port = null;
 	#sysex = false;
@@ -16,3 +17,4 @@ class gswaMIDIOutput {
 		targetOutput.send( bytes );
 	}
 }
+/* eslint-enable */

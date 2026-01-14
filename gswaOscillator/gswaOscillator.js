@@ -7,7 +7,6 @@ class gswaOscillator {
 	#id = ++gswaOscillator.$nbCreated;
 	#ctx = null;
 	#type = "";
-	#wave = "";
 	#when = -1;
 	#srcs = [];
 	#bufDur = 0;
@@ -118,7 +117,6 @@ class gswaOscillator {
 			return;
 		}
 		this.#type = GSUisWavetableName( w ) ? "oscTable" : "osc";
-		this.#wave = w;
 		if ( this.#type === "osc" ) {
 			this.#readyForSingleWave( this.#ctx, w );
 		} else {
@@ -135,7 +133,7 @@ class gswaOscillator {
 		this.#srcs = [ osc ];
 	}
 	#readyForWavetable( ctx, wtname ) {
-		this.#srcs = gswaPeriodicWaves.$getWavetable( ctx, wtname ).map( ( pw, i ) => {
+		this.#srcs = gswaPeriodicWaves.$getWavetable( ctx, wtname ).map( pw => {
 			const osc = GSUaudioOscillator( ctx );
 
 			osc.setPeriodicWave( pw );
@@ -143,7 +141,7 @@ class gswaOscillator {
 		} );
 
 		const len = this.#srcs.length;
-		const sourceMap = this.#srcs.map( ( src, i, arr ) => [ len === 1 ? 0 : i / ( len - 1 ), src ] );
+		const sourceMap = this.#srcs.map( ( src, i ) => [ len === 1 ? 0 : i / ( len - 1 ), src ] );
 
 		this.#waCrossfade = new gswaCrossfade( ctx, sourceMap );
 		this.#waCrossfade.$connect( this.#output );

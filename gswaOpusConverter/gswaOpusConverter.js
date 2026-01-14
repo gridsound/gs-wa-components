@@ -52,8 +52,8 @@ class gswaOpusConverter {
 		this.#worker.postMessage( {
 			command: "encode",
 			args: [ "usercmp", "encoded.opus" ],
-			outData: { "encoded.opus": { "MIME": "audio/ogg" } },
-			fileData: { [ "usercmp" ]: new Uint8Array( buf ) },
+			outData: { "encoded.opus": { MIME: "audio/ogg" } },
+			fileData: { usercmp: new Uint8Array( buf ) },
 		} );
 	}
 	#onmessage( e ) {
@@ -61,7 +61,7 @@ class gswaOpusConverter {
 			const val = e.data.values;
 			const res = this.#resolve;
 
-			switch( e.data.reply ) {
+			switch ( e.data.reply ) {
 				case "progress":
 					if ( val[ 1 ] ) {
 						this.$onprogress( val[ 0 ] / val[ 1 ] );

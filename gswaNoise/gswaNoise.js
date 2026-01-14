@@ -52,9 +52,14 @@ class gswaNoise {
 		gswaNoise.#loopPink2( bufSize, chan1 );
 	}
 	static #loopPink2( bufSize, chan ) {
-		let b0, b1, b2, b3, b4, b5, b6;
+		let b0 = 0;
+		let b1 = 0;
+		let b2 = 0;
+		let b3 = 0;
+		let b4 = 0;
+		let b5 = 0;
+		let b6 = 0;
 
-		b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0;
 		for ( let i = 0; i < bufSize; ++i ) {
 			const white = Math.random() * 2 - 1;
 

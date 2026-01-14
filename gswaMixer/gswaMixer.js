@@ -134,7 +134,7 @@ class gswaMixer {
 		chan.analyserR.fftSize = gswaMixer.fftSize;
 		chan.analyserL.smoothingTimeConstant =
 		chan.analyserR.smoothingTimeConstant = 0;
-		chan.input.connect( chan.toggle )
+		chan.input.connect( chan.toggle );
 		chan.toggle.connect( chan.gain );
 		chan.gain.connect( chan.pan.$getInput() );
 		chan.pan.$connect( chan.output );
@@ -158,7 +158,7 @@ class gswaMixer {
 		nodes.splitter.disconnect();
 		delete this.#chans[ id ];
 	}
-	#changeChanProp( id, prop, val, prev ) {
+	#changeChanProp( id, prop, val ) {
 		const chan = this.#chans[ id ];
 		const now = this.ctx.currentTime;
 

@@ -2,7 +2,6 @@
 
 class gswaMIDIDevices {
 	#uiKeys = null;
-	#midiAccess = null;
 	#midiCtrlInputs = new Map();
 	#midiCtrlOutputs = new Map();
 
@@ -17,7 +16,6 @@ class gswaMIDIDevices {
 
 	// .........................................................................
 	#oninit( midiAcc ) {
-		this.#midiAccess = midiAcc;
 		midiAcc.onstatechange = this.#onstatechange.bind( this );
 		midiAcc.inputs.forEach( i => i.open() );
 		midiAcc.outputs.forEach( o => o.open() );
