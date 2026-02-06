@@ -2,15 +2,22 @@
 
 class gswaEncodeWAV {
 	static $encode( buffer, opt ) {
-		const nbChannels = buffer.numberOfChannels;
-		const sampleRate = buffer.sampleRate;
-		const format = opt && opt.float32 ? 3 : 1;
+		return gswaEncodeWAV.$encodeManual( {
+			...opt,
+			nbChannels: buffer.numberOfChannels,
+			sampleRate: buffer.sampleRate,
+			chan0: buffer.getChannelData( 0 ),
+			chan1: buffer.getChannelData( 1 ),
+		} );
+	}
+	static $encodeManual( { nbChannels, sampleRate, chan0, chan1, float32 = false } ) {
+		const format = float32 ? 3 : 1;
 		const bitsPerSample = format === 3 ? 32 : 16;
 		const bytesPerSample = bitsPerSample / 8;
 		const bytesPerbloc = nbChannels * bytesPerSample;
 		const samples = nbChannels === 2
-			? gswaEncodeWAV.#interleave( buffer.getChannelData( 0 ), buffer.getChannelData( 1 ) )
-			: buffer.getChannelData( 0 );
+			? gswaEncodeWAV.#interleave( chan0, chan1 )
+			: chan0;
 		const dataSize = samples.length * bytesPerSample;
 		const arrBuffer = new ArrayBuffer( 44 + dataSize );
 		const data = new DataView( arrBuffer );
