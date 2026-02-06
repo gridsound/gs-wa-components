@@ -1,6 +1,9 @@
 "use strict";
 
 class gswaEncodeWAV {
+	static $createBlob( pcm ) {
+		return new Blob( [ pcm ], { type: "audio/wav" } );
+	}
 	static $encodeBuffer( o ) {
 		return gswaEncodeWAV.$encodeManual( {
 			$nbChannels: o.$buffer.numberOfChannels,
