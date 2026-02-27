@@ -41,9 +41,13 @@ class gswaPeriodicWaves {
 			gswaPeriodicWaves.#deleteWave( name );
 		}
 	}
-	static $loadWaves( waves ) {
-		waves.forEach( w => gswaPeriodicWaves.#loadWaveImagReal( ...w ) );
-		return gswaPeriodicWaves.#list;
+	static $loadWaveDots( name, arr ) {
+		gswaPeriodicWaves.#loadWaveDots( name, arr );
+	}
+	static $loadSquareWave() {
+		const w = { imag: GSUnewArray( 2048, n => 2 / ( n * Math.PI ) * ( 1 - ( -1 ) ** n ) ) };
+
+		gswaPeriodicWaves.#loadWaveImagReal( "square", w );
 	}
 	static $addWavetable( name, obj ) {
 		const wt = [];
