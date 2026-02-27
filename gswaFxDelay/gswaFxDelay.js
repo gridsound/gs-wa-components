@@ -35,6 +35,10 @@ class gswaFxDelay {
 			this.#output.disconnect();
 			this.#delayA.disconnect();
 			this.#delayB.disconnect();
+			this.#delayGainA.disconnect();
+			this.#delayGainB.disconnect();
+			this.#delayPanA.disconnect();
+			this.#delayPanB.disconnect();
 		}
 		this.#ctx = ctx;
 		this.#input = GSUaudioGain( ctx );
@@ -63,6 +67,10 @@ class gswaFxDelay {
 			} else {
 				this.#delayA.disconnect();
 				this.#delayB.disconnect();
+				this.#delayGainA.disconnect();
+				this.#delayGainB.disconnect();
+				this.#delayPanA.disconnect();
+				this.#delayPanB.disconnect();
 				this.#input.connect( this.#output );
 			}
 		}
