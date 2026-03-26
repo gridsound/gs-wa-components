@@ -14,6 +14,7 @@ class gswaFxFilter {
 	#responseMagOut = null;
 	#responsePhaseOut = null;
 	#data = GSUgetModel( "fx.filter" );
+	static #automatableProps = [ "Q", "gain", "detune", "frequency" ];
 
 	constructor() {
 		Object.seal( this );
@@ -25,6 +26,15 @@ class gswaFxFilter {
 	}
 	$getOutput() {
 		return this.#output;
+	}
+	$getPropValue( prop ) {
+		return this.#filter[ prop ].value;
+	}
+	$setAutomation( prop, arr, when, dur ) {
+		this.#filter[ prop ].setValueCurveAtTime( arr, when, dur );
+	}
+	$stopAutomations() {
+		GSUforEach( gswaFxFilter.#automatableProps, prop => this.#filter[ prop ].cancelScheduledValues( 0 ) );
 	}
 	$getAnalyserData() {
 		this.#analyser.getFloatFrequencyData( this.#analyserData );
