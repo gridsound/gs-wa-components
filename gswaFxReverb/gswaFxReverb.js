@@ -32,21 +32,10 @@ class gswaFxReverb {
 	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {
-			this.#input.disconnect();
-			this.#output.disconnect();
-			this.#wetGain.disconnect();
-			this.#wetDelay.disconnect();
-			this.#convolver.disconnect();
-			this.#wetConstant.disconnect();
+			this.#disconnect();
 		}
 		this.#ctx = ctx;
-		this.#input = GSUaudioGain( ctx );
-		this.#output = GSUaudioGain( ctx );
-		this.#dryGain = GSUaudioGain( ctx );
-		this.#wetGain = GSUaudioGain( ctx );
-		this.#wetDelay = GSUaudioDelay( ctx, 30 );
-		this.#convolver = GSUaudioConvolver( ctx );
-		this.#wetConstant = GSUaudioConstantSource( ctx );
+		this.#createNodes( ctx );
 		this.$toggle( this.#enable );
 		this.$change( this.#data );
 	}
@@ -99,6 +88,23 @@ class gswaFxReverb {
 	}
 	#updateBuffer() {
 		this.#convolver.buffer = gswaReverbIR.$createIR( this.#ctx, this.#data.fadein / this.#bps, this.#data.decay / this.#bps );
+	}
+	#createNodes( ctx ) {
+		this.#input = GSUaudioGain( ctx );
+		this.#output = GSUaudioGain( ctx );
+		this.#dryGain = GSUaudioGain( ctx );
+		this.#wetGain = GSUaudioGain( ctx );
+		this.#wetDelay = GSUaudioDelay( ctx, 30 );
+		this.#convolver = GSUaudioConvolver( ctx );
+		this.#wetConstant = GSUaudioConstantSource( ctx );
+	}
+	#disconnect() {
+		this.#input.disconnect();
+		this.#output.disconnect();
+		this.#wetGain.disconnect();
+		this.#wetDelay.disconnect();
+		this.#convolver.disconnect();
+		this.#wetConstant.disconnect();
 	}
 }
 
