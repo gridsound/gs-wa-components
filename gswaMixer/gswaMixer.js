@@ -82,6 +82,9 @@ class gswaMixer {
 	$getChanOutput( id ) {
 		return this.#chans[ id ]?.toggle;
 	}
+	$getPropValue( id, prop ) {
+		return this.#chans[ id ][ prop ][ prop ].value;
+	}
 	$fillAudioDataVu( chanId ) {
 		if ( chanId !== this.#vuAnalyserChan ) {
 			const nodes = this.#chans[ chanId ];
