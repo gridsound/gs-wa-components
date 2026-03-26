@@ -97,7 +97,7 @@ class gswaDrumrows {
 			const absn = GSUaudioBufferSource( this.#ctx );
 			const gainRow = GSUaudioGain( this.#ctx );
 			const gainCut = GSUaudioGain( this.#ctx );
-			const panRow = new gswaStereoPanner( this.#ctx );
+			const panRow = GSUaudioStereoPanner( this.#ctx );
 			const dest = this.$getChannelInput( pat.dest );
 
 			nodes.absn = absn;
@@ -107,9 +107,8 @@ class gswaDrumrows {
 			absn.buffer = buffer;
 			absn.detune.setValueAtTime( ( row.detune + drum.detune ) * 100, this.#ctx.currentTime );
 			gainRow.gain.setValueAtTime( row.toggle ? row.gain * drum.gain : 0, this.#ctx.currentTime );
-			panRow.$setValueAtTime( GSUpanningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
-			absn.connect( gainCut ).connect( gainRow ).connect( panRow.$getInput() );
-			panRow.$connect( dest );
+			panRow.pan.setValueAtTime( GSUpanningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
+			absn.connect( gainCut ).connect( gainRow ).connect( panRow ).connect( dest );
 			absn.start( when, off, dur );
 			if ( this.$onstartdrum ) {
 				nodes.startDrumTimeoutId = GSUsetTimeout( () => this.$onstartdrum( rowId ), Math.max( 0, when - this.#ctx.currentTime ) );
@@ -144,7 +143,7 @@ class gswaDrumrows {
 			nodes.absn.stop();
 			nodes.gainCut.disconnect();
 			nodes.gainRow.disconnect();
-			nodes.panRow.$disconnect();
+			nodes.panRow.disconnect();
 			if ( this.onstopdrum ) {
 				this.onstopdrum( nodes.rowId, id );
 			}
@@ -167,7 +166,7 @@ class gswaDrumrows {
 					break;
 				case "pan":
 					nodes.pan = val;
-					nodes.panRow.$setValueAtTime( GSUpanningMerge( val, row.pan ), this.#ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( GSUpanningMerge( val, row.pan ), this.#ctx.currentTime );
 					break;
 			}
 		}
@@ -183,11 +182,12 @@ class gswaDrumrows {
 	}
 	#changeDrumrow( id, prop, val ) {
 		const row = this.#ctrl.$data.drumrows[ id ];
+		const now = this.#ctx.currentTime;
 
 		switch ( prop ) {
 			case "toggle":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, this.#ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, now );
 				} );
 				break;
 			case "dest":
@@ -198,17 +198,17 @@ class gswaDrumrows {
 				break;
 			case "detune":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.absn.detune.setValueAtTime( ( val + nodes.detune ) * 100, this.#ctx.currentTime );
+					nodes.absn.detune.setValueAtTime( ( val + nodes.detune ) * 100, now );
 				} );
 				break;
 			case "gain":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val * nodes.gain, this.#ctx.currentTime );
+					nodes.gainRow.gain.setValueAtTime( val * nodes.gain, now );
 				} );
 				break;
 			case "pan":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.panRow.$setValueAtTime( GSUpanningMerge( val, nodes.pan ), this.#ctx.currentTime );
+					nodes.panRow.pan.setValueAtTime( GSUpanningMerge( val, nodes.pan ), now );
 				} );
 				break;
 		}
