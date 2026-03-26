@@ -35,6 +35,17 @@ class gswaFxDelay {
 		this.#bps = bpm / 60;
 		this.#changeProp( "time", this.#data.time );
 	}
+	$getPropValue( prop ) {
+		const val = this.#csNodes[ prop ].offset.value;
+
+		return prop !== "time" ? val : val * this.#bps;
+	}
+	$setAutomation( prop, arr, when, dur ) {
+		this.#csNodes[ prop ].offset.setValueCurveAtTime( this.#formatValue( prop, arr ), when, dur );
+	}
+	$stopAutomations() {
+		GSUforEach( this.#csNodes, cs => cs.offset.cancelScheduledValues( 0 ) );
+	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {
 			this.#disconnect();
@@ -85,7 +96,7 @@ class gswaFxDelay {
 	#formatValue( prop, val ) {
 		return prop !== "time"
 			? val
-			: val / this.#bps;
+			: GSUisNum( val ) ? val / this.#bps : val.map( n => n / this.#bps );
 	}
 	#createNodes( ctx ) {
 		this.#input = GSUaudioGain( ctx );
