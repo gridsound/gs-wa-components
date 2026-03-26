@@ -25,6 +25,25 @@ class gswaFxReverb {
 	$getOutput() {
 		return this.#output;
 	}
+	$getPropValue( prop ) {
+		switch ( prop ) {
+			case "dry": return this.#dryGain.gain.value;
+			case "wet": return this.#wetGain.gain.value;
+			case "delay": return this.#wetDelay.delayTime.value * this.#bps;
+		}
+	}
+	$setAutomation( prop, arr, when, dur ) {
+		switch ( prop ) {
+			case "dry": this.#dryGain.gain.setValueCurveAtTime( arr, when, dur ); break;
+			case "wet": this.#wetGain.gain.setValueCurveAtTime( arr, when, dur ); break;
+			case "delay": this.#wetDelay.delayTime.setValueCurveAtTime( arr.map( n => n / this.#bps ), when, dur ); break;
+		}
+	}
+	$stopAutomations() {
+		this.#dryGain.gain.cancelScheduledValues( 0 );
+		this.#wetGain.gain.cancelScheduledValues( 0 );
+		this.#wetDelay.delayTime.cancelScheduledValues( 0 );
+	}
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;
 		this.#changeProp( "delay", this.#data.delay );
@@ -101,6 +120,7 @@ class gswaFxReverb {
 	#disconnect() {
 		this.#input.disconnect();
 		this.#output.disconnect();
+		this.#dryGain.disconnect();
 		this.#wetGain.disconnect();
 		this.#wetDelay.disconnect();
 		this.#convolver.disconnect();
