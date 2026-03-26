@@ -85,6 +85,15 @@ class gswaMixer {
 	$getPropValue( id, prop ) {
 		return this.#chans[ id ][ prop ][ prop ].value;
 	}
+	$setAutomation( id, prop, arr, when, dur ) {
+		this.#chans[ id ][ prop ][ prop ].setValueCurveAtTime( arr, when, dur );
+	}
+	$stopAutomations() {
+		GSUforEach( this.#chans, ch => {
+			ch.gain.gain.cancelScheduledValues( 0 );
+			ch.pan.pan.cancelScheduledValues( 0 );
+		} );
+	}
 	$fillAudioDataVu( chanId ) {
 		if ( chanId !== this.#vuAnalyserChan ) {
 			const nodes = this.#chans[ chanId ];
