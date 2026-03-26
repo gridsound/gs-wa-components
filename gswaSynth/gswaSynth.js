@@ -113,7 +113,7 @@ class gswaSynth {
 			objEnt.forEach( ( [ prop, val ] ) => {
 				switch ( prop ) {
 					case "phaze": this.#oscChangeProp( osc, nodes, "phaze", key.$midi, now, 0 ); break;
-					case "pan": nodes.panNode.$setValueAtTime( val, now ); break;
+					case "pan": GSUsetValueAtTime( nodes.panNode.pan, val, now ); break;
 					case "gain": GSUsetValueAtTime( nodes.gainNode.gain, val, now ); break;
 					case "detune": this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 ); break;
 					case "detunefine": this.#oscChangeProp( osc, nodes, "detune", key.$midi, now, 0 ); break;
@@ -138,7 +138,7 @@ class gswaSynth {
 						GSUsetValueAtTime( key.$noiseNodes.gainNode.gain, obj.gain, now );
 					}
 					if ( "pan" in obj ) {
-						key.$noiseNodes.panNode.$setValueAtTime( obj.pan, now );
+						GSUsetValueAtTime( key.$noiseNodes.panNode.pan, obj.pan, now );
 					}
 				}
 			} );
@@ -268,7 +268,7 @@ class gswaSynth {
 		}
 		key.$lowpassNode.type = "lowpass";
 		key.$highpassNode.type = "highpass";
-		key.$panNode.$setValueAtTime( key.$pan, atTime );
+		GSUsetValueAtTime( key.$panNode.pan, key.$pan, atTime );
 		GSUsetValueAtTime( key.$gainNode.gain, key.$gain, atTime );
 		GSUsetValueAtTime( key.$lowpassNode.frequency, 10, atTime );
 		GSUsetValueAtTime( key.$highpassNode.frequency, this.#nyquist, atTime );
@@ -355,9 +355,8 @@ class gswaSynth {
 		}
 		key.$gainEnvNode
 			.connect( key.$gainNode )
-			.connect( key.$panNode.$getInput() );
-		key.$panNode
-			.$connect( key.$lowpassNode )
+			.connect( key.$panNode )
+			.connect( key.$lowpassNode )
 			.connect( key.$highpassNode )
 			.connect( this.$output );
 		this.#startedKeys.set( id, key );
@@ -386,7 +385,7 @@ class gswaSynth {
 			$detuneLFO: new gswaLFO( ctx ),
 			$gainLFOtarget: GSUaudioGain( ctx ),
 			$gainNode: GSUaudioGain( ctx ),
-			$panNode: new gswaStereoPanner( ctx ),
+			$panNode: GSUaudioStereoPanner( ctx ),
 			$lowpassNode: GSUaudioBiquadFilter( ctx ),
 			$highpassNode: GSUaudioBiquadFilter( ctx ),
 		} );
@@ -435,7 +434,7 @@ class gswaSynth {
 
 			if ( when > this.$ctx.currentTime ) {
 				key.$oscNodes.forEach( ( nodes, oscId ) => this.#oscChangeProp( this.#data.oscillators[ oscId ], nodes, "frequency", va.midi, when, dur ) );
-				key.$panNode.$setValueCurveAtTime( va.pan, when, dur );
+				GSUsetValueCurveAtTime( key.$panNode.pan, va.pan, when, dur );
 				GSUsetValueCurveAtTime( key.$gainNode.gain, va.gain, when, dur );
 				GSUsetValueCurveAtTime( key.$lowpassNode.detune, va.lowpass, when, dur );
 				GSUsetValueCurveAtTime( key.$highpassNode.detune, va.highpass, when, dur );
@@ -450,17 +449,16 @@ class gswaSynth {
 		if ( d.noise.toggle ) {
 			const now = this.$ctx.currentTime;
 			const dur = key.$dur + d.envs.gain.release / this.#bps;
-			const panNode = new gswaStereoPanner( this.$ctx );
+			const panNode = GSUaudioStereoPanner( this.$ctx );
 			const gainNode = GSUaudioGain( this.$ctx );
 			const absn = gswaNoise.$startABSN( this.$ctx, key.$when, dur, d.noise.color );
 
 			key.$noiseNodes.absn = absn;
 			key.$noiseNodes.panNode = panNode;
 			key.$noiseNodes.gainNode = gainNode;
-			panNode.$setValueAtTime( d.noise.pan, now );
+			GSUsetValueAtTime( panNode.pan, d.noise.pan, now );
 			GSUsetValueAtTime( gainNode.gain, d.noise.gain, now );
-			absn.connect( panNode.$getInput() );
-			panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
+			absn.connect( panNode ).connect( gainNode ).connect( key.$gainLFOtarget );
 		}
 	}
 	#destroyNoiseNodes( key ) {
@@ -469,7 +467,7 @@ class gswaSynth {
 	#createOscNode( key, oscId, osc, ind, env ) {
 		const now = this.$ctx.currentTime;
 		const uniNodes = [];
-		const panNode = new gswaStereoPanner( this.$ctx );
+		const panNode = GSUaudioStereoPanner( this.$ctx );
 		const gainNode = GSUaudioGain( this.$ctx );
 		const dur = key.$dur + env.release / this.#bps;
 		const nodes = Object.seal( {
@@ -478,14 +476,14 @@ class gswaSynth {
 			gainNode,
 		} );
 
-		panNode.$setValueAtTime( osc.pan, now );
+		GSUsetValueAtTime( panNode.pan, osc.pan, now );
 		GSUsetValueAtTime( gainNode.gain, osc.gain, now );
-		panNode.$connect( gainNode ).connect( key.$gainLFOtarget );
+		panNode.connect( gainNode ).connect( key.$gainLFOtarget );
 		for ( let i = 0; i < osc.unisonvoices; ++i ) {
 			const uniGain = GSUaudioGain( this.$ctx );
 			const uniSrc = new gswaOscillator( this.$ctx );
 
-			uniSrc.$connect( uniGain ).connect( panNode.$getInput() );
+			uniSrc.$connect( uniGain ).connect( panNode );
 			uniNodes.push( [ uniSrc, uniGain ] );
 		}
 		if ( osc.source ) {
