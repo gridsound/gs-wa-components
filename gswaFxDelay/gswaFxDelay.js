@@ -124,6 +124,9 @@ class gswaFxDelay {
 		this.#csNodes.gain.connect( this.#delayGainB.gain );
 		this.#csNodes.pan.connect( this.#delayPanA.pan );
 		this.#csNodes.pan.connect( this.#gainNegPan ).connect( this.#delayPanB.pan );
+		this.#csNodes.time.offset.value = 0;
+		this.#csNodes.gain.offset.value = .5;
+		this.#csNodes.pan.offset.value = -.5;
 		GSUforEach( this.#csNodes, cs => cs.start() );
 	}
 	#disconnect() {
