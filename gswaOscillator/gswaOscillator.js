@@ -77,16 +77,16 @@ class gswaOscillator {
 		this.#srcs.forEach( src => node.connect( src.detune ) );
 	}
 	$setDetuneAtTime( val, when ) {
-		GSUforEach( this.#srcs, src => GSUsetValueAtTime( src.detune, val, when ) );
+		GSUforEach( this.#srcs, src => GSUaudioParamSet( src.detune, val, when ) );
 	}
 	$setDetuneCurveAtTime( val, when, dur ) {
-		GSUforEach( this.#srcs, src => GSUsetValueCurveAtTime( src.detune, val, when, dur ) );
+		GSUforEach( this.#srcs, src => GSUaudioParamSetCurve( src.detune, val, when, dur ) );
 	}
 	$setFrequencyAtTime( val, when ) {
-		GSUforEach( this.#srcs, src => GSUsetValueAtTime( src.frequency, val, when ) );
+		GSUforEach( this.#srcs, src => GSUaudioParamSet( src.frequency, val, when ) );
 	}
 	$setFrequencyCurveAtTime( val, when, dur ) {
-		GSUforEach( this.#srcs, src => GSUsetValueCurveAtTime( src.frequency, val, when, dur ) );
+		GSUforEach( this.#srcs, src => GSUaudioParamSetCurve( src.frequency, val, when, dur ) );
 	}
 	$setWavetableAtTime( val, when ) {
 		this.#waCrossfade.$setIndex( val, when );
