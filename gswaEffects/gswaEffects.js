@@ -41,6 +41,9 @@ class gswaEffects {
 	$liveChangeFxProp( id, prop, val ) {
 		this.$getFx( id ).$liveChange( prop, val );
 	}
+	$stopAutomations() {
+		GSUforEach( this.#wafxs, fx => fx.$stopAutomations?.() );
+	}
 
 	// .........................................................................
 	#addEffect( id, fx ) {
