@@ -76,9 +76,9 @@ class gswaEnvelope {
 			const dotsSampled = GSUmathSampleDotLine( dots, 128, xa, xb ).map( d => d[ 1 ] );
 
 			Rmax = dotsSampled.at( -1 );
-			GSUsetValueCurveAtTime( par, dotsSampled, offset > 0 ? now : w, xb - xa );
+			GSUaudioParamSetCurve( par, dotsSampled, offset > 0 ? now : w, xb - xa );
 		} else {
-			GSUsetValueAtTime( par, Rmax, now );
+			GSUaudioParamSet( par, Rmax );
 		}
 		if ( !this.#nodeStarted ) {
 			this.#nodeStarted = true;
@@ -95,7 +95,7 @@ class gswaEnvelope {
 		}
 	}
 	#release( top, when, dur ) {
-		GSUsetValueCurveAtTime( this.$node.offset, [ top, 0 ], when, dur );
+		GSUaudioParamSetCurve( this.$node.offset, [ top, 0 ], when, dur );
 	}
 	#stop( when ) {
 		const d = this.#data;
