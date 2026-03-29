@@ -41,7 +41,14 @@ class gswaFxDelay {
 		return prop !== "time" ? val : val * this.#bps;
 	}
 	$setAutomation( prop, arr, when, dur ) {
-		this.#csNodes[ prop ].offset.setValueCurveAtTime( this.#formatValue( prop, arr ), when, dur );
+		this.#csNodes[ prop ].offset.setValueCurveAtTime( arr.map( this.#formatAutomat( prop ) ), when, dur );
+	}
+	#formatAutomat( prop ) {
+		switch ( prop ) {
+			case "time": return n => n / this.#bps * 2;
+			case "gain": return n => n * .95;
+			case "pan": return n => n * 2 - 1;
+		}
 	}
 	$stopAutomations() {
 		GSUforEach( this.#csNodes, cs => GSUaudioParamCancel( cs.offset ) );
@@ -91,12 +98,7 @@ class gswaFxDelay {
 	// .........................................................................
 	#changeProp( prop, val ) {
 		this.#data[ prop ] = val;
-		this.#csNodes[ prop ].offset.setValueAtTime( this.#formatValue( prop, val ), this.#ctx.currentTime );
-	}
-	#formatValue( prop, val ) {
-		return prop !== "time"
-			? val
-			: GSUisNum( val ) ? val / this.#bps : val.map( n => n / this.#bps );
+		this.#csNodes[ prop ].offset.setValueAtTime( prop !== "time" ? val : val / this.#bps, this.#ctx.currentTime );
 	}
 	#createNodes( ctx ) {
 		this.#input = GSUaudioGain( ctx );
