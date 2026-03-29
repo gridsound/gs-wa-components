@@ -98,7 +98,7 @@ class gswaFxDelay {
 	// .........................................................................
 	#changeProp( prop, val ) {
 		this.#data[ prop ] = val;
-		this.#csNodes[ prop ].offset.setValueAtTime( prop !== "time" ? val : val / this.#bps, this.#ctx.currentTime );
+		GSUaudioParamSet( this.#csNodes[ prop ].offset, prop !== "time" ? val : val / this.#bps );
 	}
 	#createNodes( ctx ) {
 		this.#input = GSUaudioGain( ctx );

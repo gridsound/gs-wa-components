@@ -172,12 +172,11 @@ class gswaMixer {
 	}
 	#changeChanProp( id, prop, val ) {
 		const chan = this.#chans[ id ];
-		const now = this.ctx.currentTime;
 
 		switch ( prop ) {
-			case "toggle": chan.toggle.gain.setValueAtTime( val ? 1 : 0, now ); break;
-			case "pan": chan.pan.pan.setValueAtTime( val, now ); break;
-			case "gain": chan.gain.gain.setValueAtTime( val, now ); break;
+			case "toggle": GSUaudioParamSet( chan.toggle.gain, val ? 1 : 0 ); break;
+			case "pan": GSUaudioParamSet( chan.pan.pan, val ); break;
+			case "gain": GSUaudioParamSet( chan.gain.gain, val ); break;
 			case "dest":
 				chan.output.disconnect();
 				if ( val in this.#ctrlMixer.$getData().channels ) {

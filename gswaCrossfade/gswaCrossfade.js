@@ -24,7 +24,7 @@ class gswaCrossfade {
 		GSUforEach( sourceMap, ( s, i ) => {
 			const gain = GSUaudioGain( ctx );
 
-			gain.gain.setValueAtTime( 0, 0 );
+			GSUaudioParamSet( gain.gain, 0 );
 			node.connect( gain.gain, i );
 			s[ 1 ].connect( gain ).connect( this.#dest );
 		} );

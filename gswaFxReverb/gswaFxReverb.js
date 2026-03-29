@@ -99,12 +99,10 @@ class gswaFxReverb {
 
 	// .........................................................................
 	#changeProp( prop, val ) {
-		const now = this.#ctx.currentTime;
-
 		switch ( prop ) {
-			case "dry": this.#dryGain.gain.setValueAtTime( val, now ); break;
-			case "wet": this.#wetGain.gain.setValueAtTime( val, now ); break;
-			case "delay": this.#wetDelay.delayTime.setValueAtTime( val / this.#bps, now ); break;
+			case "dry": GSUaudioParamSet( this.#dryGain.gain, val ); break;
+			case "wet": GSUaudioParamSet( this.#wetGain.gain, val ); break;
+			case "delay": GSUaudioParamSet( this.#wetDelay.delayTime, val / this.#bps ); break;
 			case "fadein":
 			case "decay": this.#updateBufferDeb(); break;
 		}

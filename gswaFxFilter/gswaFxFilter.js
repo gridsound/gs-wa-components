@@ -107,7 +107,7 @@ class gswaFxFilter {
 		this.#filter.type = type;
 	}
 	#changeProp( prop, val ) {
-		this.#filter[ prop ].setValueAtTime( val, this.#ctx.currentTime );
+		GSUaudioParamSet( this.#filter[ prop ], val );
 	}
 	#createResponseArrays( w ) {
 		if ( w !== this.#responseSize ) {

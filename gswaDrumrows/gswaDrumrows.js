@@ -105,9 +105,9 @@ class gswaDrumrows {
 			nodes.gainRow = gainRow;
 			nodes.panRow = panRow;
 			absn.buffer = buffer;
-			absn.detune.setValueAtTime( ( row.detune + drum.detune ) * 100, this.#ctx.currentTime );
-			gainRow.gain.setValueAtTime( row.toggle ? row.gain * drum.gain : 0, this.#ctx.currentTime );
-			panRow.pan.setValueAtTime( GSUpanningMerge( row.pan, drum.pan ), this.#ctx.currentTime );
+			GSUaudioParamSet( absn.detune, ( row.detune + drum.detune ) * 100 );
+			GSUaudioParamSet( gainRow.gain, row.toggle ? row.gain * drum.gain : 0 );
+			GSUaudioParamSet( panRow.pan, GSUpanningMerge( row.pan, drum.pan ) );
 			absn.connect( gainCut ).connect( gainRow ).connect( panRow ).connect( dest );
 			absn.start( when, off, dur );
 			if ( this.$onstartdrum ) {
@@ -158,15 +158,15 @@ class gswaDrumrows {
 			switch ( prop ) {
 				case "detune":
 					nodes.detune = val;
-					nodes.absn.detune.setValueAtTime( ( val + row.detune ) * 100, this.#ctx.currentTime );
+					GSUaudioParamSet( nodes.absn.detune, ( val + row.detune ) * 100 );
 					break;
 				case "gain":
 					nodes.gain = val;
-					nodes.gainRow.gain.setValueAtTime( row.toggle ? val * row.gain : 0, this.#ctx.currentTime );
+					GSUaudioParamSet( nodes.gainRow.gain, row.toggle ? val * row.gain : 0 );
 					break;
 				case "pan":
 					nodes.pan = val;
-					nodes.panRow.pan.setValueAtTime( GSUpanningMerge( val, row.pan ), this.#ctx.currentTime );
+					GSUaudioParamSet( nodes.panRow.pan, GSUpanningMerge( val, row.pan ) );
 					break;
 			}
 		}
@@ -182,12 +182,11 @@ class gswaDrumrows {
 	}
 	#changeDrumrow( id, prop, val ) {
 		const row = this.#ctrl.$data.drumrows[ id ];
-		const now = this.#ctx.currentTime;
 
 		switch ( prop ) {
 			case "toggle":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val ? row.gain : 0, now );
+					GSUaudioParamSet( nodes.gainRow.gain, val ? row.gain : 0 );
 				} );
 				break;
 			case "dest":
@@ -198,17 +197,17 @@ class gswaDrumrows {
 				break;
 			case "detune":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.absn.detune.setValueAtTime( ( val + nodes.detune ) * 100, now );
+					GSUaudioParamSet( nodes.absn.detune, ( val + nodes.detune ) * 100 );
 				} );
 				break;
 			case "gain":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.gainRow.gain.setValueAtTime( val * nodes.gain, now );
+					GSUaudioParamSet( nodes.gainRow.gain, val * nodes.gain );
 				} );
 				break;
 			case "pan":
 				this.#changeDrumrowProp( id, nodes => {
-					nodes.panRow.pan.setValueAtTime( GSUpanningMerge( val, nodes.pan ), now );
+					GSUaudioParamSet( nodes.panRow.pan, GSUpanningMerge( val, nodes.pan ) );
 				} );
 				break;
 		}
