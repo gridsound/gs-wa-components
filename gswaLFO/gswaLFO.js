@@ -121,10 +121,10 @@ class gswaLFO {
 		const atTime = d.when + d.delay - d.offset;
 
 		if ( this.#ctx.currentTime <= atTime && d.attack > 0 ) {
-			GSUsetValueAtTime( this.#ampAttNode.gain, 0, 0 );
-			GSUsetValueCurveAtTime( this.#ampAttNode.gain, [ 0, 1 ], atTime, d.attack );
+			GSUaudioParamSet( this.#ampAttNode.gain, 0, 0 );
+			GSUaudioParamSetCurve( this.#ampAttNode.gain, [ 0, 1 ], atTime, d.attack );
 		} else {
-			GSUsetValueAtTime( this.#ampAttNode.gain, 1, 0 );
+			GSUaudioParamSet( this.#ampAttNode.gain, 1, 0 );
 		}
 	}
 	#setAmp() {
@@ -146,9 +146,9 @@ class gswaLFO {
 
 				if ( !started ) {
 					started = absVal * ab[ 0 ];
-					GSUsetValueAtTime( nodeParam, started, now );
+					GSUaudioParamSet( nodeParam, started, now );
 				}
-				GSUsetValueCurveAtTime( nodeParam, [
+				GSUaudioParamSetCurve( nodeParam, [
 					absVal * ab[ 0 ],
 					absVal * ab[ 1 ],
 				], when, dur );
@@ -156,7 +156,7 @@ class gswaLFO {
 		} );
 		if ( !started ) {
 			started = absVal * d[ prop ];
-			GSUsetValueAtTime( nodeParam, started, now );
+			GSUaudioParamSet( nodeParam, started, now );
 		}
 		return started;
 	}
