@@ -31,7 +31,7 @@ class gswaFxFilter {
 		return this.#filter[ prop ].value;
 	}
 	$setAutomation( prop, arr, when, dur ) {
-		this.#filter[ prop ].setValueCurveAtTime( arr.map( this.#formatAutomat( prop ) ), when, dur );
+		GSUaudioParamSetCurve( this.#filter[ prop ], arr.map( this.#formatAutomat( prop ) ), when, dur );
 	}
 	#formatAutomat( prop ) {
 		switch ( prop ) {

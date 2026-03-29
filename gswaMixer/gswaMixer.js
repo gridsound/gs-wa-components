@@ -86,7 +86,7 @@ class gswaMixer {
 		return this.#chans[ id ][ prop ][ prop ].value;
 	}
 	$setAutomation( id, prop, arr, when, dur ) {
-		this.#chans[ id ][ prop ][ prop ].setValueCurveAtTime( arr, when, dur );
+		GSUaudioParamSetCurve( this.#chans[ id ][ prop ][ prop ], arr, when, dur );
 	}
 	$stopAutomations() {
 		GSUforEach( this.#chans, ch => {

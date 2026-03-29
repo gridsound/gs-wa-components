@@ -41,7 +41,7 @@ class gswaFxReverb {
 			case "wet":   par = this.#wetGain.gain;       arr2 = arr.map( n => n * 10 ); break;
 			case "delay": par = this.#wetDelay.delayTime; arr2 = arr.map( n => n / this.#bps * 2 ); break;
 		}
-		par.setValueCurveAtTime( arr2, when, dur );
+		GSUaudioParamSetCurve( par, arr2, when, dur );
 	}
 	$stopAutomations() {
 		GSUaudioParamCancel( this.#dryGain.gain );

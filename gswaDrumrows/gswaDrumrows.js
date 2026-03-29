@@ -63,7 +63,7 @@ class gswaDrumrows {
 		this.#startedDrums.forEach( nodes => {
 			if ( nodes.absn && nodes.rowId === drumcut.row && nodes.when < whenCutStart && when < nodes.endAt ) {
 				nodes.endAt = when;
-				nodes.gainCut.gain.setValueCurveAtTime( new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
+				GSUaudioParamSetCurve( nodes.gainCut.gain, new Float32Array( [ 1, 0 ] ), whenCutStart, cutDur );
 				nodes.absn.stop( when + cutDur );
 				if ( this.$onstartdrumcut ) {
 					const fn = this.$onstartdrumcut.bind( null, nodes.rowId );
