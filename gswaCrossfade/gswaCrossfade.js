@@ -32,10 +32,10 @@ class gswaCrossfade {
 
 	$connect( ...args ) { this.#dest.connect( ...args ); }
 	$disconnect( ...args ) { this.#dest.disconnect( ...args ); }
-	$stop( when = 0 ) { GSUsetValueAtTime( this.#node.parameters.get( "start" ), 2, when ); }
-	$start( when = 0 ) { GSUsetValueAtTime( this.#node.parameters.get( "start" ), 1, when ); }
-	$setIndex( val, when ) { GSUsetValueAtTime( this.#node.parameters.get( "index" ), val, when ); }
-	$setIndexCurve( curve, when, dur ) { GSUsetValueCurveAtTime( this.#node.parameters.get( "index" ), curve, when, dur ); }
+	$stop( when = 0 ) { GSUaudioParamSet( this.#node.parameters.get( "start" ), 2, when ); }
+	$start( when = 0 ) { GSUaudioParamSet( this.#node.parameters.get( "start" ), 1, when ); }
+	$setIndex( val, when ) { GSUaudioParamSet( this.#node.parameters.get( "index" ), val, when ); }
+	$setIndexCurve( curve, when, dur ) { GSUaudioParamSetCurve( this.#node.parameters.get( "index" ), curve, when, dur ); }
 
 	$destroy() {
 		this.$stop();
