@@ -44,7 +44,7 @@ class gswaFxDelay {
 		this.#csNodes[ prop ].offset.setValueCurveAtTime( this.#formatValue( prop, arr ), when, dur );
 	}
 	$stopAutomations() {
-		GSUforEach( this.#csNodes, cs => cs.offset.cancelScheduledValues( 0 ) );
+		GSUforEach( this.#csNodes, cs => GSUaudioParamCancel( cs.offset ) );
 	}
 	$setContext( ctx ) {
 		if ( this.#ctx ) {

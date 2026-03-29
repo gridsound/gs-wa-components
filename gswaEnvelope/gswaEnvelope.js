@@ -102,7 +102,7 @@ class gswaEnvelope {
 		const env = d.toggle ? d : this.#defEnv;
 		const par = this.$node.offset;
 
-		par.cancelScheduledValues( 0 );
+		GSUaudioParamCancel( par );
 		if ( Number.isFinite( d.duration ) ) {
 			this.$node.stop( when );
 		} else {

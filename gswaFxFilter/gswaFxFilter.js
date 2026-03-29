@@ -34,7 +34,7 @@ class gswaFxFilter {
 		this.#filter[ prop ].setValueCurveAtTime( arr, when, dur );
 	}
 	$stopAutomations() {
-		GSUforEach( gswaFxFilter.#automatableProps, prop => this.#filter[ prop ].cancelScheduledValues( 0 ) );
+		GSUforEach( gswaFxFilter.#automatableProps, prop => GSUaudioParamCancel( this.#filter[ prop ] ) );
 	}
 	$getAnalyserData() {
 		this.#analyser.getFloatFrequencyData( this.#analyserData );

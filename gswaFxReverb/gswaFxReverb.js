@@ -40,9 +40,9 @@ class gswaFxReverb {
 		}
 	}
 	$stopAutomations() {
-		this.#dryGain.gain.cancelScheduledValues( 0 );
-		this.#wetGain.gain.cancelScheduledValues( 0 );
-		this.#wetDelay.delayTime.cancelScheduledValues( 0 );
+		GSUaudioParamCancel( this.#dryGain.gain );
+		GSUaudioParamCancel( this.#wetGain.gain );
+		GSUaudioParamCancel( this.#wetDelay.delayTime );
 	}
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;

@@ -90,8 +90,8 @@ class gswaMixer {
 	}
 	$stopAutomations() {
 		GSUforEach( this.#chans, ch => {
-			ch.gain.gain.cancelScheduledValues( 0 );
-			ch.pan.pan.cancelScheduledValues( 0 );
+			GSUaudioParamCancel( ch.gain.gain );
+			GSUaudioParamCancel( ch.pan.pan );
 		} );
 	}
 	$fillAudioDataVu( chanId ) {

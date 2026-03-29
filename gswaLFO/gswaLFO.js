@@ -94,9 +94,9 @@ class gswaLFO {
 		this.#oscNode.$start( d.when + d.delay - d.offset, Hz );
 	}
 	#stop( when ) {
-		this.#oscNode.$frequency0.cancelScheduledValues( when );
-		this.#ampNode.gain.cancelScheduledValues( when );
-		this.#ampAttNode.gain.cancelScheduledValues( when );
+		GSUaudioParamCancel( this.#oscNode.$frequency0, when );
+		GSUaudioParamCancel( this.#ampNode.gain, when );
+		GSUaudioParamCancel( this.#ampAttNode.gain, when );
 		this.#oscNode.$stop( when );
 	}
 	#change( obj ) {
