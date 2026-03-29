@@ -31,7 +31,15 @@ class gswaFxFilter {
 		return this.#filter[ prop ].value;
 	}
 	$setAutomation( prop, arr, when, dur ) {
-		this.#filter[ prop ].setValueCurveAtTime( arr, when, dur );
+		this.#filter[ prop ].setValueCurveAtTime( arr.map( this.#formatAutomat( prop ) ), when, dur );
+	}
+	#formatAutomat( prop ) {
+		switch ( prop ) {
+			case "Q": return n => n * 25;
+			case "gain": return n => n * 100 - 50;
+			case "detune": return n => n * 2400 - 1200;
+			case "frequency": return n => GSUXtoHz( n ) * this.#ctx.sampleRate / 2;
+		}
 	}
 	$stopAutomations() {
 		GSUforEach( gswaFxFilter.#automatableProps, prop => GSUaudioParamCancel( this.#filter[ prop ] ) );
