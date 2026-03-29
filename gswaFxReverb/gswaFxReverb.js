@@ -33,11 +33,15 @@ class gswaFxReverb {
 		}
 	}
 	$setAutomation( prop, arr, when, dur ) {
+		let par;
+		let arr2;
+
 		switch ( prop ) {
-			case "dry": this.#dryGain.gain.setValueCurveAtTime( arr, when, dur ); break;
-			case "wet": this.#wetGain.gain.setValueCurveAtTime( arr, when, dur ); break;
-			case "delay": this.#wetDelay.delayTime.setValueCurveAtTime( arr.map( n => n / this.#bps ), when, dur ); break;
+			case "dry":   par = this.#dryGain.gain;       arr2 = arr; break;
+			case "wet":   par = this.#wetGain.gain;       arr2 = arr.map( n => n * 10 ); break;
+			case "delay": par = this.#wetDelay.delayTime; arr2 = arr.map( n => n / this.#bps * 2 ); break;
 		}
+		par.setValueCurveAtTime( arr2, when, dur );
 	}
 	$stopAutomations() {
 		GSUaudioParamCancel( this.#dryGain.gain );
