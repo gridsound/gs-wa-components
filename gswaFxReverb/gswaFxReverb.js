@@ -26,20 +26,17 @@ class gswaFxReverb {
 		return this.#output;
 	}
 	$getPropValue( prop ) {
-		switch ( prop ) {
-			case "dry": return this.#dryGain.gain.value;
-			case "wet": return this.#wetGain.gain.value;
-			case "delay": return this.#wetDelay.delayTime.value * this.#bps;
-		}
+		const val = this.#getAudioParam( prop ).value;
+
+		return prop === "delay" ? val * this.#bps : val;
 	}
 	$setAutomation( prop, arr, when, dur ) {
-		let par;
-		let arr2;
+		const par = this.#getAudioParam( prop );
+		let arr2 = arr;
 
 		switch ( prop ) {
-			case "dry":   par = this.#dryGain.gain;       arr2 = arr; break;
-			case "wet":   par = this.#wetGain.gain;       arr2 = arr.map( n => n * 10 ); break;
-			case "delay": par = this.#wetDelay.delayTime; arr2 = arr.map( n => n / this.#bps * 2 ); break;
+			case "wet": arr2 = arr.map( n => n * 10 ); break;
+			case "delay": arr2 = arr.map( n => n / this.#bps * 2 ); break;
 		}
 		GSUaudioParamSetCurve( par, arr2, when, dur );
 	}
@@ -47,6 +44,13 @@ class gswaFxReverb {
 		GSUaudioParamCancel( this.#dryGain.gain );
 		GSUaudioParamCancel( this.#wetGain.gain );
 		GSUaudioParamCancel( this.#wetDelay.delayTime );
+	}
+	#getAudioParam() {
+		switch ( prop ) {
+			case "dry": return this.#dryGain.gain;
+			case "wet": return this.#wetGain.gain;
+			case "delay": return this.#wetDelay.delayTime;
+		}
 	}
 	$setBPM( bpm ) {
 		this.#bps = bpm / 60;
@@ -99,10 +103,12 @@ class gswaFxReverb {
 
 	// .........................................................................
 	#changeProp( prop, val ) {
+		const par = this.#getAudioParam( prop );
+
 		switch ( prop ) {
-			case "dry": GSUaudioParamSet( this.#dryGain.gain, val ); break;
-			case "wet": GSUaudioParamSet( this.#wetGain.gain, val ); break;
-			case "delay": GSUaudioParamSet( this.#wetDelay.delayTime, val / this.#bps ); break;
+			case "dry":
+			case "wet": GSUaudioParamSet( par, val ); break;
+			case "delay": GSUaudioParamSet( par, val / this.#bps ); break;
 			case "fadein":
 			case "decay": this.#updateBufferDeb(); break;
 		}
