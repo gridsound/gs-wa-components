@@ -30,6 +30,9 @@ class gswaFxReverb {
 
 		return prop === "delay" ? val * this.#bps : val;
 	}
+	$setAutomationValue( prop, val, when ) {
+		this.#changeProp( prop, val, when );
+	}
 	$setAutomation( prop, arr, when, dur ) {
 		const par = this.#getAudioParam( prop );
 		let arr2 = arr;
@@ -102,13 +105,13 @@ class gswaFxReverb {
 	}
 
 	// .........................................................................
-	#changeProp( prop, val ) {
+	#changeProp( prop, val, when = 0 ) {
 		const par = this.#getAudioParam( prop );
 
 		switch ( prop ) {
 			case "dry":
-			case "wet": GSUaudioParamSet( par, val ); break;
-			case "delay": GSUaudioParamSet( par, val / this.#bps ); break;
+			case "wet": GSUaudioParamSet( par, val, when ); break;
+			case "delay": GSUaudioParamSet( par, val / this.#bps, when ); break;
 			case "fadein":
 			case "decay": this.#updateBufferDeb(); break;
 		}
