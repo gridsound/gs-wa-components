@@ -40,7 +40,7 @@ class gswaFxDelay {
 
 		return prop !== "time" ? val : val * this.#bps;
 	}
-	$setAutomation( prop, arr, when, dur ) {
+	$setAutomationCurveNormalized( prop, arr, when, dur ) {
 		GSUaudioParamSetCurve( this.#csNodes[ prop ].offset, arr.map( this.#formatAutomat( prop ) ), when, dur );
 	}
 	#formatAutomat( prop ) {

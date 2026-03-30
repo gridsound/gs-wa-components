@@ -33,7 +33,7 @@ class gswaFxReverb {
 	$setAutomationValue( prop, val, when ) {
 		this.#changeProp( prop, val, when );
 	}
-	$setAutomation( prop, arr, when, dur ) {
+	$setAutomationCurveNormalized( prop, arr, when, dur ) {
 		const par = this.#getAudioParam( prop );
 		let arr2 = arr;
 
