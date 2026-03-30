@@ -117,8 +117,8 @@ class gswaFxDelay {
 		this.#delayB.delayTime.value = 0;
 	}
 	#createConstantSourceLayer( ctx ) {
-		GSUforEach( this.#csNodes, ( _, k, obj ) => obj[ k ] = ctx.createConstantSource() );
-		this.#gainNegPan = ctx.createGain();
+		GSUforEach( this.#csNodes, ( _, k, obj ) => obj[ k ] = GSUaudioConstantSource( ctx ) );
+		this.#gainNegPan = GSUaudioGain( ctx );
 		this.#gainNegPan.gain.value = -1;
 		this.#csNodes.time.connect( this.#delayA.delayTime );
 		this.#csNodes.time.connect( this.#delayB.delayTime );
