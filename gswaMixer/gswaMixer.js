@@ -85,6 +85,9 @@ class gswaMixer {
 	$getPropValue( id, prop ) {
 		return this.#chans[ id ][ prop ][ prop ].value;
 	}
+	$setAutomationValue( id, prop, val, when ) {
+		GSUaudioParamSet( this.#chans[ id ][ prop ][ prop ], val, when );
+	}
 	$setAutomationCurveNormalized( id, prop, arr, when, dur ) {
 		GSUaudioParamSetCurve( this.#chans[ id ][ prop ][ prop ], arr, when, dur );
 	}
