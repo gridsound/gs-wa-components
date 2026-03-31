@@ -48,7 +48,7 @@ class gswaFxReverb {
 		GSUaudioParamCancel( this.#wetGain.gain );
 		GSUaudioParamCancel( this.#wetDelay.delayTime );
 	}
-	#getAudioParam() {
+	#getAudioParam( prop ) {
 		switch ( prop ) {
 			case "dry": return this.#dryGain.gain;
 			case "wet": return this.#wetGain.gain;
