@@ -30,6 +30,9 @@ class gswaFxFilter {
 	$getPropValue( prop ) {
 		return this.#filter[ prop ].value;
 	}
+	$setAutomationValue( prop, val, when ) {
+		GSUaudioParamSet( this.#filter[ prop ], val, when );
+	}
 	$setAutomationCurveNormalized( prop, arr, when, dur ) {
 		GSUaudioParamSetCurve( this.#filter[ prop ], arr.map( this.#formatAutomat( prop ) ), when, dur );
 	}
@@ -84,14 +87,14 @@ class gswaFxFilter {
 	}
 	$change( obj ) {
 		Object.assign( this.#data, obj );
-		"type" in obj && this.#changeType( obj.type );
-		"Q" in obj && this.#changeProp( "Q", obj.Q );
-		"gain" in obj && this.#changeProp( "gain", obj.gain );
-		"detune" in obj && this.#changeProp( "detune", obj.detune );
-		"frequency" in obj && this.#changeProp( "frequency", obj.frequency );
+		"type" in obj && ( this.#filter.type = obj.type );
+		"Q" in obj && this.$setAutomationValue( "Q", obj.Q );
+		"gain" in obj && this.$setAutomationValue( "gain", obj.gain );
+		"detune" in obj && this.$setAutomationValue( "detune", obj.detune );
+		"frequency" in obj && this.$setAutomationValue( "frequency", obj.frequency );
 	}
 	$liveChange( prop, val ) {
-		this.#changeProp( prop, val );
+		this.$setAutomationValue( prop, val );
 	}
 	$updateResponse( size ) {
 		this.#createResponseArrays( size );
@@ -103,12 +106,6 @@ class gswaFxFilter {
 	}
 
 	// .........................................................................
-	#changeType( type ) {
-		this.#filter.type = type;
-	}
-	#changeProp( prop, val ) {
-		GSUaudioParamSet( this.#filter[ prop ], val );
-	}
 	#createResponseArrays( w ) {
 		if ( w !== this.#responseSize ) {
 			const nyquist = this.#ctx.sampleRate / 2;
