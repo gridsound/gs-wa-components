@@ -33,12 +33,12 @@ class gswaMixer {
 		this.#vuAnalyserL.fftSize =
 		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
 		this.#vuAnalyserChan = null;
-		if ( "main" in this.#ctrlMixer.$getData().channels ) {
+		if ( "0" in this.#ctrlMixer.$getData().channels ) {
 			this.#ctrlMixer.$recall();
 		} else {
 			this.#ctrlMixer.$change( {
 				channels: {
-					main: {
+					0: {
 						toggle: true,
 						name: "main",
 						gain: 1,
@@ -56,7 +56,7 @@ class gswaMixer {
 		this.#ctrlMixer.$clear();
 		this.#ctrlMixer.$change( {
 			channels: {
-				main: {
+				0: {
 					toggle: true,
 					name: "main",
 					gain: 1,
@@ -67,12 +67,12 @@ class gswaMixer {
 	}
 	$connect( dest ) {
 		this.$disconnect();
-		this.#chans.main.output.connect( dest );
+		this.#chans[ 0 ].output.connect( dest );
 		this.connectedTo = dest;
 	}
 	$disconnect() {
-		if ( this.#chans.main ) {
-			this.#chans.main.output.disconnect();
+		if ( this.#chans[ 0 ] ) {
+			this.#chans[ 0 ].output.disconnect();
 			this.connectedTo = null;
 		}
 	}
