@@ -16,7 +16,6 @@ class gswaScheduler {
 	currentTime = GSUnoop;
 	ondatastart = GSUnoop;
 	ondatastop = GSUnoop;
-	ondatapropchange = GSUnoop;
 	#startDur = 0;
 	#startOff = 0;
 	#startWhen = 0;

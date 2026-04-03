@@ -7,10 +7,8 @@ class gswaDrumsScheduler {
 
 	constructor() {
 		Object.seal( this );
-
 		this.scheduler.ondatastart = this.#onstartDrum.bind( this );
 		this.scheduler.ondatastop = this.#onstopDrum.bind( this );
-		this.scheduler.ondatapropchange = this.#onchangeDrum.bind( this );
 	}
 
 	// .........................................................................
