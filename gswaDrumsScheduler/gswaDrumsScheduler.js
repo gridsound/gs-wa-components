@@ -1,20 +1,20 @@
 "use strict";
 
 class gswaDrumsScheduler {
-	scheduler = new gswaScheduler();
+	$scheduler = new gswaScheduler();
 	#drumrows = null;
 	#startedDrums = new Map();
 
 	constructor() {
 		Object.seal( this );
-		this.scheduler.ondatastart = this.#onstartDrum.bind( this );
-		this.scheduler.ondatastop = this.#onstopDrum.bind( this );
+		this.$scheduler.$ondatastart = this.#onstartDrum.bind( this );
+		this.$scheduler.$ondatastop = this.#onstopDrum.bind( this );
 	}
 
 	// .........................................................................
 	$setContext( ctx ) {
-		this.scheduler.currentTime = () => ctx.currentTime;
-		this.scheduler.$enableStreaming( !( ctx instanceof OfflineAudioContext ) );
+		this.$scheduler.$currentTime = () => ctx.currentTime;
+		this.$scheduler.$enableStreaming( !( ctx instanceof OfflineAudioContext ) );
 	}
 	$setDrumrows( drumrows ) {
 		this.#drumrows = drumrows;
@@ -27,13 +27,13 @@ class gswaDrumsScheduler {
 				drum.duration = this.#drumrows.$getPatternDurationByRowId( drum.row );
 			}
 		} );
-		this.scheduler.$change( cpy );
+		this.$scheduler.$change( cpy );
 	}
 	$start( when, off, dur ) {
-		this.scheduler.$start( when, off, dur );
+		this.$scheduler.$start( when, off, dur );
 	}
 	$stop() {
-		this.scheduler.$stop();
+		this.$scheduler.$stop();
 	}
 
 	// .........................................................................
