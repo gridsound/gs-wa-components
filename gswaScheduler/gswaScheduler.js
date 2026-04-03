@@ -194,9 +194,9 @@ class gswaScheduler {
 		let stillSomethingToPlay;
 
 		Object.entries( this.#dataScheduled ).forEach( ( [ id, obj ] ) => {
-			if ( obj.whenEnd + delay < currTime ) {
+			if ( obj.$whenEnd + delay < currTime ) {
 				delete this.#dataScheduled[ id ];
-				delete this.#dataScheduledPerBlock[ obj.blockId ].started[ id ];
+				delete this.#dataScheduledPerBlock[ obj.$blockId ].$started[ id ];
 				this.ondatastop( id );
 			}
 		} );
@@ -214,19 +214,19 @@ class gswaScheduler {
 	#blockStop( id ) {
 		const blcSchedule = this.#dataScheduledPerBlock[ id ];
 
-		Object.keys( blcSchedule.started ).forEach( id => {
+		Object.keys( blcSchedule.$started ).forEach( id => {
 			this.ondatastop( id );
 			delete this.#dataScheduled[ id ];
-			delete blcSchedule.started[ id ];
+			delete blcSchedule.$started[ id ];
 		} );
-		blcSchedule.scheduledUntil = 0;
+		blcSchedule.$scheduledUntil = 0;
 	}
 	#blockSchedule( id ) {
 		if ( this.started ) {
 			const currTime = this.currentTime();
 			const currTimeEnd = currTime + 1;
 			const blcSchedule = this.#dataScheduledPerBlock[ id ];
-			let until = Math.max( currTime, blcSchedule.scheduledUntil || 0 );
+			let until = Math.max( currTime, blcSchedule.$scheduledUntil || 0 );
 
 			if ( until < currTimeEnd ) {
 				const offEnd = this.#getOffsetEnd();
@@ -238,9 +238,9 @@ class gswaScheduler {
 
 					until += this.#blockStart( until, from, to, offEnd, id, blc );
 				} while ( this.looping && until < currTimeEnd );
-				blcSchedule.scheduledUntil = until;
+				blcSchedule.$scheduledUntil = until;
 			}
-			return blcSchedule.scheduledUntil <= this.#startWhen + this.#startDur;
+			return blcSchedule.$scheduledUntil <= this.#startWhen + this.#startDur;
 		}
 	}
 	#blockStart( when, from, to, offEnd, blockId, block ) {
@@ -277,12 +277,10 @@ class gswaScheduler {
 				if ( bDur > .000001 ) {
 					const id = `${ ++gswaScheduler.#startedMaxId }`;
 
-					this.#dataScheduledPerBlock[ blockId ].started[ id ] =
+					this.#dataScheduledPerBlock[ blockId ].$started[ id ] =
 					this.#dataScheduled[ id ] = {
-						block,
-						blockId,
-						when: bWhn,
-						whenEnd: bWhn + bDur,
+						$blockId: blockId,
+						$whenEnd: bWhn + bDur,
 					};
 					this.ondatastart( id, blcs, bWhn, bOff, bDur );
 				}
@@ -311,8 +309,8 @@ class gswaScheduler {
 	}
 	#dataAddBlock( id, obj ) {
 		this.#dataScheduledPerBlock[ id ] = {
-			started: {},
-			scheduledUntil: 0,
+			$started: {},
+			$scheduledUntil: 0,
 		};
 		this.data[ id ] = {
 			when: 0,
