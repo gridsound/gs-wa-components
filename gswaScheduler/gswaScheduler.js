@@ -242,20 +242,30 @@ class gswaScheduler {
 			return blcSchedule.$scheduledUntil <= this.#startWhen + this.#startDur;
 		}
 	}
+	#shouldBlockStart( blc ) {
+		return !block.prev && !block.mute;
+	}
+	#groupBlocks( blockId, block ) {
+		const blcs = [];
+		const bWhn = block.when / this.$bps;
+		let bDur = 0;
+
+		for ( let id = blockId, blc = block; blc; ) {
+			blcs.push( [ id, blc ] );
+			bDur = blc.when / this.$bps - bWhn + blc.duration / this.$bps;
+			id = blc.next;
+			blc = id ? this.$data[ id ] : null;
+		}
+		return [ blcs, bDur ];
+	}
 	#blockStart( when, from, to, offEnd, blockId, block ) {
-		if ( !block.prev && !block.mute ) {
+		if ( this.#shouldBlockStart( block ) ) {
 			const bps = this.$bps;
-			const blcs = [];
+			const [ blcs, newDur ] = this.#groupBlocks( blockId, block );
 			let bWhn = block.when / bps;
 			let bOff = block.offset / bps;
-			let bDur = 0;
+			let bDur = newDur;
 
-			for ( let id = blockId, blc = block; blc; ) {
-				blcs.push( [ id, blc ] );
-				bDur = blc.when / bps - bWhn + blc.duration / bps;
-				id = blc.next;
-				blc = id ? this.$data[ id ] : null;
-			}
 			if ( from <= bWhn + bDur && bWhn < to ) {
 				const startWhen = this.#startWhen;
 
