@@ -1,18 +1,18 @@
 "use strict";
 
 class gswaMixer {
-	static fftSizeVu = 1024;
-	static fftSize = 1024;
-	ctx = null;
-	connectedTo = null;
+	static $fftSizeVu = 1024;
+	static $fftSize = 1024;
+	#ctx = null;
+	#connectedTo = null;
 	#vuAnalyserL = null;
 	#vuAnalyserR = null;
 	#vuAnalyserChan = null;
 	#analyserType = "hz";
-	$vuDataL = new Float32Array( gswaMixer.fftSizeVu / 2 );
-	$vuDataR = new Float32Array( gswaMixer.fftSizeVu / 2 );
-	$audioDataL = new Float32Array( gswaMixer.fftSize / 2 );
-	$audioDataR = new Float32Array( gswaMixer.fftSize / 2 );
+	$vuDataL = new Float32Array( gswaMixer.$fftSizeVu / 2 );
+	$vuDataR = new Float32Array( gswaMixer.$fftSizeVu / 2 );
+	$audioDataL = new Float32Array( gswaMixer.$fftSize / 2 );
+	$audioDataR = new Float32Array( gswaMixer.$fftSize / 2 );
 	#chans = {};
 	#ctrlMixer = new DAWCoreControllerMixer( {
 		$addChannel: this.#addChan.bind( this ),
@@ -27,11 +27,11 @@ class gswaMixer {
 	// .........................................................................
 	$setContext( ctx ) {
 		this.$disconnect();
-		this.ctx = ctx;
+		this.#ctx = ctx;
 		this.#vuAnalyserL = GSUaudioAnalyser( ctx );
 		this.#vuAnalyserR = GSUaudioAnalyser( ctx );
 		this.#vuAnalyserL.fftSize =
-		this.#vuAnalyserR.fftSize = gswaMixer.fftSize;
+		this.#vuAnalyserR.fftSize = gswaMixer.$fftSize;
 		this.#vuAnalyserChan = null;
 		if ( "0" in this.#ctrlMixer.$getData().channels ) {
 			this.#ctrlMixer.$recall();
@@ -68,12 +68,12 @@ class gswaMixer {
 	$connect( dest ) {
 		this.$disconnect();
 		this.#chans[ 0 ].output.connect( dest );
-		this.connectedTo = dest;
+		this.#connectedTo = dest;
 	}
 	$disconnect() {
 		if ( this.#chans[ 0 ] ) {
 			this.#chans[ 0 ].output.disconnect();
-			this.connectedTo = null;
+			this.#connectedTo = null;
 		}
 	}
 	$getChanInput( id ) {
@@ -133,7 +133,7 @@ class gswaMixer {
 
 	// .........................................................................
 	#addChan( id ) {
-		const ctx = this.ctx;
+		const ctx = this.#ctx;
 		const chan = {
 			input: GSUaudioGain( ctx ),
 			toggle: GSUaudioGain( ctx ),
@@ -146,7 +146,7 @@ class gswaMixer {
 		};
 
 		chan.analyserL.fftSize =
-		chan.analyserR.fftSize = gswaMixer.fftSize;
+		chan.analyserR.fftSize = gswaMixer.$fftSize;
 		chan.analyserL.smoothingTimeConstant =
 		chan.analyserR.smoothingTimeConstant = 0;
 		chan.input.connect( chan.toggle );
