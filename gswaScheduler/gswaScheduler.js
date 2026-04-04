@@ -247,12 +247,11 @@ class gswaScheduler {
 	}
 	#groupBlocks( blockId, block ) {
 		const blcs = [];
-		const bWhn = block.when / this.$bps;
 		let bDur = 0;
 
 		for ( let id = blockId, blc = block; blc; ) {
 			blcs.push( [ id, blc ] );
-			bDur = blc.when / this.$bps - bWhn + blc.duration / this.$bps;
+			bDur = blc.when - block.when + blc.duration;
 			id = blc.next;
 			blc = id ? this.$data[ id ] : null;
 		}
@@ -264,7 +263,7 @@ class gswaScheduler {
 			const [ blcs, newDur ] = this.#groupBlocks( blockId, block );
 			let bWhn = block.when / bps;
 			let bOff = block.offset / bps;
-			let bDur = newDur;
+			let bDur = newDur / bps;
 
 			if ( from <= bWhn + bDur && bWhn < to ) {
 				const startWhen = this.#startWhen;
