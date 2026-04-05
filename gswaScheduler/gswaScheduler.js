@@ -243,17 +243,45 @@ class gswaScheduler {
 		}
 	}
 	#shouldBlockStart( blc ) {
-		return !block.prev && !block.mute;
+		if ( blc.prev || blc.mute ) {
+			return false;
+		}
+		if ( blc.$group ) {
+			const grp = blc.$group;
+			const whn = blc.when;
+
+			return !GSUsome( this.$data, ( bc, id ) => {
+				return !bc.mute && bc.$group === grp && bc.when < whn && whn <= bc.when + bc.duration;
+			} );
+		}
+		return true;
 	}
 	#groupBlocks( blockId, block ) {
 		const blcs = [];
 		let bDur = 0;
 
-		for ( let id = blockId, blc = block; blc; ) {
-			blcs.push( [ id, blc ] );
-			bDur = blc.when - block.when + blc.duration;
-			id = blc.next;
-			blc = id ? this.$data[ id ] : null;
+		if ( block.$group ) {
+			let whnA = block.when;
+			let whnB = block.when + block.duration;
+
+			GSUforEach( this.#sortedData, ( [ id, blc ] ) => {
+				if (
+					!blc.mute &&
+					blc.$group === block.$group &&
+					whnA <= blc.when && blc.when <= whnB
+				) {
+					blcs.push( [ id, blc ] );
+					whnB = Math.max( whnB, blc.when + blc.duration );
+				}
+			} );
+			bDur = whnB - whnA;
+		} else {
+			for ( let id = blockId, blc = block; blc; ) {
+				blcs.push( [ id, blc ] );
+				bDur = blc.when - block.when + blc.duration;
+				id = blc.next;
+				blc = id ? this.$data[ id ] : null;
+			}
 		}
 		return [ blcs, bDur ];
 	}
