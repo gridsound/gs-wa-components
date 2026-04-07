@@ -36,16 +36,7 @@ class gswaMixer {
 		if ( "0" in this.#ctrlMixer.$getData().channels ) {
 			this.#ctrlMixer.$recall();
 		} else {
-			this.#ctrlMixer.$change( {
-				channels: {
-					0: {
-						toggle: true,
-						name: "main",
-						gain: 1,
-						pan: 0,
-					},
-				},
-			} );
+			this.#ctrlMixer.$change( { channels: { 0: GSUgetModel( "channelMain" ) } } );
 		}
 	}
 	$change( obj ) {
@@ -54,16 +45,7 @@ class gswaMixer {
 	$clear() {
 		this.#vuAnalyserChan = null;
 		this.#ctrlMixer.$clear();
-		this.#ctrlMixer.$change( {
-			channels: {
-				0: {
-					toggle: true,
-					name: "main",
-					gain: 1,
-					pan: 0,
-				},
-			},
-		} );
+		this.#ctrlMixer.$change( { channels: { 0: GSUgetModel( "channelMain" ) } } );
 	}
 	$connect( dest ) {
 		this.$disconnect();
