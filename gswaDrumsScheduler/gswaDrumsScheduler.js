@@ -49,9 +49,6 @@ class gswaDrumsScheduler {
 		this.#drumrows.$stopDrum( this.#startedDrums.get( startedId ) );
 		this.#startedDrums.delete( startedId );
 	}
-	#onchangeDrum( startedId, prop, val ) {
-		this.#drumrows.$changeDrumProp( startedId, prop, val );
-	}
 }
 
 /*
