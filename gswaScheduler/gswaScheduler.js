@@ -187,7 +187,7 @@ class gswaScheduler {
 			this.#streamloopId = null;
 		}
 	}
-	#streamloop() { 
+	#streamloop() {
 		const currTime = this.$currentTime();
 		const delay = this.$delayStopCallback / this.$bps;
 		let stillSomethingToPlay;
@@ -264,7 +264,7 @@ class gswaScheduler {
 		let bDur = 0;
 
 		if ( block.$group ) {
-			let whnA = block.when;
+			const whnA = block.when;
 			let whnB = block.when + block.duration;
 
 			GSUforEach( this.#sortedData, ( [ id, blc ] ) => {
