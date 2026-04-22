@@ -4,7 +4,6 @@ class gswaMixer {
 	static $fftSizeVu = 1024;
 	static $fftSize = 1024;
 	#ctx = null;
-	#connectedTo = null;
 	#vuAnalyserL = null;
 	#vuAnalyserR = null;
 	#vuAnalyserChan = null;
@@ -50,12 +49,10 @@ class gswaMixer {
 	$connect( dest ) {
 		this.$disconnect();
 		this.#chans[ 0 ].output.connect( dest );
-		this.#connectedTo = dest;
 	}
 	$disconnect() {
 		if ( this.#chans[ 0 ] ) {
 			this.#chans[ 0 ].output.disconnect();
-			this.#connectedTo = null;
 		}
 	}
 	$getChanInput( id ) {
