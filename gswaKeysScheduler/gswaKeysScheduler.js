@@ -34,12 +34,14 @@ class gswaKeysScheduler {
 
 	// .........................................................................
 	#onstartKey( startedId, blcs, when, off, dur ) {
-		this.$onstartkey( startedId, blcs, when, off, dur );
-		this.#startedKeys.set( startedId, this.#synth.$startKey( blcs, when, off, dur ) );
+		if ( this.#synth ) {
+			this.$onstartkey( startedId, blcs, when, off, dur );
+			this.#startedKeys.set( startedId, this.#synth.$startKey( blcs, when, off, dur ) );
+		}
 	}
 	#onstopKey( startedId ) {
 		this.$onstopkey( startedId );
-		this.#synth.$stopKey( this.#startedKeys.get( startedId ) );
+		this.#synth?.$stopKey( this.#startedKeys.get( startedId ) );
 		this.#startedKeys.delete( startedId );
 	}
 }
