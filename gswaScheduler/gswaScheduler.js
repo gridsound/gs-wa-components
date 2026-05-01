@@ -296,7 +296,7 @@ class gswaScheduler {
 			let bOff = block.offset / bps;
 			let bDur = newDur / bps;
 
-			if ( from <= bWhn + bDur && bWhn < to ) {
+			if ( from <= bWhn + bDur && bWhn < to && blcs.length ) { // 1.
 				const startWhen = this.#startWhen;
 
 				if ( bWhn + bDur > offEnd ) {
@@ -378,3 +378,7 @@ class gswaScheduler {
 }
 
 Object.freeze( gswaScheduler );
+
+/*
+1. Why do we have to check for `blcs.length`?
+*/
