@@ -75,7 +75,7 @@ class gswaLFO {
 
 	// .........................................................................
 	#start() {
-		this.#oscNode = new gswaOscillator( this.#ctx );
+		this.#oscNode = new gswaSource( this.#ctx );
 		this.#ampNode = GSUaudioGain( this.#ctx );
 		this.#ampAttNode = GSUaudioGain( this.#ctx );
 		this.#oscNode.$connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );

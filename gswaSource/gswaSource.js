@@ -1,10 +1,10 @@
 "use strict";
 
-class gswaOscillator {
+class gswaSource {
 	static $nbCreated = 0;
 	static $weakMap = new WeakMap();
 	static $runningMap = new Map();
-	#id = ++gswaOscillator.$nbCreated;
+	#id = ++gswaSource.$nbCreated;
 	#ctx = null;
 	#type = "";
 	#when = -1;
@@ -16,15 +16,15 @@ class gswaOscillator {
 	constructor( ctx ) {
 		this.#ctx = ctx;
 		this.#output = GSUaudioGain( ctx );
-		gswaOscillator.$weakMap.set( this, 1 );
+		gswaSource.$weakMap.set( this, 1 );
 	}
 
 	// .........................................................................
 	$connect( ...args ) { return this.#output.connect( ...args ); }
 	$disconnect( ...args ) { return this.#output.disconnect( ...args ); }
 	$stop( when ) {
-		gswaOscillator.$runningMap.set( this.#id, when || 0 );
-		gswaOscillator.#clearRunningMap( this.#ctx.currentTime );
+		gswaSource.$runningMap.set( this.#id, when || 0 );
+		gswaSource.#clearRunningMap( this.#ctx.currentTime );
 		this.#srcs.forEach( src => src.stop( when ) );
 	}
 	$start( when, Hz ) {
@@ -32,7 +32,7 @@ class gswaOscillator {
 		let started;
 
 		if ( this.#when > -1 ) {
-			console.error( "gswaOscillator: multiple $start calls" );
+			console.error( "gswaSource: multiple $start calls" );
 			return;
 		}
 		switch ( this.#type ) {
@@ -64,7 +64,7 @@ class gswaOscillator {
 		}
 		if ( started ) {
 			this.#when = when;
-			gswaOscillator.$runningMap.set( this.#id, true );
+			gswaSource.$runningMap.set( this.#id, true );
 		}
 	}
 
@@ -98,7 +98,7 @@ class gswaOscillator {
 	// .........................................................................
 	set $buffer( buf ) {
 		if ( this.#type ) {
-			console.error( "gswaOscillator: multiple $buffer set" );
+			console.error( "gswaSource: multiple $buffer set" );
 			return;
 		}
 		if ( buf ) {
@@ -113,7 +113,7 @@ class gswaOscillator {
 	}
 	set $type( w ) {
 		if ( this.#type ) {
-			console.error( "gswaOscillator: multiple $type set" );
+			console.error( "gswaSource: multiple $type set" );
 			return;
 		}
 		this.#type = GSUisWavetableName( w ) ? "oscTable" : "osc";
@@ -129,7 +129,7 @@ class gswaOscillator {
 		const osc = GSUaudioOscillator( ctx );
 
 		osc.connect( this.#output );
-		gswaOscillator.#setOscWave( ctx, osc, w );
+		gswaSource.#setOscWave( ctx, osc, w );
 		this.#srcs = [ osc ];
 	}
 	#readyForWavetable( ctx, wtname ) {
@@ -162,9 +162,9 @@ class gswaOscillator {
 
 	// .........................................................................
 	static #clearRunningMap( now ) {
-		gswaOscillator.$runningMap.forEach( ( when, id ) => {
+		gswaSource.$runningMap.forEach( ( when, id ) => {
 			if ( when !== true && when <= now ) {
-				gswaOscillator.$runningMap.delete( id );
+				gswaSource.$runningMap.delete( id );
 			}
 		} );
 	}
