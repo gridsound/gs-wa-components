@@ -28,7 +28,6 @@ class gswaOscillatorProc extends AudioWorkletProcessor {
 			case "reset-phase": this.#phase = 0; break;
 			case "wavetable":
 				this.#wtdata = new Float32Array( e.data.buffer );
-				console.log( "proooc #onmsg 'wavetable'", this.#wtdata.length );
 				this.port.postMessage( { type: "ready" } );
 				break;
 		}
@@ -36,11 +35,11 @@ class gswaOscillatorProc extends AudioWorkletProcessor {
 
 	process( _inputs, outputs, params ) {
 		if ( currentTime > this.#currentTimeInt ) {
-			console.log( "process .......", currentTime );
+			console.log( "process ......." );
 			this.#currentTimeInt = Math.floor( currentTime ) + 1;
 		}
 
-		if ( currentTime > this.#stopTime ) {
+		if ( currentTime >= this.#stopTime ) {
 			this.port.postMessage( { type: "ended" } );
 			return false;
 		}
