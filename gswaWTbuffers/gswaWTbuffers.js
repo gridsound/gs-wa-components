@@ -2,7 +2,12 @@
 
 class gswaWTbuffers {
 	static #headerSize = 4;
-	static #list = new Map();
+	static #list = new Map( [
+		[ "sine",     gswaWTbuffers.#format( [ GSUmathWaveSine(     2048 ) ] ) ],
+		[ "triangle", gswaWTbuffers.#format( [ GSUmathWaveTriangle( 2048 ) ] ) ],
+		[ "sawtooth", gswaWTbuffers.#format( [ GSUmathWaveSawtooth( 2048 ) ] ) ],
+		[ "square",   gswaWTbuffers.#format( [ GSUmathWaveSquare(   2048 ) ] ) ],
+	] );
 
 	// .........................................................................
 	static $wtClear() {
@@ -17,6 +22,9 @@ class gswaWTbuffers {
 	static $wtSet( id, waves ) {
 		if ( __LOCALHOST__ ) {
 			gswaWTbuffers.#check( waves );
+		}
+		if ( id in GSUmathWaveFns ) {
+			return;
 		}
 
 		const arr = this.#list.get( id )?.$arr;
