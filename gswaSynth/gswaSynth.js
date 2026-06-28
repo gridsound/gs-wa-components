@@ -391,7 +391,7 @@ class gswaSynth {
 
 	// ..........................................................................
 	$synStopAllKeys( ctx ) {
-		this.#startedKeys.forEach( ( key, id ) => this.$stopKey( ctx, id ) );
+		this.#startedKeys.forEach( ( key, id ) => this.$synStopKey( ctx, id ) );
 	}
 	$synStopKey( ctx, id ) {
 		const key = this.#startedKeys.get( id );
