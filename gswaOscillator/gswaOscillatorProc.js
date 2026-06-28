@@ -11,7 +11,7 @@ class gswaOscillatorProc extends AudioWorkletProcessor {
 	static get parameterDescriptors() {
 		return [
 			{ automationRate: "a-rate", name: "phase",     defaultValue:   0, minValue: 0, maxValue:     1 },
-			{ automationRate: "a-rate", name: "frequency", defaultValue: 440, minValue: 5, maxValue: 24000 },
+			{ automationRate: "a-rate", name: "frequency", defaultValue: 440, minValue: 0, maxValue: 24000 },
 			{ automationRate: "a-rate", name: "detune",    defaultValue:   0                               },
 			{ automationRate: "a-rate", name: "wtpos",     defaultValue:   0, minValue: 0, maxValue:     1 },
 		];
