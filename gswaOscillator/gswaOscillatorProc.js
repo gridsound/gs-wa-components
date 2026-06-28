@@ -25,7 +25,11 @@ class gswaOscillatorProc extends AudioWorkletProcessor {
 		switch ( e.data.type ) {
 			case "start": this.#startTime = e.data.when; break;
 			case "stop": this.#stopTime = e.data.when; break;
-			case "reset-phase": this.#phase = 0; break;
+			case "reset":
+				this.#phase = 0;
+				this.#startTime = Infinity;
+				this.#stopTime = Infinity;
+				break;
 			case "wavetable":
 				this.#wtdata = new Float32Array( e.data.buffer );
 				this.port.postMessage( { type: "ready" } );

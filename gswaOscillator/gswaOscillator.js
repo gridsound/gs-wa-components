@@ -49,8 +49,8 @@ class gswaOscillator {
 	$stop( when ) {
 		this.#node.port.postMessage( { type: "stop", when: when ?? this.#node.context.currentTime } );
 	}
-	$resetPhase() {
-		this.#node.port.postMessage( { type: "reset-phase" } );
+	$reset() {
+		this.#node.port.postMessage( { type: "reset" } );
 	}
 	$setWavetable( wt ) {
 		this.#ready = false;
