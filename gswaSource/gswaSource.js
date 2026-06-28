@@ -8,10 +8,9 @@ class gswaSource {
 	#ctx = null;
 	#type = "";
 	#when = -1;
-	#srcs = [];
+	#src = null;
 	#bufDur = 0;
 	#output = null;
-	#waCrossfade = null;
 
 	constructor( ctx ) {
 		this.#ctx = ctx;
@@ -25,7 +24,11 @@ class gswaSource {
 	$stop( when ) {
 		gswaSource.$runningMap.set( this.#id, when || 0 );
 		gswaSource.#clearRunningMap( this.#ctx.currentTime );
-		this.#srcs.forEach( src => src.stop( when ) );
+		if ( this.#type === "osc" ) {
+			this.#src.$stop( when );
+		} else {
+			this.#src.stop( when );
+		}
 	}
 	$start( when, Hz ) {
 		const now = this.#ctx.currentTime;
@@ -39,26 +42,20 @@ class gswaSource {
 			case "buffer":
 				if ( when >= now ) {
 					started = true;
-					this.#srcs[ 0 ].start( when );
+					this.#src.start( when );
 				} else if ( when + this.#bufDur > now ) {
 					started = true;
-					this.#srcs[ 0 ].start( now, now - when );
+					this.#src.start( now, now - when );
 				}
 				break;
 			case "osc":
-			case "oscTable":
-				this.#srcs.forEach( src => {
-					if ( when >= now || !Number.isFinite( Hz ) ) {
-						src.start( when );
-					} else {
-						const periods = ( now - when ) * Hz;
-						const diff = Math.ceil( periods ) - periods;
+				if ( when >= now || !Number.isFinite( Hz ) ) {
+					this.#src.$start( when );
+				} else {
+					const periods = ( now - when ) * Hz;
+					const diff = Math.ceil( periods ) - periods;
 
-						src.start( now + diff / Hz );
-					}
-				} );
-				if ( this.#type === "oscTable" ) {
-					this.#waCrossfade.$start( when );
+					this.#src.$start( now + diff / Hz );
 				}
 				break;
 		}
@@ -69,30 +66,30 @@ class gswaSource {
 	}
 
 	// .........................................................................
-	get $type0() { return this.#srcs[ 0 ].type; }
-	get $frequency0() { return this.#srcs[ 0 ].frequency; }
+	get $type0() { return this.#src.type; }
+	get $frequency0() { return this.#src.frequency; }
 
 	// .........................................................................
 	$connectToDetune( node ) {
-		this.#srcs.forEach( src => node.connect( src.detune ) );
+		node.connect( this.#src.detune );
 	}
 	$setDetuneAtTime( val, when ) {
-		GSUforEach( this.#srcs, src => GSUaudioParamSet( src.detune, val, when ) );
+		GSUaudioParamSet( this.#src.detune, val, when );
 	}
 	$setDetuneCurveAtTime( val, when, dur ) {
-		GSUforEach( this.#srcs, src => GSUaudioParamSetCurve( src.detune, val, when, dur ) );
+		GSUaudioParamSetCurve( this.#src.detune, val, when, dur );
 	}
 	$setFrequencyAtTime( val, when ) {
-		GSUforEach( this.#srcs, src => GSUaudioParamSet( src.frequency, val, when ) );
+		GSUaudioParamSet( this.#src.frequency, val, when );
 	}
 	$setFrequencyCurveAtTime( val, when, dur ) {
-		GSUforEach( this.#srcs, src => GSUaudioParamSetCurve( src.frequency, val, when, dur ) );
+		GSUaudioParamSetCurve( this.#src.frequency, val, when, dur );
 	}
 	$setWavetableAtTime( val, when ) {
-		this.#waCrossfade.$setIndex( val, when );
+		GSUaudioParamSet( this.#src.wtpos, val, when );
 	}
 	$setWavetableCurveAtTime( val, when, dur ) {
-		this.#waCrossfade.$setIndexCurve( val, when, dur );
+		GSUaudioParamSetCurve( this.#src.wtpos, val, when, dur );
 	}
 
 	// .........................................................................
@@ -106,8 +103,8 @@ class gswaSource {
 
 			absn.buffer = buf;
 			absn.connect( this.#output );
+			this.#src = absn;
 			this.#type = "buffer";
-			this.#srcs = [ absn ];
 			this.#bufDur = buf.duration;
 		}
 	}
@@ -116,48 +113,14 @@ class gswaSource {
 			console.error( "gswaSource: multiple $type set" );
 			return;
 		}
-		this.#type = GSUisWavetableName( w ) ? "oscTable" : "osc";
-		if ( this.#type === "osc" ) {
-			this.#readyForSingleWave( this.#ctx, w );
-		} else {
-			this.#readyForWavetable( this.#ctx, w );
-		}
-	}
 
-	// .........................................................................
-	#readyForSingleWave( ctx, w ) {
-		const osc = GSUaudioOscillator( ctx );
+		const osc = new gswaOscillator( this.#ctx );
 
-		osc.connect( this.#output );
-		gswaSource.#setOscWave( ctx, osc, w );
-		this.#srcs = [ osc ];
-	}
-	#readyForWavetable( ctx, wtname ) {
-		this.#srcs = gswaPeriodicWaves.$getWavetable( ctx, wtname ).map( pw => {
-			const osc = GSUaudioOscillator( ctx );
-
-			osc.setPeriodicWave( pw );
-			return osc;
-		} );
-
-		const len = this.#srcs.length;
-		const sourceMap = this.#srcs.map( ( src, i ) => [ len === 1 ? 0 : i / ( len - 1 ), src ] );
-
-		this.#waCrossfade = new gswaCrossfade( ctx, sourceMap );
-		this.#waCrossfade.$connect( this.#output );
-	}
-	static #setOscWave( ctx, osc, w ) {
-		if ( w === "sine" || w === "triangle" || w === "sawtooth" ) { // 1.
-			osc.type = w;
-		} else {
-			const pw = gswaPeriodicWaves.$get( ctx, w );
-
-			if ( pw ) {
-				osc.setPeriodicWave( pw );
-			} else {
-				osc.type = "sine";
-			}
-		}
+		osc.$init( this.#ctx );
+		osc.$connect( this.#output );
+		osc.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( w ) );
+		this.#type = "osc";
+		this.#src = osc;
 	}
 
 	// .........................................................................
@@ -169,9 +132,3 @@ class gswaSource {
 		} );
 	}
 }
-
-/*
-1. Square is not considered as a native wave because of its normalization.
-   This normalization is a problem only when the oscillator is used as an LFO.
-   This means the square would never be fully -1 neither +1.
-*/
