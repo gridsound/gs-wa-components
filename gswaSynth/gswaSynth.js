@@ -505,7 +505,7 @@ class gswaSynth {
 			if ( osc.wavetable && GSUisWavetableName( osc.wave ) ) {
 				const [ wtCurve, wtCurveDuration ] = this.#wtCurvesMap.get( `${ oscId }.${ key.$wtposCurves[ oscId ] || 0 }` );
 
-				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
+				n[ 0 ].$setWtposCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
 			}
 			n[ 0 ].$srcStart( ctx, when );
 		} );
