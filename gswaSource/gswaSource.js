@@ -79,6 +79,9 @@ class gswaSource {
 	$setFrequencyCurveAtTime( val, when, dur ) {
 		GSUaudioParamSetCurve( this.#src.frequency, val, when, dur );
 	}
+	$cancelWtpos( when ) {
+		GSUaudioParamCancel( this.#src.wtpos, when );
+	}
 	$setWavetableAtTime( val, when ) {
 		GSUaudioParamSet( this.#src.wtpos, val, when );
 	}
