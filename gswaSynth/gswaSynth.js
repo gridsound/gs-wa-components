@@ -106,8 +106,8 @@ class gswaSynth {
 			}
 			if ( obj.wavetable ) {
 				nodes.uniNodes.forEach( n => {
-					n[ 0 ].$type = "sine"; // 3.
-					n[ 0 ].$type = osc.wave;
+					n[ 0 ].$setWavetable( "sine" ); // 3. ??
+					n[ 0 ].$setWavetable( osc.wave );
 				} );
 			}
 			objEnt.forEach( ( [ prop, val ] ) => {
@@ -524,9 +524,9 @@ class gswaSynth {
 			case "source": {
 				const buf = this.$getAudioBuffer( val );
 
-				uniNodes.forEach( n => n[ 0 ].$buffer = buf );
+				uniNodes.forEach( n => n[ 0 ].$setBuffer( buf ) );
 			} break;
-			case "wave": uniNodes.forEach( n => n[ 0 ].$type = val ); break;
+			case "wave": uniNodes.forEach( n => n[ 0 ].$setWavetable( val ) ); break;
 			case "detune":
 			case "unisondetune": uniNodes.forEach( ( n, i ) => n[ 0 ].$setDetuneAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when ) ); break;
 			case "unisonblend": uniNodes.forEach( ( n, i ) => GSUaudioParamSet( n[ 1 ].gain, gswaSynth.#calcUnisonGain( osc, val, i ), when ) ); break;

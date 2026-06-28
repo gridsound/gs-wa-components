@@ -93,9 +93,9 @@ class gswaSource {
 	}
 
 	// .........................................................................
-	set $buffer( buf ) {
+	$setBuffer( buf ) {
 		if ( this.#type ) {
-			console.error( "gswaSource: multiple $buffer set" );
+			console.error( "gswaSource: $setBuffer, multiple calls" );
 			return;
 		}
 		if ( buf ) {
@@ -108,9 +108,9 @@ class gswaSource {
 			this.#bufDur = buf.duration;
 		}
 	}
-	set $type( w ) {
+	$setWavetable( wt ) {
 		if ( this.#type ) {
-			console.error( "gswaSource: multiple $type set" );
+			console.error( "gswaSource: $setWavetable, multiple calls" );
 			return;
 		}
 
@@ -118,7 +118,7 @@ class gswaSource {
 
 		osc.$init( this.#ctx );
 		osc.$connect( this.#output );
-		osc.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( w ) );
+		osc.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( wt ) );
 		this.#type = "osc";
 		this.#src = osc;
 	}
