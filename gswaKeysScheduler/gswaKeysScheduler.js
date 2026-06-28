@@ -4,6 +4,7 @@ class gswaKeysScheduler {
 	$scheduler = new gswaScheduler();
 	$onstartkey = GSUnoop;
 	$onstopkey = GSUnoop;
+	#ctx = null;
 	#synth = null;
 	#startedKeys = new Map();
 
@@ -16,7 +17,8 @@ class gswaKeysScheduler {
 
 	// .........................................................................
 	$setContext( ctx ) {
-		this.$scheduler.$currentTime = () => ctx.currentTime;
+		this.#ctx = ctx;
+		this.$scheduler.$currentTime = () => this.#ctx.currentTime;
 		this.$scheduler.$enableStreaming( !( ctx instanceof OfflineAudioContext ) );
 	}
 	$setSynth( synth ) {
@@ -36,12 +38,12 @@ class gswaKeysScheduler {
 	#onstartKey( startedId, blcs, when, off, dur ) {
 		if ( this.#synth ) {
 			this.$onstartkey( startedId, blcs, when, off, dur );
-			this.#startedKeys.set( startedId, this.#synth.$startKey( blcs, when, off, dur ) );
+			this.#startedKeys.set( startedId, this.#synth.$synStartKey( this.#ctx, blcs, when, off, dur ) );
 		}
 	}
 	#onstopKey( startedId ) {
 		this.$onstopkey( startedId );
-		this.#synth?.$stopKey( this.#startedKeys.get( startedId ) );
+		this.#synth?.$synStopKey( this.#ctx, this.#startedKeys.get( startedId ) );
 		this.#startedKeys.delete( startedId );
 	}
 }
