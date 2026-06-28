@@ -75,9 +75,10 @@ class gswaLFO {
 
 	// .........................................................................
 	#start() {
-		this.#oscNode = new gswaSource( this.#ctx );
+		this.#oscNode = new gswaOscillator( this.#ctx );
 		this.#ampNode = GSUaudioGain( this.#ctx );
 		this.#ampAttNode = GSUaudioGain( this.#ctx );
+		this.#oscNode.$init( this.#ctx );
 		this.#oscNode.$connect( this.#ampAttNode ).connect( this.#ampNode ).connect( this.$node );
 		this.#setType();
 		this.#setAmpAtt();
@@ -91,10 +92,10 @@ class gswaLFO {
 		const d = this.#data;
 		const Hz = this.#setSpeed();
 
-		this.#oscNode.$start( d.when + d.delay - d.offset, Hz );
+		this.#oscNode.$start( d.when + d.delay - d.offset );
 	}
 	#stop( when ) {
-		GSUaudioParamCancel( this.#oscNode.$frequency0, when );
+		GSUaudioParamCancel( this.#oscNode.frequency, when );
 		GSUaudioParamCancel( this.#ampNode.gain, when );
 		GSUaudioParamCancel( this.#ampAttNode.gain, when );
 		this.#oscNode.$stop( when );
@@ -114,7 +115,7 @@ class gswaLFO {
 		}
 	}
 	#setType() {
-		this.#oscNode.$type = this.#data.type;
+		this.#oscNode.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( this.#data.type ) );
 	}
 	#setAmpAtt() {
 		const d = this.#data;
@@ -131,7 +132,7 @@ class gswaLFO {
 		gswaLFO.#setVariations( this.#data, "absoluteAmp", "amp", this.#ampNode.gain, this.#ctx.currentTime );
 	}
 	#setSpeed() {
-		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.$frequency0, this.#ctx.currentTime );
+		return gswaLFO.#setVariations( this.#data, "absoluteSpeed", "speed", this.#oscNode.frequency, this.#ctx.currentTime );
 	}
 	static #setVariations( d, absProp, prop, nodeParam, now ) {
 		const absVal = d[ absProp ];
