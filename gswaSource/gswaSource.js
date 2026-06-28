@@ -64,10 +64,6 @@ class gswaSource {
 	}
 
 	// .........................................................................
-	get $type0() { return this.#src.type; }
-	get $frequency0() { return this.#src.frequency; }
-
-	// .........................................................................
 	$connectToDetune( node ) {
 		node.connect( this.#src.detune );
 	}
