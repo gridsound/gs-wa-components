@@ -20,6 +20,7 @@ class gswaOscillator {
 			numberOfInputs: 0,
 			numberOfOutputs: 1,
 			outputChannelCount: [ 1 ],
+			processorOptions: { renderQuantumSize: 2048 },
 		} );
 		this.frequency = this.#node.parameters.get( "frequency" );
 		this.detune = this.#node.parameters.get( "detune" );
