@@ -106,8 +106,8 @@ class gswaSynth {
 			}
 			if ( obj.wavetable ) {
 				nodes.uniNodes.forEach( n => {
-					n[ 0 ].$setWavetable( "sine" ); // 3. ??
-					n[ 0 ].$setWavetable( osc.wave );
+					n[ 0 ].$setWavetable( this.$ctx, "sine" ); // 3. ??
+					n[ 0 ].$setWavetable( this.$ctx, osc.wave );
 				} );
 			}
 			objEnt.forEach( ( [ prop, val ] ) => {
@@ -507,15 +507,15 @@ class gswaSynth {
 
 				n[ 0 ].$setWavetableCurveAtTime( wtCurve, when, wtCurveDuration / this.#bps );
 			}
-			n[ 0 ].$start( when );
+			n[ 0 ].$srcStart( this.$ctx, when );
 		} );
 		if ( Number.isFinite( dur ) ) {
-			uniNodes.forEach( n => n[ 0 ].$stop( key.$when + dur ) );
+			uniNodes.forEach( n => n[ 0 ].$srcStop( this.$ctx, key.$when + dur ) );
 		}
 		return nodes;
 	}
 	#destroyOscNode( nodes ) {
-		nodes.uniNodes.forEach( n => n[ 0 ].$stop() );
+		nodes.uniNodes.forEach( n => n[ 0 ].$srcStop( this.$ctx ) );
 	}
 	#oscChangeProp( osc, nodes, prop, val, when, dur ) {
 		const uniNodes = nodes.uniNodes;
@@ -524,9 +524,9 @@ class gswaSynth {
 			case "source": {
 				const buf = this.$getAudioBuffer( val );
 
-				uniNodes.forEach( n => n[ 0 ].$setBuffer( buf ) );
+				uniNodes.forEach( n => n[ 0 ].$setBuffer( this.$ctx, buf ) );
 			} break;
-			case "wave": uniNodes.forEach( n => n[ 0 ].$setWavetable( val ) ); break;
+			case "wave": uniNodes.forEach( n => n[ 0 ].$setWavetable( this.$ctx, val ) ); break;
 			case "detune":
 			case "unisondetune": uniNodes.forEach( ( n, i ) => n[ 0 ].$setDetuneAtTime( gswaSynth.#calcUnisonDetune( osc, val, i ), when ) ); break;
 			case "unisonblend": uniNodes.forEach( ( n, i ) => GSUaudioParamSet( n[ 1 ].gain, gswaSynth.#calcUnisonGain( osc, val, i ), when ) ); break;

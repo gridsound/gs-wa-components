@@ -5,7 +5,6 @@ class gswaSource {
 	static $weakMap = new WeakMap();
 	static $runningMap = new Map();
 	#id = ++gswaSource.$nbCreated;
-	#ctx = null;
 	#type = "";
 	#when = -1;
 	#src = null;
@@ -13,7 +12,6 @@ class gswaSource {
 	#output = null;
 
 	constructor( ctx ) {
-		this.#ctx = ctx;
 		this.#output = GSUaudioGain( ctx );
 		gswaSource.$weakMap.set( this, 1 );
 	}
@@ -21,21 +19,21 @@ class gswaSource {
 	// .........................................................................
 	$connect( ...args ) { return this.#output.connect( ...args ); }
 	$disconnect( ...args ) { return this.#output.disconnect( ...args ); }
-	$stop( when ) {
+	$srcStop( ctx, when ) {
 		gswaSource.$runningMap.set( this.#id, when || 0 );
-		gswaSource.#clearRunningMap( this.#ctx.currentTime );
+		gswaSource.#clearRunningMap( ctx.currentTime );
 		if ( this.#type === "osc" ) {
 			this.#src.$stop( when );
 		} else {
 			this.#src.stop( when );
 		}
 	}
-	$start( when, Hz ) {
-		const now = this.#ctx.currentTime;
+	$srcStart( ctx, when, Hz ) {
+		const now = ctx.currentTime;
 		let started;
 
 		if ( this.#when > -1 ) {
-			console.error( "gswaSource: multiple $start calls" );
+			console.error( "gswaSource: $start, multiple calls" );
 			return;
 		}
 		switch ( this.#type ) {
@@ -93,13 +91,13 @@ class gswaSource {
 	}
 
 	// .........................................................................
-	$setBuffer( buf ) {
+	$setBuffer( ctx, buf ) {
 		if ( this.#type ) {
 			console.error( "gswaSource: $setBuffer, multiple calls" );
 			return;
 		}
 		if ( buf ) {
-			const absn = GSUaudioBufferSource( this.#ctx );
+			const absn = GSUaudioBufferSource( ctx );
 
 			absn.buffer = buf;
 			absn.connect( this.#output );
@@ -108,15 +106,15 @@ class gswaSource {
 			this.#bufDur = buf.duration;
 		}
 	}
-	$setWavetable( wt ) {
+	$setWavetable( ctx, wt ) {
 		if ( this.#type ) {
 			console.error( "gswaSource: $setWavetable, multiple calls" );
 			return;
 		}
 
-		const osc = new gswaOscillator( this.#ctx );
+		const osc = new gswaOscillator( ctx );
 
-		osc.$init( this.#ctx );
+		osc.$init( ctx );
 		osc.$connect( this.#output );
 		osc.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( wt ) );
 		this.#type = "osc";
