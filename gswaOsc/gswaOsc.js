@@ -1,0 +1,45 @@
+class gswaOsc {
+	static #path = "gswaOscProc.js";
+	#node = null;
+	#ready = false;
+
+	static $oscLoadModule( ctx ) {
+		return ctx.audioWorklet.addModule( gswaOsc.#path );
+	}
+
+	// .........................................................................
+	constructor( ctx ) {
+		this.#node = new AudioWorkletNode( ctx, "gswaOscProc", {
+			numberOfInputs: 0,
+			numberOfOutputs: 1,
+			outputChannelCount: [ 1 ],
+			processorOptions: { renderQuantumSize: 2048 },
+		} );
+		this.#node.port.onmessage = this.#onmsg.bind( this );
+	}
+	#onmsg( e ) {
+		switch ( e.data.type ) {
+			case "ready": this.#ready = true; break;
+		}
+	}
+
+	// .........................................................................
+	$oscConnect( ...args ) {
+		return this.#node.connect( ...args );
+	}
+	$oscDisconnect( ...args ) {
+		return this.#node.disconnect( ...args );
+	}
+	$oscKill( when ) {
+		this.#node.port.postMessage( { type: "kill" } );
+	}
+	$oscWavetable( wt ) {
+		this.#ready = false;
+		this.#node.port.postMessage( { type: "wavetable", buffer: wt } );
+	}
+	$oscPushNote( id, key ) {
+		this.#node.port.postMessage( { type: "push", id, key } );
+	}
+}
+
+export default gswaOsc;

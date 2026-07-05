@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>gswaOsc — test</title>
+<style>
+	body {
+		font-family: system-ui, sans-serif;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		height: 100vh;
+		margin: 0;
+		background: #111;
+		color: #eee;
+	}
+	button {
+		font-size: 1.2rem;
+		padding: 1rem 2rem;
+		border-radius: 8px;
+		border: none;
+		cursor: pointer;
+		background: #4caf50;
+		color: white;
+	}
+	button:disabled {
+		background: #555;
+		cursor: not-allowed;
+	}
+	#status {
+		margin-top: 1rem;
+		font-family: monospace;
+		color: #9ad;
+		white-space: pre;
+	}
+</style>
+</head>
+<body>
+
+<button id="playBtn" disabled>Loading…</button>
+<div id="status"></div>
+
+<script type="module">
+import gswaOsc from "./gswaOsc.js";
+
+const btn = document.getElementById( "playBtn" );
+const status = document.getElementById( "status" );
+
+function log( msg ) {
+	status.textContent += msg + "\n";
+	console.log( msg );
+}
+
+const HEADER_SIZE = 4;
+const waveLen = 2048;
+const nbWaves = 1;
+
+const sab = new SharedArrayBuffer( ( HEADER_SIZE + nbWaves * waveLen ) * Float32Array.BYTES_PER_ELEMENT );
+const view = new Float32Array( sab );
+
+view[ 0 ] = nbWaves;
+view[ 1 ] = waveLen;
+
+for ( let i = 0; i < waveLen; i++ ) {
+	view[ HEADER_SIZE + i ] = Math.sin( 2 * Math.PI * i / waveLen );
+}
+
+const ctx = new AudioContext();
+let osc = null;
+
+async function setup() {
+	await gswaOsc.$oscLoadModule( ctx );
+
+	osc = new gswaOsc( ctx );
+	osc.$oscConnect( ctx.destination );
+	osc.$oscWavetable( sab );
+
+	btn.disabled = false;
+	btn.textContent = "Play note (1s)";
+}
+
+btn.addEventListener( "click", async () => {
+	if ( ctx.state === "suspended" ) {
+		await ctx.resume();
+	}
+
+	const when = ctx.currentTime + .05;
+	const duration = 1;
+
+	osc.$oscPushNote( "note1", {
+		when,
+		duration,
+		frequency: 400,
+		detune: 0,
+		wtpos: 0,
+		phase: 0,
+		gain: 1,
+	} );
+	osc.$oscPushNote( "note2", {
+		when: when,
+		duration,
+		frequency: 440,
+		detune: 0,
+		wtpos: 0,
+		phase: 0,
+		gain: 1,
+	} );
+
+	log( `Note pushed — start: ${ when.toFixed( 3 ) }s, duration: ${ duration }s` );
+} );
+
+setup().catch( err => log( "Setup error: " + err.message ) );
+</script>
+</body>
+</html>
