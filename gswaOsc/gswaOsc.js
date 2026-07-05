@@ -2,6 +2,8 @@ class gswaOsc {
 	static #path = "gswaOscProc.js";
 	#node = null;
 	#ready = false;
+	pan = null;
+	gain = null;
 	phase = null;
 	detune = null;
 
@@ -17,6 +19,8 @@ class gswaOsc {
 			outputChannelCount: [ 2 ],
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
+		this.pan = this.#node.parameters.get( "pan" );
+		this.gain = this.#node.parameters.get( "gain" );
 		this.phase = this.#node.parameters.get( "phase" );
 		this.detune = this.#node.parameters.get( "detune" );
 		this.#node.port.onmessage = this.#onmsg.bind( this );

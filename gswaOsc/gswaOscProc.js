@@ -7,9 +7,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 	static get parameterDescriptors() {
 		return [
-			{ automationRate: "a-rate", name: "phase",  defaultValue: 0, minValue: 0, maxValue: 1 },
-			{ automationRate: "a-rate", name: "detune", defaultValue: 0                           },
-			// { automationRate: "a-rate", name: "wtpos",  defaultValue: 0, minValue: 0, maxValue: 1 },
+			{ automationRate: "a-rate", name: "pan",    defaultValue: 0, minValue: -1, maxValue: 1 },
+			{ automationRate: "a-rate", name: "gain",   defaultValue: 1                            },
+			{ automationRate: "a-rate", name: "phase",  defaultValue: 0, minValue:  0, maxValue: 1 },
+			{ automationRate: "a-rate", name: "detune", defaultValue: 0                            },
+			// { automationRate: "a-rate", name: "wtpos",  defaultValue: 0, minValue:  0, maxValue: 1 },
 		];
 	}
 
@@ -31,8 +33,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 				break;
 			case "push": {
 				const k = d.key;
-				const pan = Math.max( -1, Math.min( 1, k.pan ?? 0 ) );
-				const angle = ( pan + 1 ) * .25 * Math.PI;
 
 				this.#keys.set( d.id, {
 					$id: d.id,
@@ -46,8 +46,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 						$frequency: k.frequency ?? 440,
 						$wtpos: k.wtpos ?? 0,
 						$gain: k.gain ?? 1,
-						$gainL: Math.cos( angle ),
-						$gainR: Math.sin( angle ),
+						$pan: Math.max( -1, Math.min( 1, k.pan ?? 0 ) ),
 					},
 				} );
 			} break;
@@ -91,22 +90,27 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	static #process_key( chanL, chanR, params, o, wtdata, nbWaves, waveLen ) {
 		const chanLen = chanL.length;
-		const gainL = o.$key.$gain * o.$key.$gainL;
-		const gainR = o.$key.$gain * o.$key.$gainR;
+		const apPan = params.pan;
+		const apGain = params.gain;
 		const apPhase = params.phase;
 		const apDetune = params.detune;
+		const keyGain = o.$key.$gain;
+		const keyPan = o.$key.$pan;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
 			if ( o.$when <= now && now < o.$whenEnd ) {
+				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
+				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
+				const pan = Math.max( -1, Math.min( 1, keyPan + apPanI ) );
 				const s = gswaOscProc.#process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
 
-				chanL[ i ] += gainL * s;
-				chanR[ i ] += gainR * s;
+				chanL[ i ] += apGainI * keyGain * ( ( 1 - pan ) * .5 ) * s;
+				chanR[ i ] += apGainI * keyGain * ( ( 1 + pan ) * .5 ) * s;
 			}
 		}
 		o.$phase = o.$phaseB;
