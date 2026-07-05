@@ -2,6 +2,7 @@ class gswaOsc {
 	static #path = "gswaOscProc.js";
 	#node = null;
 	#ready = false;
+	detune = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -15,6 +16,7 @@ class gswaOsc {
 			outputChannelCount: [ 2 ],
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
+		this.detune = this.#node.parameters.get( "detune" );
 		this.#node.port.onmessage = this.#onmsg.bind( this );
 	}
 	#onmsg( e ) {
