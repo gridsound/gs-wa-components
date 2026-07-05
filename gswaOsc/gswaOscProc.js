@@ -109,8 +109,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const pan = Math.max( -1, Math.min( 1, keyPan + apPanI ) );
 				const s = gswaOscProc.#process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
 
-				chanL[ i ] += apGainI * keyGain * ( ( 1 - pan ) * .5 ) * s;
-				chanR[ i ] += apGainI * keyGain * ( ( 1 + pan ) * .5 ) * s;
+				chanL[ i ] += apGainI * keyGain * ( pan > 0 ? 1 - pan : 1 ) * s;
+				chanR[ i ] += apGainI * keyGain * ( pan < 0 ? 1 + pan : 1 ) * s;
 			}
 		}
 		o.$phase = o.$phaseB;
