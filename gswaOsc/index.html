@@ -93,23 +93,12 @@ btn.addEventListener( "click", async () => {
 	const when = ctx.currentTime + .05;
 	const duration = 1;
 
-	osc.$oscPushNote( "note1", {
-		when,
-		duration,
-		frequency: 400,
-		wtpos: 0,
-		gain: 1,
-		// pan: -1,
-	} );
-	osc.$oscPushNote( "note2", {
-		when: when,
-		duration,
-		frequency: 440,
-		wtpos: 0,
-		gain: 1,
-		// pan: 1,
-	} );
-
+	osc.$oscPushNote( "note1", [
+		{ when, duration, frequency: 400 },
+	] );
+	osc.$oscPushNote( "note2", [
+		{ when, duration, frequency: 440 },
+	] );
 	log( `Note pushed — start: ${ when.toFixed( 3 ) }s, duration: ${ duration }s` );
 } );
 

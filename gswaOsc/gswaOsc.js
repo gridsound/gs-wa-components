@@ -45,8 +45,8 @@ class gswaOsc {
 		this.#ready = false;
 		this.#node.port.postMessage( { type: "wavetable", buffer: wt } );
 	}
-	$oscPushNote( id, key ) {
-		this.#node.port.postMessage( { type: "push", id, key } );
+	$oscPushNote( id, keys ) {
+		this.#node.port.postMessage( { type: "push", id, keys } );
 	}
 }
 
