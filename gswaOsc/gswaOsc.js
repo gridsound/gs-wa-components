@@ -2,6 +2,7 @@ class gswaOsc {
 	static #path = "gswaOscProc.js";
 	#node = null;
 	#ready = false;
+	phase = null;
 	detune = null;
 
 	static $oscLoadModule( ctx ) {
@@ -16,6 +17,7 @@ class gswaOsc {
 			outputChannelCount: [ 2 ],
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
+		this.phase = this.#node.parameters.get( "phase" );
 		this.detune = this.#node.parameters.get( "detune" );
 		this.#node.port.onmessage = this.#onmsg.bind( this );
 	}

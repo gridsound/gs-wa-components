@@ -7,10 +7,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 	static get parameterDescriptors() {
 		return [
-			{ automationRate: "a-rate", name: "detune",    defaultValue:   0                               },
-			// { automationRate: "a-rate", name: "phase",     defaultValue:   0, minValue: 0, maxValue:     1 },
-			// { automationRate: "a-rate", name: "frequency", defaultValue: 440, minValue: 0, maxValue: 24000 },
-			// { automationRate: "a-rate", name: "wtpos",     defaultValue:   0, minValue: 0, maxValue:     1 },
+			{ automationRate: "a-rate", name: "phase",  defaultValue: 0, minValue: 0, maxValue: 1 },
+			{ automationRate: "a-rate", name: "detune", defaultValue: 0                           },
+			// { automationRate: "a-rate", name: "wtpos",  defaultValue: 0, minValue: 0, maxValue: 1 },
 		];
 	}
 
@@ -46,7 +45,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 						$duration: k.duration,
 						$frequency: k.frequency ?? 440,
 						$wtpos: k.wtpos ?? 0,
-						$phase: k.phase ?? 0,
 						$gain: k.gain ?? 1,
 						$gainL: Math.cos( angle ),
 						$gainR: Math.sin( angle ),
@@ -95,6 +93,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const chanLen = chanL.length;
 		const gainL = o.$key.$gain * o.$key.$gainL;
 		const gainR = o.$key.$gain * o.$key.$gainR;
+		const apPhase = params.phase;
 		const apDetune = params.detune;
 
 		o.$phaseB = o.$phase;
@@ -102,8 +101,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const now = currentTime + i / sampleRate;
 
 			if ( o.$when <= now && now < o.$whenEnd ) {
+				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const s = gswaOscProc.#process_key_sample( o, apDetuneI, wtdata, nbWaves, waveLen );
+				const s = gswaOscProc.#process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
 
 				chanL[ i ] += gainL * s;
 				chanR[ i ] += gainR * s;
@@ -111,7 +111,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		o.$phase = o.$phaseB;
 	}
-	static #process_key_sample( o, apDetuneI, wtdata, nbWaves, waveLen ) {
+	static #process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen ) {
 		const fEff = o.$key.$frequency * 2 ** ( apDetuneI / 1200 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = Math.max( 0, Math.min( 1, o.$key.$wtpos ) ) * ( nbWaves - 1 );
@@ -124,7 +124,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			o.$phaseB -= Math.floor( o.$phaseB );
 		}
 
-		let phaseC = o.$key.$phase + o.$phaseB;
+		let phaseC = apPhaseI + o.$phaseB;
 
 		if ( phaseC >= 1 ) { phaseC -= Math.floor( phaseC ); }
 		if ( phaseC <  0 ) { phaseC += 1; }

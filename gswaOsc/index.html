@@ -76,7 +76,8 @@ async function setup() {
 	osc = new gswaOsc( ctx );
 	osc.$oscConnect( ctx.destination );
 	osc.$oscWavetable( sab );
-	GSUaudioParamSet( osc.detune, 1200 );
+	// GSUaudioParamSet( osc.detune, 1200 );
+	GSUaudioParamSet( osc.phase, 0 );
 
 	btn.disabled = false;
 	btn.textContent = "Play note (1s)";
@@ -95,7 +96,6 @@ btn.addEventListener( "click", async () => {
 		duration,
 		frequency: 400,
 		wtpos: 0,
-		phase: 0,
 		gain: 1,
 		pan: -1,
 	} );
@@ -104,7 +104,6 @@ btn.addEventListener( "click", async () => {
 		duration,
 		frequency: 440,
 		wtpos: 0,
-		phase: 0,
 		gain: 1,
 		pan: 1,
 	} );
