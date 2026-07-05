@@ -12,7 +12,7 @@ class gswaOsc {
 		this.#node = new AudioWorkletNode( ctx, "gswaOscProc", {
 			numberOfInputs: 0,
 			numberOfOutputs: 1,
-			outputChannelCount: [ 1 ],
+			outputChannelCount: [ 2 ],
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
 		this.#node.port.onmessage = this.#onmsg.bind( this );

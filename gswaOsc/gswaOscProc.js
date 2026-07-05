@@ -23,6 +23,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				break;
 			case "push": {
 				const k = d.key;
+				const pan = Math.max( -1, Math.min( 1, k.pan ?? 0 ) );
+				const angle = ( pan + 1 ) * .25 * Math.PI;
 
 				this.#keys.set( d.id, {
 					$id: d.id,
@@ -38,6 +40,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 						$wtpos: k.wtpos ?? 0,
 						$phase: k.phase ?? 0,
 						$gain: k.gain ?? 1,
+						$gainL: Math.cos( angle ),
+						$gainR: Math.sin( angle ),
 					},
 				} );
 			} break;
@@ -45,47 +49,54 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	process( _inputs, outputs ) {
-		const chan = outputs[ 0 ]?.[ 0 ];
+		const chanL = outputs[ 0 ]?.[ 0 ];
+		const chanR = outputs[ 0 ]?.[ 1 ];
 		const wtdata = this.#wtdata;
 
-		this.#process_debug( chan );
-		if ( chan ) {
-			chan.fill( 0 );
+		this.#process_debug();
+		if ( chanR ) {
+			chanL.fill( 0 );
+			chanR.fill( 0 );
 			if ( wtdata ) {
 				const nbWaves = wtdata[ 0 ] | 0;
 				const waveLen = wtdata[ 1 ] | 0;
 
 				if ( nbWaves > 0 && waveLen > 1 && wtdata.length === gswaOscProc.#wtdataHeaderSize + nbWaves * waveLen ) {
-					this.#process_keys( chan, wtdata, nbWaves, waveLen );
+					this.#process_keys( chanL, chanR, wtdata, nbWaves, waveLen );
 				}
 			}
 		}
 		return this.#ok;
 	}
-	#process_debug( chan ) {
+	#process_debug() {
 		if ( currentTime > this.#currentTimeInt ) {
 			console.log( "processing..." );
 			this.#currentTimeInt = Math.floor( currentTime ) + 1;
 		}
 	}
-	#process_keys( chan, wtdata, nbWaves, waveLen ) {
+	#process_keys( chanL, chanR, wtdata, nbWaves, waveLen ) {
 		for ( const o of this.#keys.values() ) {
 			if ( o.$whenEnd <= currentTime ) {
 				this.#keys.delete( o.$id );
-			} else if ( o.$when < currentTime + chan.length / sampleRate ) {
-				gswaOscProc.#process_key( chan, o, wtdata, nbWaves, waveLen );
+			} else if ( o.$when < currentTime + chanL.length / sampleRate ) {
+				gswaOscProc.#process_key( chanL, chanR, o, wtdata, nbWaves, waveLen );
 			}
 		}
 	}
-	static #process_key( chan, o, wtdata, nbWaves, waveLen ) {
-		const chanLen = chan.length;
+	static #process_key( chanL, chanR, o, wtdata, nbWaves, waveLen ) {
+		const chanLen = chanL.length;
+		const gainL = o.$key.$gain * o.$key.$gainL;
+		const gainR = o.$key.$gain * o.$key.$gainR;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
 			if ( o.$when <= now && now < o.$whenEnd ) {
-				chan[ i ] += o.$key.$gain * gswaOscProc.#process_key_sample( o, wtdata, nbWaves, waveLen );
+				const s = gswaOscProc.#process_key_sample( o, wtdata, nbWaves, waveLen );
+
+				chanL[ i ] += gainL * s;
+				chanR[ i ] += gainR * s;
 			}
 		}
 		o.$phase = o.$phaseB;

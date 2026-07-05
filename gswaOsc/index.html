@@ -96,6 +96,7 @@ btn.addEventListener( "click", async () => {
 		wtpos: 0,
 		phase: 0,
 		gain: 1,
+		pan: -1,
 	} );
 	osc.$oscPushNote( "note2", {
 		when: when,
@@ -105,6 +106,7 @@ btn.addEventListener( "click", async () => {
 		wtpos: 0,
 		phase: 0,
 		gain: 1,
+		pan: 1,
 	} );
 
 	log( `Note pushed — start: ${ when.toFixed( 3 ) }s, duration: ${ duration }s` );
