@@ -74,7 +74,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$frequency: k.frequency ?? 440,
 				$wtpos: k.wtpos ?? 0,
 				$gain: k.gain ?? 1,
-				$pan: Math.max( -1, Math.min( 1, k.pan ?? 0 ) ),
+				$pan: gswaOscProc.#mathClamp( k.pan ?? 0, -1, 1 ),
 			} ) ),
 		};
 	}
@@ -151,7 +151,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
 					const gapLen = key.$when - prevEnd;
-					const frac = gapLen > 0 ? Math.max( 0, Math.min( 1, ( now - prevEnd ) / gapLen ) ) : 1;
+					const frac = gapLen > 0 ? gswaOscProc.#mathClamp( ( now - prevEnd ) / gapLen, 0, 1 ) : 1;
 
 					keyPan = prev.$pan + ( key.$pan - prev.$pan ) * frac;
 					keyGain = prev.$gain + ( key.$gain - prev.$gain ) * frac;
@@ -168,7 +168,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const pan = Math.max( -1, Math.min( 1, apPanI + keyPan ) );
+				const pan = gswaOscProc.#mathClamp( apPanI + keyPan, -1, 1 );
 				const s =
 					apGainI *
 					keyGain *
@@ -203,7 +203,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			val = e.$sustain;
 		}
 		if ( e.$release > 0 ) {
-			val *= Math.max( 0, Math.min( 1, remaining / e.$release ) );
+			val *= gswaOscProc.#mathClamp( remaining / e.$release, 0, 1 );
 		} else if ( remaining <= 0 ) {
 			val = 0;
 		}
@@ -212,7 +212,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	static #process_key_sample( o, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
 		const fEff = frequency * 2 ** ( detune / 1200 );
 		const phaseInc = fEff / sampleRate;
-		const tPosi = Math.max( 0, Math.min( 1, wtpos ) ) * ( nbWaves - 1 );
+		const tPosi = gswaOscProc.#mathClamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
 		const tLoww = tPosi | 0;
 		const tHigh = Math.min( tLoww + 1, nbWaves - 1 );
 		const tFrac = tPosi - tLoww;
@@ -225,7 +225,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		let phaseC = apPhaseI + o.$phaseB;
 
 		if ( phaseC >= 1 ) { phaseC -= Math.floor( phaseC ); }
-		if ( phaseC <  0 ) { phaseC += 1; }
+		if ( phaseC <  0 ) { ++phaseC; }
 
 		const sPosi = phaseC * waveLen;
 		const sLoww = Math.floor( sPosi ) | 0;
@@ -238,6 +238,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const smpB = wtdata[ baseB + sLoww ] + sFrac * ( wtdata[ baseB + sHigh ] - wtdata[ baseB + sLoww ] );
 
 		return smpA + tFrac * ( smpB - smpA );
+	}
+
+	// .........................................................................
+	static #mathClamp( n, a, b ) {
+		return Math.max( a, Math.min( n, b ) );
 	}
 }
 
