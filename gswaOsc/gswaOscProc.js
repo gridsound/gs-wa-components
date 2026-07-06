@@ -32,47 +32,51 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.#wtdata = new Float32Array( d.buffer );
 				this.port.postMessage( { type: "ready" } );
 				break;
-			case "push": {
-				const klast = d.keys.at( -1 );
-				const envGain = d.envs?.gain;
-				const envDetune = d.envs?.detune;
-				const release = envGain?.release ?? .01;
-
-				this.#keys.set( d.id, {
-					$id: d.id,
-					$phase: 0,
-					$phaseB: 0,
-					$keyInd: 0,
-					$when: d.keys[ 0 ].when,
-					$whenEnd: klast.when + klast.duration + release,
-					$envs: {
-						$gain: {
-							$attack: envGain?.attack ?? .01,
-							$hold: envGain?.hold ?? 0,
-							$decay: envGain?.decay ?? 0,
-							$sustain: envGain?.sustain ?? 1,
-							$release: release,
-						},
-						$detune: {
-							$attack: envDetune?.attack ?? 0,
-							$hold: envDetune?.hold ?? 0,
-							$decay: envDetune?.decay ?? 0,
-							$sustain: envDetune?.sustain ?? 0,
-							$release: envDetune?.release ?? 0,
-							$pitch: envDetune?.pitch ?? 0,
-						},
-					},
-					$keys: d.keys.map( k => ( {
-						$when: k.when,
-						$duration: k.duration,
-						$frequency: k.frequency ?? 440,
-						$wtpos: k.wtpos ?? 0,
-						$gain: k.gain ?? 1,
-						$pan: Math.max( -1, Math.min( 1, k.pan ?? 0 ) ),
-					} ) ),
-				} );
-			} break;
+			case "push":
+				this.#keys.set( d.id, gswaOscProc.#format_new_key( d ) );
+				break;
 		}
+	}
+
+	static #format_new_key( d ) {
+		const klast = d.keys.at( -1 );
+		const envGain = d.envs?.gain;
+		const envDetune = d.envs?.detune;
+		const release = envGain?.release ?? .01;
+
+		return {
+			$id: d.id,
+			$phase: 0,
+			$phaseB: 0,
+			$keyInd: 0,
+			$when: d.keys[ 0 ].when,
+			$whenEnd: klast.when + klast.duration + release,
+			$envs: {
+				$gain: {
+					$attack: envGain?.attack ?? .01,
+					$hold: envGain?.hold ?? 0,
+					$decay: envGain?.decay ?? 0,
+					$sustain: envGain?.sustain ?? 1,
+					$release: release,
+				},
+				$detune: {
+					$attack: envDetune?.attack ?? 0,
+					$hold: envDetune?.hold ?? 0,
+					$decay: envDetune?.decay ?? 0,
+					$sustain: envDetune?.sustain ?? 0,
+					$release: envDetune?.release ?? 0,
+					$pitch: envDetune?.pitch ?? 0,
+				},
+			},
+			$keys: d.keys.map( k => ( {
+				$when: k.when,
+				$duration: k.duration,
+				$frequency: k.frequency ?? 440,
+				$wtpos: k.wtpos ?? 0,
+				$gain: k.gain ?? 1,
+				$pan: Math.max( -1, Math.min( 1, k.pan ?? 0 ) ),
+			} ) ),
+		};
 	}
 
 	process( _inputs, outputs, params ) {
