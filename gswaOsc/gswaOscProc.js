@@ -102,7 +102,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#process_debug() {
 		if ( currentTime > this.#currentTimeInt ) {
 			console.log( "processing..." );
-			this.#currentTimeInt = Math.floor( currentTime ) + 1;
+			this.#currentTimeInt = gswaOscProc.#mathFloor( currentTime ) + 1;
 		}
 	}
 	#process_keys( chanL, chanR, params, wtdata, nbWaves, waveLen ) {
@@ -214,21 +214,21 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const phaseInc = fEff / sampleRate;
 		const tPosi = gswaOscProc.#mathClamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
 		const tLoww = tPosi | 0;
-		const tHigh = Math.min( tLoww + 1, nbWaves - 1 );
+		const tHigh = gswaOscProc.#mathMin( tLoww + 1, nbWaves - 1 );
 		const tFrac = tPosi - tLoww;
 
 		o.$phaseB += phaseInc;
 		if ( o.$phaseB >= 1 ) {
-			o.$phaseB -= Math.floor( o.$phaseB );
+			o.$phaseB -= gswaOscProc.#mathFloor( o.$phaseB );
 		}
 
 		let phaseC = apPhaseI + o.$phaseB;
 
-		if ( phaseC >= 1 ) { phaseC -= Math.floor( phaseC ); }
+		if ( phaseC >= 1 ) { phaseC -= gswaOscProc.#mathFloor( phaseC ); }
 		if ( phaseC <  0 ) { ++phaseC; }
 
 		const sPosi = phaseC * waveLen;
-		const sLoww = Math.floor( sPosi ) | 0;
+		const sLoww = gswaOscProc.#mathFloor( sPosi );
 		const sHigh = ( sLoww + 1 ) % waveLen;
 		const sFrac = sPosi - sLoww;
 
@@ -241,6 +241,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
+	static #mathMin( a, b ) {
+		return a < b ? a : b;
+	}
+	static #mathFloor( a ) {
+		return ( a < 0 ? a - 1 : a ) | 0;
+	}
 	static #mathClamp( n, a, b ) {
 		return (
 			n < a ? a :
