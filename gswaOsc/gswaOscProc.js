@@ -11,7 +11,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			{ automationRate: "a-rate", name: "gain",   defaultValue: 1                            },
 			{ automationRate: "a-rate", name: "phase",  defaultValue: 0, minValue:  0, maxValue: 1 },
 			{ automationRate: "a-rate", name: "detune", defaultValue: 0                            },
-			// { automationRate: "a-rate", name: "wtpos",  defaultValue: 0, minValue:  0, maxValue: 1 },
 		];
 	}
 
@@ -38,6 +37,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$id: d.id,
 					$phase: 0,
 					$phaseB: 0,
+					$keyInd: 0,
 					$when: d.keys[ 0 ].when,
 					$whenEnd: klast.when + klast.duration,
 					$keys: d.keys.map( k => ( {
@@ -94,21 +94,49 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apGain = params.gain;
 		const apPhase = params.phase;
 		const apDetune = params.detune;
-		const key = o.$keys[ 0 ];
-		const keyPan = key.$pan;
-		const keyGain = key.$gain;
+		const keys = o.$keys;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
 			if ( o.$when <= now && now < o.$whenEnd ) {
+				while (
+					o.$keyInd < keys.length - 1 &&
+					now >= keys[ o.$keyInd ].$when + keys[ o.$keyInd ].$duration
+				) {
+					++o.$keyInd;
+				}
+
+				const key = keys[ o.$keyInd ];
+				let keyPan;
+				let keyGain;
+				let keyWtpos;
+				let keyFrequency;
+
+				if ( now >= key.$when ) {
+					keyPan = key.$pan;
+					keyGain = key.$gain;
+					keyWtpos = key.$wtpos;
+					keyFrequency = key.$frequency;
+				} else {
+					const prev = keys[ o.$keyInd - 1 ];
+					const prevEnd = prev.$when + prev.$duration;
+					const gapLen = key.$when - prevEnd;
+					const frac = gapLen > 0 ? Math.max( 0, Math.min( 1, ( now - prevEnd ) / gapLen ) ) : 1;
+
+					keyPan = prev.$pan + ( key.$pan - prev.$pan ) * frac;
+					keyGain = prev.$gain + ( key.$gain - prev.$gain ) * frac;
+					keyWtpos = prev.$wtpos + ( key.$wtpos - prev.$wtpos ) * frac;
+					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
+				}
+
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
 				const pan = Math.max( -1, Math.min( 1, apPanI + keyPan ) );
-				const s = apGainI * keyGain * gswaOscProc.#process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
+				const s = apGainI * keyGain * gswaOscProc.#process_key_sample( o, keyFrequency, keyWtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
 
 				chanL[ i ] += s * ( pan > 0 ? 1 - pan : 1 );
 				chanR[ i ] += s * ( pan < 0 ? 1 + pan : 1 );
@@ -116,11 +144,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		o.$phase = o.$phaseB;
 	}
-	static #process_key_sample( o, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen ) {
-		const key = o.$keys[ 0 ];
-		const fEff = key.$frequency * 2 ** ( apDetuneI / 1200 );
+	static #process_key_sample( o, frequency, wtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen ) {
+		const fEff = frequency * 2 ** ( apDetuneI / 1200 );
 		const phaseInc = fEff / sampleRate;
-		const tPosi = Math.max( 0, Math.min( 1, key.$wtpos ) ) * ( nbWaves - 1 );
+		const tPosi = Math.max( 0, Math.min( 1, wtpos ) ) * ( nbWaves - 1 );
 		const tLoww = tPosi | 0;
 		const tHigh = Math.min( tLoww + 1, nbWaves - 1 );
 		const tFrac = tPosi - tLoww;
