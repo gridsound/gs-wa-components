@@ -2,6 +2,7 @@
 
 class gswaOscProc extends AudioWorkletProcessor {
 	static #wtdataHeaderSize = 4;
+	static #lpCoefUpdateRate = 32;
 	#ok = true;
 	#keys = new Map();
 	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
@@ -45,6 +46,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const klast = d.keys.at( -1 );
 		const envGain = d.envs?.gain;
 		const envDetune = d.envs?.detune;
+		const envLP = d.envs?.lowpass;
 		const release = envGain?.release ?? .01;
 
 		return {
@@ -70,6 +72,26 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$release: envDetune?.release ?? 0,
 					$pitch: envDetune?.pitch ?? 0,
 				},
+				$lowpass: {
+					$attack: envLP?.attack ?? 0,
+					$hold: envLP?.hold ?? 0,
+					$decay: envLP?.decay ?? 0,
+					$sustain: envLP?.sustain ?? 1,
+					$release: envLP?.release ?? .01,
+					$q: envLP?.q ?? 0,
+				},
+			},
+			$lp: {
+				$counter: 0,
+				$x1: 0,
+				$x2: 0,
+				$y1: 0,
+				$y2: 0,
+				$b0: 1,
+				$b1: 0,
+				$b2: 0,
+				$a1: 0,
+				$a2: 0,
 			},
 			$keys: d.keys.map( k => ( {
 				$when: k.when,
@@ -131,6 +153,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const keys = o.$keys;
 		const envGain = o.$envs.$gain;
 		const envDetune = o.$envs.$detune;
+		const envLP = o.$envs.$lowpass;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
@@ -177,7 +200,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
 				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
-				const s =
+				const dry =
 					apGainI *
 					keyGain *
 					envGainVal *
@@ -188,6 +211,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apPhaseI,
 						apDetuneI + envDetuneVal * envDetune.$pitch,
 					);
+				const s = gswaOscProc.#process_env_lowpass( o, dry, envLP, elapsed, remaining );
 
 				chanL[ i ] += s * ( pan > 0 ? 1 - pan : 1 );
 				chanR[ i ] += s * ( pan < 0 ? 1 + pan : 1 );
@@ -230,6 +254,39 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
+	static #process_env_lowpass( o, x, envLP, elapsed, remaining ) {
+		const lp = o.$lp;
+
+		if ( ( lp.$counter % gswaOscProc.#lpCoefUpdateRate ) === 0 ) {
+			const cutoff = 20 * ( sampleRate * .45 / 20 ) ** gswaOscProc.#process_env( envLP, elapsed, remaining );
+			const q = .707 + gswaOscProc.#math_max( 0, envLP.$q );
+
+			gswaOscProc.#process_env_lowpass_calc_coeffs( lp, cutoff, q );
+		}
+		++lp.$counter;
+
+		const y0 = lp.$b0 * x + lp.$b1 * lp.$x1 + lp.$b2 * lp.$x2 - lp.$a1 * lp.$y1 - lp.$a2 * lp.$y2;
+
+		lp.$x2 = lp.$x1;
+		lp.$x1 = x;
+		lp.$y2 = lp.$y1;
+		lp.$y1 = y0;
+		return y0;
+	}
+	static #process_env_lowpass_calc_coeffs( lp, cutoffHz, q ) {
+		const w0 = 2 * Math.PI * gswaOscProc.#math_clamp( cutoffHz, 1, sampleRate * .49 ) / sampleRate;
+		const alpha = Math.sin( w0 ) / ( 2 * q );
+		const cosw0 = Math.cos( w0 );
+		const a0 = 1 + alpha;
+
+		lp.$b0 = ( ( 1 - cosw0 ) / 2 ) / a0;
+		lp.$b1 = ( 1 - cosw0 ) / a0;
+		lp.$b2 = lp.$b0;
+		lp.$a1 = ( -2 * cosw0 ) / a0;
+		lp.$a2 = ( 1 - alpha ) / a0;
+	}
+
+	// .........................................................................
 	static #process_env( e, t, remaining ) {
 		let val;
 
@@ -253,6 +310,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	// .........................................................................
 	static #math_min( a, b ) {
 		return a < b ? a : b;
+	}
+	static #math_max( a, b ) {
+		return a > b ? a : b;
 	}
 	static #math_floor( a ) {
 		return ( a < 0 ? a - 1 : a ) | 0;

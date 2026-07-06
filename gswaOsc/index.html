@@ -133,22 +133,38 @@ btn.$onclick( () => {
 		const d = 1;
 
 		/**/
-		for ( let i = 0; i < 1; ++i ) {
-			osc.$oscPushNote( `note${ i }`, {
-				envs: {
-					detune: {
-						attack: 0,
-						hold: 0.005,
-						decay: 0.02,
-						sustain: 0,
-						pitch: 8000,
-					},
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
 				},
-				keys: [
-					{ when: now + i * .2, duration: .15, frequency: 60, gain: 1 },
-				],
-			} );
-		}
+				lowpass: {
+					attack: .2,
+					hold: .5,
+					decay: .4,
+					sustain: .2,
+					q: 25,
+				},
+			},
+			keys: [
+				{ when: now, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
+			],
+		} );
+		/** /
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				detune: {
+					attack: 0,
+					hold: 0.005,
+					decay: 0.02,
+					sustain: 0,
+					pitch: 8000,
+				},
+			},
+			keys: [
+				{ when: now, duration: .15, frequency: 60, gain: 1 },
+			],
+		} );
 		/** /
 		for ( let i = 0; i < 3; ++i ) {
 			osc.$oscPushNote( `note${ i }`, {
