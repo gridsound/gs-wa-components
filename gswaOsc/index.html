@@ -7,7 +7,6 @@
 	body {
 		display: flex;
 		align-items: center;
-		flex-direction: column;
 		justify-content: center;
 		height: 100vh;
 		margin: 0;
@@ -30,24 +29,50 @@
 		}
 	}
 	#status {
-		margin-top: 16px;
-		font-family: monospace;
 		white-space: pre;
+		font-family: monospace;
 		color: #9ad;
 	}
 </style>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-flex.css" />
 </head>
 <body>
 
-<button id="playBtn" disabled>Loading…</button>
-<div id="status"></div>
+<gs-flex x ycenter g16>
+	<gs-flex y g8>
+		<button id="playBtn" disabled>Loading…</button>
+		<gs-flex y>
+			<gs-flex x ycenter g4>
+				<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
+				<span>pan</span>
+			</gs-flex>
+			<gs-flex x ycenter g4>
+				<input id="gainInput" type="range" min="0" max="1" step=".01" value="1" />
+				<span>gain</span>
+			</gs-flex>
+			<gs-flex x ycenter g4>
+				<input id="phaseInput" type="range" min="0" max="1" step=".01" value="0" />
+				<span>phase</span>
+			</gs-flex>
+			<gs-flex x ycenter g4>
+				<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0" />
+				<span>detune</span>
+			</gs-flex>
+			<!-- <gs-flex x ycenter g4> -->
+				<!-- <input id="wtposInput" type="range" min="0" max="1" step=".01" value="0" /> -->
+				<!-- <span>wtpos</span> -->
+			<!-- </gs-flex> -->
+		</gs-flex>
+	</gs-flex>
+	<div id="status"></div>
+</gs-flex>
 
 <!-- ....................................................................... -->
 <script src="../../gs-utils/gs-utils"></script>
 <script src="../../gs-utils/gs-utils-math"></script>
+<script src="../../gs-utils/gs-utils-jquery"></script>
 <script src="../../gs-utils/gs-utils-audio"></script>
 <script src="../../gs-utils/gs-utils-audio-nodes"></script>
-<script src="../../gs-utils/gs-utils-jquery"></script>
 
 <!-- ....................................................................... -->
 <script src="../gswaWTbuffers/gswaWTbuffers.js"></script>
@@ -61,9 +86,25 @@
 
 const btn = $( "#playBtn" );
 const status = $( "#status" );
+const panInput = $( "#panInput" );
+const gainInput = $( "#gainInput" );
+const phaseInput = $( "#phaseInput" );
+const wtposInput = $( "#wtposInput" );
+const detuneInput = $( "#detuneInput" );
+
 const ctx = GSUaudioContext();
-const sab = gswaWTbuffers.$wtGetSharedBuffer( "sine" );
 let osc = null;
+
+gswaWTbuffers.$wtSet( "sine-to-square", [
+	GSUmathWaveSine( 2048 ),
+	GSUmathWaveSawtooth( 2048 ),
+] );
+
+panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
+gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
+phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
+// wtposInput.$oninput( () => GSUaudioParamSet( osc.wtpos, +wtposInput.$value() ) );
+detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
 
 function log( msg ) {
 	status.$text( status.$text() + msg + "\n" );
@@ -71,16 +112,14 @@ function log( msg ) {
 }
 
 function setup() {
+	log( "Init..." );
 	return gswaOsc.$oscLoadModule( ctx ).then( () => {
 		osc = new gswaOsc( ctx );
 		osc.$oscConnect( ctx.destination );
-		osc.$oscWavetable( sab );
-		// GSUaudioParamSet( osc.pan, 0 );
-		// GSUaudioParamSet( osc.gain, 1 );
-		// GSUaudioParamSet( osc.phase, 0 );
-		// GSUaudioParamSet( osc.detune, 1200 );
-
+		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
+		$( "input[type=range]" ).$trigger( "oninput" );
 		btn.$disabled( false ).$text( "Play" );
+		log( "Ready." );
 	} );
 }
 
@@ -93,16 +132,30 @@ btn.$onclick( () => {
 	} else {
 		const d = 1;
 
+		/** /
 		osc.$oscPushNote( "note1", [
-			{ when: now + 0, duration: d, frequency: 400 },
-			{ when: now + 2, duration: d, frequency: 800, gain: .1 },
-			{ when: now + 4, duration: d, frequency: 200 },
+			{ when: now + 0, duration: d, frequency: 200, gain: 1, pan: -0, wtpos: 0 },
+			{ when: now + 2, duration: 3, frequency: 200, gain: 1, pan: +0, wtpos: 1 },
+		] );
+		/**/
+		osc.$oscPushNote( "note1", [
+			{ when: now + 0, duration: d, frequency: 400, gain: 0.3, pan: -0 },
+			{ when: now + 2, duration: d, frequency: 800, gain: 0.1, pan:  0 },
+			{ when: now + 4, duration: d, frequency: 200, gain: 0.3, pan: +0 },
+			{ when: now + 6, duration: d, frequency: 200, gain: 0.3, pan: +0, wtpos: 1 },
 		] );
 		osc.$oscPushNote( "note2", [
-			{ when: now + 0, duration: d, frequency: 440 },
-			{ when: now + 2, duration: d, frequency: 880, gain: .1 },
-			{ when: now + 4, duration: d, frequency: 220 },
+			{ when: now + 0, duration: d, frequency: 440, gain: 0.3, pan: -0 },
+			{ when: now + 2, duration: d, frequency: 880, gain: 0.1, pan:  0 },
+			{ when: now + 4, duration: d, frequency: 220, gain: 0.3, pan: +0 },
+			{ when: now + 6, duration: d, frequency: 220, gain: 0.3, pan: +0, wtpos: 1 },
 		] );
+		for ( let i = 0; i < 32; ++i ) {
+			osc.$oscPushNote( `high${ i }`, [
+				{ when: now + i / 2, duration: .1, frequency: 1600, gain: 0.4, pan: 0 },
+			] );
+		}
+		/**/
 		log( `Push notes: ${ now.toFixed( 3 ) }s` );
 	}
 } );
