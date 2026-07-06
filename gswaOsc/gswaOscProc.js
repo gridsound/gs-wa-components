@@ -242,7 +242,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 	// .........................................................................
 	static #mathClamp( n, a, b ) {
-		return Math.max( a, Math.min( n, b ) );
+		return (
+			n < a ? a :
+			n > b ? b : n
+		);
 	}
 }
 
