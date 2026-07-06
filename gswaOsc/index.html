@@ -2,37 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>gswaOsc — test</title>
+<title>gswaOsc</title>
 <style>
 	body {
-		font-family: system-ui, sans-serif;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
+		flex-direction: column;
 		justify-content: center;
 		height: 100vh;
 		margin: 0;
-		background: #111;
-		color: #eee;
+		color: #fff;
+		font-family: system-ui, sans-serif;
+		background-color: #111;
 	}
 	button {
-		font-size: 1.2rem;
-		padding: 1rem 2rem;
-		border-radius: 8px;
+		padding: 16px 28px;
+		border-radius: 6px;
 		border: none;
+		color: #fff;
+		font-size: 20px;
 		cursor: pointer;
-		background: #4caf50;
-		color: white;
-	}
-	button:disabled {
-		background: #555;
-		cursor: not-allowed;
+		background-color: #4a5;
+
+		&:disabled {
+			background: #555;
+			cursor: not-allowed;
+		}
 	}
 	#status {
-		margin-top: 1rem;
+		margin-top: 16px;
 		font-family: monospace;
-		color: #9ad;
 		white-space: pre;
+		color: #9ad;
 	}
 </style>
 </head>
@@ -41,65 +42,69 @@
 <button id="playBtn" disabled>Loading…</button>
 <div id="status"></div>
 
+<!-- ....................................................................... -->
+<script src="../../gs-utils/gs-utils"></script>
+<script src="../../gs-utils/gs-utils-math"></script>
 <script src="../../gs-utils/gs-utils-audio"></script>
+<script src="../../gs-utils/gs-utils-audio-nodes"></script>
+<script src="../../gs-utils/gs-utils-jquery"></script>
+
+<!-- ....................................................................... -->
+<script src="../gswaWTbuffers/gswaWTbuffers.js"></script>
+
+<!-- ....................................................................... -->
+<script src="gswaOsc.js"></script>
+
+<!-- ....................................................................... -->
 <script type="module">
-import gswaOsc from "./gswaOsc.js";
+"use strict";
 
-const btn = document.getElementById( "playBtn" );
-const status = document.getElementById( "status" );
-
-function log( msg ) {
-	status.textContent += msg + "\n";
-	console.log( msg );
-}
-
-const HEADER_SIZE = 4;
-const waveLen = 2048;
-const nbWaves = 1;
-
-const sab = new SharedArrayBuffer( ( HEADER_SIZE + nbWaves * waveLen ) * Float32Array.BYTES_PER_ELEMENT );
-const view = new Float32Array( sab );
-
-view[ 0 ] = nbWaves;
-view[ 1 ] = waveLen;
-
-for ( let i = 0; i < waveLen; i++ ) {
-	view[ HEADER_SIZE + i ] = Math.sin( 2 * Math.PI * i / waveLen );
-}
-
-const ctx = new AudioContext();
+const btn = $( "#playBtn" );
+const status = $( "#status" );
+const ctx = GSUaudioContext();
+const sab = gswaWTbuffers.$wtGetSharedBuffer( "sine" );
 let osc = null;
 
-async function setup() {
-	await gswaOsc.$oscLoadModule( ctx );
-
-	osc = new gswaOsc( ctx );
-	osc.$oscConnect( ctx.destination );
-	osc.$oscWavetable( sab );
-	// GSUaudioParamSet( osc.pan, 0 );
-	// GSUaudioParamSet( osc.gain, 1 );
-	// GSUaudioParamSet( osc.phase, 0 );
-	// GSUaudioParamSet( osc.detune, 1200 );
-
-	btn.disabled = false;
-	btn.textContent = "Play note (1s)";
+function log( msg ) {
+	status.$text( status.$text() + msg + "\n" );
+	lg( msg );
 }
 
-btn.addEventListener( "click", async () => {
+function setup() {
+	return gswaOsc.$oscLoadModule( ctx ).then( () => {
+		osc = new gswaOsc( ctx );
+		osc.$oscConnect( ctx.destination );
+		osc.$oscWavetable( sab );
+		// GSUaudioParamSet( osc.pan, 0 );
+		// GSUaudioParamSet( osc.gain, 1 );
+		// GSUaudioParamSet( osc.phase, 0 );
+		// GSUaudioParamSet( osc.detune, 1200 );
+
+		btn.$disabled( false ).$text( "Play" );
+	} );
+}
+
+btn.$onclick( () => {
+	const now = ctx.currentTime + .05;
+
 	if ( ctx.state === "suspended" ) {
-		await ctx.resume();
+		log( `Context suspended: ${ now.toFixed( 3 ) }s` );
+		ctx.resume();
+	} else {
+		const d = 1;
+
+		osc.$oscPushNote( "note1", [
+			{ when: now + 0, duration: d, frequency: 400 },
+			{ when: now + 2, duration: d, frequency: 800, gain: .1 },
+			{ when: now + 4, duration: d, frequency: 200 },
+		] );
+		osc.$oscPushNote( "note2", [
+			{ when: now + 0, duration: d, frequency: 440 },
+			{ when: now + 2, duration: d, frequency: 880, gain: .1 },
+			{ when: now + 4, duration: d, frequency: 220 },
+		] );
+		log( `Push notes: ${ now.toFixed( 3 ) }s` );
 	}
-
-	const when = ctx.currentTime + .05;
-	const duration = 1;
-
-	osc.$oscPushNote( "note1", [
-		{ when, duration, frequency: 400 },
-	] );
-	osc.$oscPushNote( "note2", [
-		{ when, duration, frequency: 440 },
-	] );
-	log( `Note pushed — start: ${ when.toFixed( 3 ) }s, duration: ${ duration }s` );
 } );
 
 setup().catch( err => log( "Setup error: " + err.message ) );

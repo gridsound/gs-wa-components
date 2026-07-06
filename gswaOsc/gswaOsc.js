@@ -1,3 +1,5 @@
+"use strict";
+
 class gswaOsc {
 	static #path = "gswaOscProc.js";
 	#node = null;
@@ -49,5 +51,3 @@ class gswaOsc {
 		this.#node.port.postMessage( { type: "push", id, keys } );
 	}
 }
-
-export default gswaOsc;
