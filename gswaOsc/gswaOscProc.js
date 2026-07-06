@@ -35,6 +35,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "push": {
 				const klast = d.keys.at( -1 );
 				const envGain = d.envs?.gain;
+				const envDetune = d.envs?.detune;
 				const release = envGain?.release ?? .01;
 
 				this.#keys.set( d.id, {
@@ -51,6 +52,14 @@ class gswaOscProc extends AudioWorkletProcessor {
 							$decay: envGain?.decay ?? 0,
 							$sustain: envGain?.sustain ?? 1,
 							$release: release,
+						},
+						$detune: {
+							$attack: envDetune?.attack ?? 0,
+							$hold: envDetune?.hold ?? 0,
+							$decay: envDetune?.decay ?? 0,
+							$sustain: envDetune?.sustain ?? 0,
+							$release: envDetune?.release ?? 0,
+							$pitch: envDetune?.pitch ?? 0,
 						},
 					},
 					$keys: d.keys.map( k => ( {
@@ -109,6 +118,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apDetune = params.detune;
 		const keys = o.$keys;
 		const envGain = o.$envs.$gain;
+		const envDetune = o.$envs.$detune;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
@@ -148,13 +158,27 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const elapsed = now - o.$when;
 				const remaining = o.$whenEnd - now;
 				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
+				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, remaining );
 
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
 				const pan = Math.max( -1, Math.min( 1, apPanI + keyPan ) );
-				const s = apGainI * keyGain * envGainVal * gswaOscProc.#process_key_sample( o, keyFrequency, keyWtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
+				const s =
+					apGainI *
+					keyGain *
+					envGainVal *
+					gswaOscProc.#process_key_sample(
+						o,
+						keyFrequency,
+						keyWtpos,
+						apPhaseI,
+						apDetuneI + envDetuneVal * envDetune.$pitch,
+						wtdata,
+						nbWaves,
+						waveLen
+					);
 
 				chanL[ i ] += s * ( pan > 0 ? 1 - pan : 1 );
 				chanR[ i ] += s * ( pan < 0 ? 1 + pan : 1 );
@@ -166,7 +190,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		let val;
 
 		if ( t < e.$attack ) {
-			val = e.$attack <= 0 ? 1 : ? t / e.$attack;
+			val = e.$attack <= 0 ? 1 : t / e.$attack;
 		} else if ( t < e.$attack + e.$hold ) {
 			val = 1;
 		} else if ( t < e.$attack + e.$hold + e.$decay ) {
@@ -181,8 +205,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		return val;
 	}
-	static #process_key_sample( o, frequency, wtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen ) {
-		const fEff = frequency * 2 ** ( apDetuneI / 1200 );
+	static #process_key_sample( o, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
+		const fEff = frequency * 2 ** ( detune / 1200 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = Math.max( 0, Math.min( 1, wtpos ) ) * ( nbWaves - 1 );
 		const tLoww = tPosi | 0;
