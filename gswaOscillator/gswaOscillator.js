@@ -2,9 +2,8 @@
 
 class gswaOscillator {
 	static #path = "gswaOscillatorProc.js";
-	#wtdata = null;
 	#node = null;
-	#ready = false;
+	// #ready = false;
 	frequency = null;
 	detune = null;
 	phase = null;
@@ -31,8 +30,8 @@ class gswaOscillator {
 	}
 	#onmsg( e ) {
 		switch ( e.data.type ) {
-			case "ready": this.#ready = true; break;
-			case "ended": this.#ready = false; break;
+			// case "ready": this.#ready = true; break;
+			// case "ended": this.#ready = false; break;
 			case "debug": console.log( ...e.data.data ); break;
 		}
 	}
@@ -54,8 +53,7 @@ class gswaOscillator {
 		this.#node.port.postMessage( { type: "reset" } );
 	}
 	$setWavetable( wt ) {
-		this.#ready = false;
-		this.#wtdata = wt;
+		// this.#ready = false;
 		this.#node.port.postMessage( { type: "wavetable", buffer: wt } );
 	}
 }

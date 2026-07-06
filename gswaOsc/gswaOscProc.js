@@ -1,3 +1,5 @@
+"use strict";
+
 class gswaOscProc extends AudioWorkletProcessor {
 	static #wtdataHeaderSize = 4;
 	#ok = true;

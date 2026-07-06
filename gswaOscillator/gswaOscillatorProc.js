@@ -2,8 +2,8 @@
 
 class gswaOscillatorProc extends AudioWorkletProcessor {
 	static #headerSize = 4;
-    #startTime = Infinity;
-    #stopTime = Infinity;
+	#startTime = Infinity;
+	#stopTime = Infinity;
 	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
 	#phase = 0;
 	#currentTimeInt = 0;
@@ -69,10 +69,10 @@ class gswaOscillatorProc extends AudioWorkletProcessor {
 			return true;
 		}
 
-		const apFreq = params[ "frequency" ];
-		const apDetu = params[ "detune" ];
-		const apPhas = params[ "phase" ];
-		const apWtpo = params[ "wtpos" ];
+		const apFreq = params.frequency;
+		const apDetu = params.detune;
+		const apPhas = params.phase;
+		const apWtpo = params.wtpos;
 		const chanLen = chan.length;
 		let phase = this.#phase;
 

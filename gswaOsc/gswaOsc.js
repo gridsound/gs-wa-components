@@ -34,13 +34,16 @@ class gswaOsc {
 	}
 
 	// .........................................................................
+	$oscIsReady() {
+		return this.#ready;
+	}
 	$oscConnect( ...args ) {
 		return this.#node.connect( ...args );
 	}
 	$oscDisconnect( ...args ) {
 		return this.#node.disconnect( ...args );
 	}
-	$oscKill( when ) {
+	$oscKill() {
 		this.#node.port.postMessage( { type: "kill" } );
 	}
 	$oscWavetable( wt ) {

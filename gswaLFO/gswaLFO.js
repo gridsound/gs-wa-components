@@ -90,7 +90,6 @@ class gswaLFO {
 	}
 	#start2() {
 		const d = this.#data;
-		const Hz = this.#setSpeed();
 
 		this.#oscNode.$start( d.when + d.delay - d.offset );
 	}

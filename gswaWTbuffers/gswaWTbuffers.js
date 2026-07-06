@@ -86,7 +86,7 @@ class gswaWTbuffers {
 			}
 		}
 		if ( err > 0 ) {
-			throw new TypeError( `gswaWTbuffers: $wtSet, #err${err}, (${N}, ${L}), #arg1 should be an Array (>=1) of same-size float-array (>=2) each float should be in [-1;1]` );
+			throw new TypeError( `gswaWTbuffers: $wtSet, #err${ err }, (${ N }, ${ L }), #arg1 should be an Array (>=1) of same-size float-array (>=2) each float should be in [-1;1]` );
 		}
 	}
 }
