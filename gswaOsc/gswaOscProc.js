@@ -32,6 +32,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				break;
 			case "push": {
 				const klast = d.keys.at( -1 );
+				const envGain = d.envs?.gain;
+				const release = envGain?.release ?? .01;
 
 				this.#keys.set( d.id, {
 					$id: d.id,
@@ -39,7 +41,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$phaseB: 0,
 					$keyInd: 0,
 					$when: d.keys[ 0 ].when,
-					$whenEnd: klast.when + klast.duration,
+					$whenEnd: klast.when + klast.duration + release,
+					$envs: {
+						$gain: {
+							$attack: envGain?.attack ?? .01,
+							$hold: envGain?.hold ?? 0,
+							$decay: envGain?.decay ?? 0,
+							$sustain: envGain?.sustain ?? 1,
+							$release: release,
+						},
+					},
 					$keys: d.keys.map( k => ( {
 						$when: k.when,
 						$duration: k.duration,
@@ -95,6 +106,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apPhase = params.phase;
 		const apDetune = params.detune;
 		const keys = o.$keys;
+		const envGain = o.$envs.$gain;
 
 		o.$phaseB = o.$phase;
 		for ( let i = 0; i < chanLen; ++i ) {
@@ -131,18 +143,41 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
 				}
 
+				const elapsed = now - o.$when;
+				const remaining = o.$whenEnd - now;
+				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
+
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
 				const pan = Math.max( -1, Math.min( 1, apPanI + keyPan ) );
-				const s = apGainI * keyGain * gswaOscProc.#process_key_sample( o, keyFrequency, keyWtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
+				const s = apGainI * keyGain * envGainVal * gswaOscProc.#process_key_sample( o, keyFrequency, keyWtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen );
 
 				chanL[ i ] += s * ( pan > 0 ? 1 - pan : 1 );
 				chanR[ i ] += s * ( pan < 0 ? 1 + pan : 1 );
 			}
 		}
 		o.$phase = o.$phaseB;
+	}
+	static #process_env( e, t, remaining ) {
+		let val;
+
+		if ( t < e.$attack ) {
+			val = e.$attack <= 0 ? 1 : ? t / e.$attack;
+		} else if ( t < e.$attack + e.$hold ) {
+			val = 1;
+		} else if ( t < e.$attack + e.$hold + e.$decay ) {
+			val = e.$decay <= 0 ? e.$sustain : 1 - ( 1 - e.$sustain ) * ( t - e.$attack - e.$hold ) / e.$decay;
+		} else {
+			val = e.$sustain;
+		}
+		if ( e.$release > 0 ) {
+			val *= Math.max( 0, Math.min( 1, remaining / e.$release ) );
+		} else if ( remaining <= 0 ) {
+			val = 0;
+		}
+		return val;
 	}
 	static #process_key_sample( o, frequency, wtpos, apPhaseI, apDetuneI, wtdata, nbWaves, waveLen ) {
 		const fEff = frequency * 2 ** ( apDetuneI / 1200 );

@@ -133,27 +133,41 @@ btn.$onclick( () => {
 		const d = 1;
 
 		/** /
-		osc.$oscPushNote( "note1", [
-			{ when: now + 0, duration: d, frequency: 200, gain: 1, pan: -0, wtpos: 0 },
-			{ when: now + 2, duration: 3, frequency: 200, gain: 1, pan: +0, wtpos: 1 },
-		] );
+		for ( let i = 0; i < 3; ++i ) {
+			osc.$oscPushNote( `note${ i }`, {
+				envs: {
+					gain: {
+						release: .2,
+					},
+				},
+				keys: [
+					{ when: now + i * .2, duration: .1, frequency: 300, gain: .5, pan: -0, wtpos: 0 },
+				],
+			} );
+		}
 		/**/
-		osc.$oscPushNote( "note1", [
-			{ when: now + 0, duration: d, frequency: 400, gain: 0.3, pan: -0 },
-			{ when: now + 2, duration: d, frequency: 800, gain: 0.1, pan:  0 },
-			{ when: now + 4, duration: d, frequency: 200, gain: 0.3, pan: +0 },
-			{ when: now + 6, duration: d, frequency: 200, gain: 0.3, pan: +0, wtpos: 1 },
-		] );
-		osc.$oscPushNote( "note2", [
-			{ when: now + 0, duration: d, frequency: 440, gain: 0.3, pan: -0 },
-			{ when: now + 2, duration: d, frequency: 880, gain: 0.1, pan:  0 },
-			{ when: now + 4, duration: d, frequency: 220, gain: 0.3, pan: +0 },
-			{ when: now + 6, duration: d, frequency: 220, gain: 0.3, pan: +0, wtpos: 1 },
-		] );
+		osc.$oscPushNote( "note1", { 
+			keys: [
+				{ when: now + 0, duration: d, frequency: 400, gain: 0.3, pan: -0 },
+				{ when: now + 2, duration: d, frequency: 800, gain: 0.1, pan:  0 },
+				{ when: now + 4, duration: d, frequency: 200, gain: 0.3, pan: +0 },
+				{ when: now + 6, duration: d, frequency: 200, gain: 0.3, pan: +0, wtpos: 1 },
+			],
+		} );
+		osc.$oscPushNote( "note2", {
+			keys: [
+				{ when: now + 0, duration: d, frequency: 440, gain: 0.3, pan: -0 },
+				{ when: now + 2, duration: d, frequency: 880, gain: 0.1, pan:  0 },
+				{ when: now + 4, duration: d, frequency: 220, gain: 0.3, pan: +0 },
+				{ when: now + 6, duration: d, frequency: 220, gain: 0.3, pan: +0, wtpos: 1 },
+			],
+		} );
 		for ( let i = 0; i < 32; ++i ) {
-			osc.$oscPushNote( `high${ i }`, [
-				{ when: now + i / 2, duration: .1, frequency: 1600, gain: 0.4, pan: 0 },
-			] );
+			osc.$oscPushNote( `high${ i }`, {
+				keys: [
+					{ when: now + i / 2, duration: .1, frequency: 1600, gain: 0.4, pan: 0 },
+				],
+			} );
 		}
 		/**/
 		log( `Push notes: ${ now.toFixed( 3 ) }s` );
