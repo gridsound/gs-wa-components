@@ -15,6 +15,7 @@
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-flex.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-gray.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiIcon/gsuiIcon.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiCursor/gsuiCursor.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiRipple/gsuiRipple.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiComButton/gsuiComButton.css" />
 </head>
@@ -22,7 +23,11 @@
 
 <gs-flex x ycenter g16>
 	<gs-flex y g8>
-		<gsui-com-button id="playBtn" disabled text="Loading…"></gsui-com-button>
+		<gs-flex x g6 style="flex-wrap: wrap; width: 200px">
+			<gsui-com-button disabled text="env_lp"></gsui-com-button>
+			<gsui-com-button disabled text="env_det"></gsui-com-button>
+			<gsui-com-button disabled text="env_gain"></gsui-com-button>
+		</gs-flex>
 		<gs-flex y>
 			<gs-flex x ycenter g4>
 				<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
@@ -72,7 +77,7 @@
 <script type="module">
 "use strict";
 
-const btn = $( "#playBtn" );
+const btns = $( "gsui-com-button" );
 const status = $( "#status" );
 const panInput = $( "#panInput" );
 const gainInput = $( "#gainInput" );
@@ -106,66 +111,30 @@ function setup() {
 		osc.$oscConnect( ctx.destination );
 		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
 		$( "input[type=range]" ).$trigger( "oninput" );
-		btn.$disabled( false ).$setAttr( "text", "Play" );
+		btns.$disabled( false );
 		log( "Ready." );
 	} );
 }
 
-btn.$onclick( () => {
-	const now = ctx.currentTime + .05;
-
+function ctxIsReady() {
 	if ( ctx.state === "suspended" ) {
-		log( `Context suspended: ${ now.toFixed( 3 ) }s` );
+		log( `Context suspended: ${ ctx.currentTime.toFixed( 3 ) }s` );
 		ctx.resume();
-	} else {
+		return false;
+	}
+	return true;
+}
+
+btns.$onclick( e => {
+	if ( ctxIsReady() ) {
+		const tar = $( e.target );
+		const name = tar.$getAttr( "text" );
+		const now = ctx.currentTime + .05;
 		const d = 1;
 
-		/**/
-		osc.$oscPushNote( GSUuuid(), {
-			envs: {
-				gain: {
-					release: 1,
-				},
-				lowpass: {
-					attack: .2,
-					hold: .5,
-					decay: .4,
-					sustain: .2,
-					q: 25,
-				},
-			},
-			keys: [
-				{ when: now, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
-			],
-		} );
-		/** /
-		osc.$oscPushNote( GSUuuid(), {
-			envs: {
-				detune: {
-					attack: 0,
-					hold: 0.005,
-					decay: 0.02,
-					sustain: 0,
-					pitch: 8000,
-				},
-			},
-			keys: [
-				{ when: now, duration: .15, frequency: 60, gain: 1 },
-			],
-		} );
-		/** /
-		for ( let i = 0; i < 3; ++i ) {
-			osc.$oscPushNote( `note${ i }`, {
-				envs: {
-					gain: {
-						release: .2,
-					},
-				},
-				keys: [
-					{ when: now + i * .2, duration: .1, frequency: 300, gain: .5, pan: -0, wtpos: 0 },
-				],
-			} );
-		}
+		map[ name ]();
+		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
+
 		/** /
 		osc.$oscPushNote( "note1", { 
 			keys: [
@@ -191,9 +160,63 @@ btn.$onclick( () => {
 			} );
 		}
 		/**/
-		log( `Push notes: ${ now.toFixed( 3 ) }s` );
 	}
 } );
+
+const map = {
+	env_lp: () => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
+				},
+				lowpass: {
+					attack: .2,
+					hold: .5,
+					decay: .4,
+					sustain: .2,
+					q: 6,
+				},
+			},
+			keys: [
+				{ when: ctx.currentTime, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
+			],
+		} );
+	},
+	env_det: () => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: .2,
+				},
+				detune: {
+					attack: 0,
+					hold: .005,
+					decay: .02,
+					sustain: 0,
+					pitch: 8000,
+				},
+			},
+			keys: [
+				{ when: ctx.currentTime, duration: .15, frequency: 60, gain: 1 },
+			],
+		} );
+	},
+	env_gain: () => {
+		for ( let i = 0; i < 3; ++i ) {
+			osc.$oscPushNote( `note${ i }`, {
+				envs: {
+					gain: {
+						release: .2,
+					},
+				},
+				keys: [
+					{ when: ctx.currentTime + i * .2, duration: .1, frequency: 300, gain: .5, pan: -0, wtpos: 0 },
+				],
+			} );
+		}
+	},
+};
 
 setup().catch( err => log( "Setup error: " + err.message ) );
 </script>
