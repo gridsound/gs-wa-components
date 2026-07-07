@@ -2,7 +2,8 @@
 
 class gswaOscProc extends AudioWorkletProcessor {
 	static #wtdataHeaderSize = 4;
-	static #lpCoefUpdateRate = 32;
+	static #filterCoefUpdateRate = 32;
+	static #filterMinFreq = 20;
 	#ok = true;
 	#keys = new Map();
 	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
@@ -57,6 +58,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
+	static #format_new_key_coeff() {
+		return {
+			$counter: 0,
+			$x1: 0, $x2: 0,
+			$y1: 0, $y2: 0,
+			$b0: 1, $b1: 0, $b2: 0,
+			$a1: 0, $a2: 0,
+		};
+	}
 	static #format_new_key( d ) {
 		const klast = d.keys.at( -1 );
 		const envGain = d.envs?.gain;
@@ -96,18 +106,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$q: envLP?.q ?? 0,
 				},
 			},
-			$lp: {
-				$counter: 0,
-				$x1: 0,
-				$x2: 0,
-				$y1: 0,
-				$y2: 0,
-				$b0: 1,
-				$b1: 0,
-				$b2: 0,
-				$a1: 0,
-				$a2: 0,
-			},
+			$lp: gswaOscProc.#format_new_key_coeff(),
+			$hp: gswaOscProc.#format_new_key_coeff(),
 			$keys: d.keys.map( k => ( {
 				$when: k.when,
 				$duration: k.duration,
@@ -115,6 +115,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$wtpos: k.wtpos ?? 0,
 				$gain: k.gain ?? 1,
 				$pan: gswaOscProc.#math_clamp( k.pan ?? 0, -1, 1 ),
+				$lowpass: gswaOscProc.#math_clamp( k.lowpass ?? 1, 0, 1 ),
+				$highpass: gswaOscProc.#math_clamp( k.highpass ?? 1, 0, 1 ),
 			} ) ),
 		};
 	}
@@ -146,7 +148,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	#process_debug() {
 		if ( currentTime > this.#currentTimeInt ) {
-			console.log( "processing..." );
+			console.log( `processing... ${ this.#keys.size }` );
 			this.#currentTimeInt = gswaOscProc.#math_floor( currentTime ) + 1;
 		}
 	}
@@ -187,12 +189,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let keyGain;
 				let keyWtpos;
 				let keyFrequency;
+				let keyLowpass;
+				let keyHighpass;
 
 				if ( now >= key.$when ) {
 					keyPan = key.$pan;
 					keyGain = key.$gain;
 					keyWtpos = key.$wtpos;
 					keyFrequency = key.$frequency;
+					keyLowpass = key.$lowpass;
+					keyHighpass = key.$highpass;
 				} else {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
@@ -203,6 +209,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyGain = prev.$gain + ( key.$gain - prev.$gain ) * frac;
 					keyWtpos = prev.$wtpos + ( key.$wtpos - prev.$wtpos ) * frac;
 					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
+					keyLowpass = prev.$lowpass + ( key.$lowpass - prev.$lowpass ) * frac;
+					keyHighpass = prev.$highpass + ( key.$highpass - prev.$highpass ) * frac;
 				}
 
 				const elapsed = now - o.$when;
@@ -214,8 +222,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
-				const dry =
+				const smp =
 					apGainI *
 					keyGain *
 					envGainVal *
@@ -226,10 +233,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apPhaseI,
 						apDetuneI + envDetuneVal * envDetune.$pitch,
 					);
-				const s = gswaOscProc.#process_env_lowpass( o, dry, envLP, elapsed, remaining );
+				const smp2 = gswaOscProc.#process_lowpass( o.$lp, smp, envLP, keyLowpass, elapsed, remaining );
+				const smp3 = gswaOscProc.#process_highpass( o.$hp, smp2, keyHighpass );
+				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
 
-				chanL[ i ] += s * ( pan > 0 ? 1 - pan : 1 );
-				chanR[ i ] += s * ( pan < 0 ? 1 + pan : 1 );
+				chanL[ i ] += smp3 * ( pan > 0 ? 1 - pan : 1 );
+				chanR[ i ] += smp3 * ( pan < 0 ? 1 + pan : 1 );
 			}
 		}
 		o.$phase = o.$phaseB;
@@ -269,36 +278,54 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_env_lowpass( o, x, envLP, elapsed, remaining ) {
-		const lp = o.$lp;
-
-		if ( ( lp.$counter % gswaOscProc.#lpCoefUpdateRate ) === 0 ) {
-			const cutoff = 20 * ( sampleRate * .45 / 20 ) ** gswaOscProc.#process_env( envLP, elapsed, remaining );
+	static #process_lowpass( cf, x, envLP, keyLowpass, elapsed, remaining ) {
+		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
+			const envVal = gswaOscProc.#process_env( envLP, elapsed, remaining );
+			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
+			const maxFreq = sampleRate * .45;
+			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;
 			const q = .707 + gswaOscProc.#math_max( 0, envLP.$q );
 
-			gswaOscProc.#process_env_lowpass_calc_coeffs( lp, cutoff, q );
+			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, q, "lp" );
 		}
-		++lp.$counter;
+		return gswaOscProc.#process_filter_coeffs_update( cf, x );
+	}
+	static #process_highpass( cf, x, keyHighpass ) {
+		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
+			const openness = gswaOscProc.#math_clamp( keyHighpass, 0, 1 );
+			const maxFreq = sampleRate * .45;
+			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** ( 1 - openness );
 
-		const y0 = lp.$b0 * x + lp.$b1 * lp.$x1 + lp.$b2 * lp.$x2 - lp.$a1 * lp.$y1 - lp.$a2 * lp.$y2;
+			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, .707, "hp" );
+		}
+		return gswaOscProc.#process_filter_coeffs_update( cf, x );
+	}
+	static #process_filter_coeffs_update( cf, x ) {
+		const y0 = cf.$b0 * x + cf.$b1 * cf.$x1 + cf.$b2 * cf.$x2 - cf.$a1 * cf.$y1 - cf.$a2 * cf.$y2;
 
-		lp.$x2 = lp.$x1;
-		lp.$x1 = x;
-		lp.$y2 = lp.$y1;
-		lp.$y1 = y0;
+		++cf.$counter;
+		cf.$x2 = cf.$x1;
+		cf.$x1 = x;
+		cf.$y2 = cf.$y1;
+		cf.$y1 = y0;
 		return y0;
 	}
-	static #process_env_lowpass_calc_coeffs( lp, cutoffHz, q ) {
-		const w0 = 2 * Math.PI * gswaOscProc.#math_clamp( cutoffHz, 1, sampleRate * .49 ) / sampleRate;
+	static #process_filter_coeffs_recalc( o, hz, q, type ) {
+		const w0 = 2 * Math.PI * gswaOscProc.#math_clamp( hz, 1, sampleRate * .49 ) / sampleRate;
 		const alpha = Math.sin( w0 ) / ( 2 * q );
 		const cosw0 = Math.cos( w0 );
 		const a0 = 1 + alpha;
 
-		lp.$b0 = ( ( 1 - cosw0 ) / 2 ) / a0;
-		lp.$b1 = ( 1 - cosw0 ) / a0;
-		lp.$b2 = lp.$b0;
-		lp.$a1 = ( -2 * cosw0 ) / a0;
-		lp.$a2 = ( 1 - alpha ) / a0;
+		if ( type === "lp" ) {
+			o.$b0 = ( ( 1 - cosw0 ) / 2 ) / a0;
+			o.$b1 = ( 1 - cosw0 ) / a0;
+		} else {
+			o.$b0 = ( ( 1 + cosw0 ) / 2 ) / a0;
+			o.$b1 = ( -( 1 + cosw0 ) ) / a0;
+		}
+		o.$b2 = o.$b0;
+		o.$a1 = ( -2 * cosw0 ) / a0;
+		o.$a2 = ( 1 - alpha ) / a0;
 	}
 
 	// .........................................................................

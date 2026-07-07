@@ -26,9 +26,12 @@
 
 <gs-flex x g16>
 	<gs-flex y g8>
-		<gs-flex y g6>
+		<gs-flex y xstart g6>
+			<gsui-com-button disabled text="ringing"></gsui-com-button>
+			<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
 			<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
 			<gsui-com-button disabled text="kick"></gsui-com-button>
+			<gsui-com-button disabled text="ding"></gsui-com-button>
 			<gsui-com-button disabled text="env_lp"></gsui-com-button>
 			<gsui-com-button disabled text="env_det"></gsui-com-button>
 			<gsui-com-button disabled text="env_gain"></gsui-com-button>
@@ -110,7 +113,6 @@ detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() 
 
 function log( msg ) {
 	status.$text( status.$text() + msg + "\n" );
-	lg( msg );
 }
 
 function setup() {
@@ -149,38 +151,13 @@ btns.$onclick( e => {
 		const tar = $( e.target );
 		const name = tar.$getAttr( "text" );
 		const now = ctx.currentTime + .2;
-		const d = 1;
 
 		map[ name ]( now );
 		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
-
-		/** /
-		osc.$oscPushNote( "note1", { 
-			keys: [
-				{ when: now + 0, duration: d, frequency: 400, gain: 0.3, pan: -0 },
-				{ when: now + 2, duration: d, frequency: 800, gain: 0.1, pan:  0 },
-				{ when: now + 4, duration: d, frequency: 200, gain: 0.3, pan: +0 },
-				{ when: now + 6, duration: d, frequency: 200, gain: 0.3, pan: +0, wtpos: 1 },
-			],
-		} );
-		osc.$oscPushNote( "note2", {
-			keys: [
-				{ when: now + 0, duration: d, frequency: 440, gain: 0.3, pan: -0 },
-				{ when: now + 2, duration: d, frequency: 880, gain: 0.1, pan:  0 },
-				{ when: now + 4, duration: d, frequency: 220, gain: 0.3, pan: +0 },
-				{ when: now + 6, duration: d, frequency: 220, gain: 0.3, pan: +0, wtpos: 1 },
-			],
-		} );
-		for ( let i = 0; i < 32; ++i ) {
-			osc.$oscPushNote( `high${ i }`, {
-				keys: [
-					{ when: now + i / 2, duration: .1, frequency: 1600, gain: 0.4, pan: 0 },
-				],
-			} );
-		}
-		/**/
 	}
 } );
+
+setup().catch( err => log( "Setup error: " + err.message ) );
 
 const envDefault = {
 	attack: 1,
@@ -191,6 +168,42 @@ const envDefault = {
 };
 
 const map = {
+	ringing: when => {
+		for ( let i = 0; i < 32; ++i ) {
+			osc.$oscPushNote( GSUuuid(), {
+				envs: {
+					gain: {
+						release: .08,
+					},
+				},
+				keys: [ { when: when + i * 2, duration: 1, frequency: 440, gain: .5 } ],
+			} );
+			osc.$oscPushNote( GSUuuid(), {
+				envs: {
+					gain: {
+						release: .08,
+					},
+				},
+				keys: [ { when: when + i * 2, duration: 1, frequency: 400, gain: .5 } ],
+			} );
+		}
+	},
+	subkeys2_hp: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					attack: 0.01,
+					decay: 0.1,
+					sustain: 0.2,
+					release: 1,
+				},
+			},
+			keys: [
+				{ when: when + 0.0, duration: 0.5, frequency: 100, gain: 1, wtpos: 1, highpass: 1.0 },
+				{ when: when + 0.7, duration: 0.2, frequency: 100, gain: 1, wtpos: 1, highpass: 0.3 },
+			],
+		} );
+	},
 	subkeys2_lp: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
@@ -203,7 +216,22 @@ const map = {
 			},
 			keys: [
 				{ when: when + 0.0, duration: 0.5, frequency: 100, gain: 1, wtpos: 1, lowpass: 1.0 },
-				{ when: when + 0.7, duration: 0.2, frequency: 100, gain: 1, wtpos: 1, lowpass: 0.2 },
+				{ when: when + 0.7, duration: 0.2, frequency: 100, gain: 1, wtpos: 1, lowpass: 0.3 },
+			],
+		} );
+	},
+	ding: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					attack: .01,
+					decay: .1,
+					sustain: .02,
+					release: .3,
+				},
+			},
+			keys: [
+				{ when, duration: .11, frequency: 880, gain: 1 },
 			],
 		} );
 	},
@@ -259,8 +287,6 @@ const map = {
 		} );
 	},
 };
-
-setup().catch( err => log( "Setup error: " + err.message ) );
 </script>
 </body>
 </html>
