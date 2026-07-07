@@ -43,6 +43,9 @@ class gswaOsc {
 	$oscDisconnect( ...args ) {
 		return this.#node.disconnect( ...args );
 	}
+	$oscClear() {
+		this.#node.port.postMessage( { type: "clear" } );
+	}
 	$oscKill() {
 		this.#node.port.postMessage( { type: "kill" } );
 	}

@@ -32,6 +32,7 @@
 			<gsui-com-button disabled text="env_lp"></gsui-com-button>
 			<gsui-com-button disabled text="env_det"></gsui-com-button>
 			<gsui-com-button disabled text="env_gain"></gsui-com-button>
+			<gsui-com-button type="danger" text="Stop"></gsui-com-button>
 			<gsui-com-button type="danger" text="Kill"></gsui-com-button>
 		</gs-flex>
 		<gs-flex y>
@@ -84,6 +85,7 @@
 "use strict";
 
 const btns = $( "gsui-com-button:not([type=danger])" );
+const btnStop = $( "gsui-com-button[text=Stop]" );
 const btnKill = $( "gsui-com-button[text=Kill]" );
 const status = $( "#status" );
 const panInput = $( "#panInput" );
@@ -135,6 +137,11 @@ function ctxIsReady() {
 btnKill.$onclick( () => {
 	osc.$oscKill();
 	log( `Osc killed: ${ ctx.currentTime.toFixed( 3 ) }s` );
+} );
+
+btnStop.$onclick( () => {
+	osc.$oscClear();
+	log( `Osc cleared: ${ ctx.currentTime.toFixed( 3 ) }s` );
 } );
 
 btns.$onclick( e => {

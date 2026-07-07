@@ -31,6 +31,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "kill":
 				this.#ok = false;
 				break;
+			case "clear":
+				this.#clear();
+				break;
 			case "wavetable":
 				this.#wtdata = new Float32Array( d.buffer );
 				this.port.postMessage( { type: "ready" } );
@@ -38,6 +41,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "push":
 				this.#keys.set( d.id, gswaOscProc.#format_new_key( d ) );
 				break;
+		}
+	}
+
+	// .........................................................................
+	#clear() {
+		for ( const o of this.#keys.values() ) {
+			if ( o.$when >= currentTime || o.$whenEnd <= currentTime ) {
+				this.#keys.delete( o.$id );
+			} else if ( o.$whenEnd > currentTime ) {
+				o.$envs.$gain.$release = .1;
+				o.$whenEnd = currentTime + .1;
+			}
 		}
 	}
 
