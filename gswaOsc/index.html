@@ -24,45 +24,46 @@
 </head>
 <body data-skin="gray">
 
-<gs-flex x g16>
-	<gs-flex y g8>
-		<gs-flex y xstart g6>
-			<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
-			<gsui-com-button disabled text="ringing"></gsui-com-button>
-			<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
-			<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
-			<gsui-com-button disabled text="kick"></gsui-com-button>
-			<gsui-com-button disabled text="ding"></gsui-com-button>
-			<gsui-com-button disabled text="env_lp"></gsui-com-button>
-			<gsui-com-button disabled text="env_det"></gsui-com-button>
-			<gsui-com-button disabled text="env_gain"></gsui-com-button>
-			<gsui-com-button type="danger" text="Stop"></gsui-com-button>
-			<gsui-com-button type="danger" text="Kill"></gsui-com-button>
+<gs-flex y g16>
+	<h1 style="opacity: .4">gridsound.gswaOsc</h1>
+	<gs-flex x g16 style="height: 260px">
+		<gs-flex y g8 style="width: 280px">
+			<gs-flex x xstart g6 wrap>
+				<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
+				<gsui-com-button disabled text="ringing"></gsui-com-button>
+				<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
+				<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
+				<gsui-com-button disabled text="kick"></gsui-com-button>
+				<gsui-com-button disabled text="ding"></gsui-com-button>
+				<gsui-com-button disabled text="env_lp"></gsui-com-button>
+				<gsui-com-button disabled text="env_det"></gsui-com-button>
+				<gsui-com-button disabled text="env_gain"></gsui-com-button>
+			</gs-flex>
+			<gs-flex x xstart g6 wrap style="width: 280px">
+				<gsui-com-button type="danger" text="Stop"></gsui-com-button>
+				<gsui-com-button type="danger" text="Kill"></gsui-com-button>
+			</gs-flex>
+			<gs-flex y>
+				<gs-flex x ycenter g4>
+					<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
+					<span>pan</span>
+				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="gainInput" type="range" min="0" max="1" step=".01" value="1" />
+					<span>gain</span>
+				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="phaseInput" type="range" min="0" max="1" step=".01" value="0" />
+					<span>phase</span>
+				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0" />
+					<span>detune</span>
+				</gs-flex>
+			</gs-flex>
 		</gs-flex>
-		<gs-flex y>
-			<gs-flex x ycenter g4>
-				<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
-				<span>pan</span>
-			</gs-flex>
-			<gs-flex x ycenter g4>
-				<input id="gainInput" type="range" min="0" max="1" step=".01" value="1" />
-				<span>gain</span>
-			</gs-flex>
-			<gs-flex x ycenter g4>
-				<input id="phaseInput" type="range" min="0" max="1" step=".01" value="0" />
-				<span>phase</span>
-			</gs-flex>
-			<gs-flex x ycenter g4>
-				<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0" />
-				<span>detune</span>
-			</gs-flex>
-			<!-- <gs-flex x ycenter g4> -->
-				<!-- <input id="wtposInput" type="range" min="0" max="1" step=".01" value="0" /> -->
-				<!-- <span>wtpos</span> -->
-			<!-- </gs-flex> -->
-		</gs-flex>
+		<pre id="status" style="width: 200px; height: 100%; overflow-y: scroll; background: #0004; scrollbar-width: auto;"></pre>
 	</gs-flex>
-	<pre id="status" style="width: 200px"></pre>
 </gs-flex>
 
 <!-- ....................................................................... -->
@@ -95,7 +96,6 @@ const status = $( "#status" );
 const panInput = $( "#panInput" );
 const gainInput = $( "#gainInput" );
 const phaseInput = $( "#phaseInput" );
-const wtposInput = $( "#wtposInput" );
 const detuneInput = $( "#detuneInput" );
 
 const ctx = GSUaudioContext();
@@ -109,11 +109,10 @@ gswaWTbuffers.$wtSet( "sine-to-square", [
 panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
 gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
 phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
-// wtposInput.$oninput( () => GSUaudioParamSet( osc.wtpos, +wtposInput.$value() ) );
 detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
 
 function log( msg ) {
-	status.$text( status.$text() + msg + "\n" );
+	status.$text( status.$text() + msg + "\n" ).$scrollY( Infinity );
 }
 
 function setup() {
