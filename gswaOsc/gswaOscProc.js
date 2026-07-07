@@ -72,6 +72,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const envGain = d.envs?.gain;
 		const envDetune = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
+		const lfoGain = d.lfos?.gain;
 		const release = envGain?.release ?? .01;
 
 		return {
@@ -104,6 +105,17 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$sustain: envLP?.sustain ?? 1,
 					$release: envLP?.release ?? .01,
 					$q: envLP?.q ?? 0,
+				},
+			},
+			$lfos: {
+				$gain: {
+					$wave: lfoGain?.wave ?? "sine",
+					$delay: lfoGain?.delay ?? 0,
+					$attack: lfoGain?.attack ?? 0,
+					$frequency: lfoGain?.frequency ?? 1,
+					$amp: gswaOscProc.#math_clamp( lfoGain?.amp ?? 0, -1, 1 ),
+					$_phase: 0,
+					$_phaseB: 0,
 				},
 			},
 			$lp: gswaOscProc.#format_new_key_coeff(),
@@ -171,8 +183,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const envGain = o.$envs.$gain;
 		const envDetune = o.$envs.$detune;
 		const envLP = o.$envs.$lowpass;
+		const lfoGain = o.$lfos.$gain;
 
 		o.$phaseB = o.$phase;
+		lfoGain.$_phaseB = lfoGain.$_phase;
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
@@ -196,9 +210,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyPan = key.$pan;
 					keyGain = key.$gain;
 					keyWtpos = key.$wtpos;
-					keyFrequency = key.$frequency;
 					keyLowpass = key.$lowpass;
 					keyHighpass = key.$highpass;
+					keyFrequency = key.$frequency;
 				} else {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
@@ -208,15 +222,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyPan = prev.$pan + ( key.$pan - prev.$pan ) * frac;
 					keyGain = prev.$gain + ( key.$gain - prev.$gain ) * frac;
 					keyWtpos = prev.$wtpos + ( key.$wtpos - prev.$wtpos ) * frac;
-					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
 					keyLowpass = prev.$lowpass + ( key.$lowpass - prev.$lowpass ) * frac;
 					keyHighpass = prev.$highpass + ( key.$highpass - prev.$highpass ) * frac;
+					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
 				}
 
 				const elapsed = now - o.$when;
 				const remaining = o.$whenEnd - now;
 				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
 				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, remaining );
+				const lfoGainVal = gswaOscProc.#process_lfo( o, lfoGain, elapsed );
 
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
@@ -226,6 +241,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					apGainI *
 					keyGain *
 					envGainVal *
+					lfoGainVal *
 					this.#process_key_sample(
 						o,
 						keyFrequency,
@@ -242,6 +258,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			}
 		}
 		o.$phase = o.$phaseB;
+		lfoGain.$_phase = lfoGain.$_phaseB;
 	}
 	#process_key_sample( o, frequency, wtpos, apPhaseI, detune ) {
 		const wtdata = this.#wtdata;
@@ -275,6 +292,35 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const smpB = wtdata[ baseB + sLoww ] + sFrac * ( wtdata[ baseB + sHigh ] - wtdata[ baseB + sLoww ] );
 
 		return smpA + tFrac * ( smpB - smpA );
+	}
+
+	// .........................................................................
+	static #process_lfo( o, lfo, elapsed ) {
+		const sinceDelay = elapsed - lfo.$delay;
+
+		lfo.$_phaseB += lfo.$frequency / sampleRate;
+		if ( lfo.$_phaseB >= 1 ) {
+			lfo.$_phaseB -= gswaOscProc.#math_floor( lfo.$_phaseB );
+		}
+		if ( sinceDelay > 0 && lfo.$amp !== 0 ) {
+			const depth = lfo.$attack > 0 ? gswaOscProc.#math_clamp( sinceDelay / lfo.$attack, 0, 1 ) : 1;
+			const wave = gswaOscProc.#process_lfo_wave( lfo.$wave, lfo.$_phaseB );
+
+			return 1 + wave * lfo.$amp * depth;
+		}
+		return 1;
+	}
+	static #process_lfo_wave( type, p ) {
+		switch ( type ) {
+			case "square": return p < .5 ? 1 : -1;
+			case "sawtooth": return p < .5 ? 2 * p : 2 * p - 2;
+			case "triangle": return (
+				p < .25 ? 4 * p :
+				p < .75 ? 2 - 4 * p :
+				4 * p - 4
+			);
+		}
+		return Math.sin( p * 2 * Math.PI );
 	}
 
 	// .........................................................................

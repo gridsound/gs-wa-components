@@ -27,6 +27,7 @@
 <gs-flex x g16>
 	<gs-flex y g8>
 		<gs-flex y xstart g6>
+			<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
 			<gsui-com-button disabled text="ringing"></gsui-com-button>
 			<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
 			<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
@@ -150,9 +151,9 @@ btns.$onclick( e => {
 	if ( ctxIsReady() ) {
 		const tar = $( e.target );
 		const name = tar.$getAttr( "text" );
-		const now = ctx.currentTime + .2;
+		const now = ctx.currentTime + .1;
 
-		map[ name ]( now );
+		examples[ name ]( now );
 		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
 	}
 } );
@@ -167,7 +168,22 @@ const envDefault = {
 	release: 1,
 };
 
-const map = {
+const examples = {
+	lfo_gain_sawtooth: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			lfos: {
+				gain: {
+					wave: "sawtooth",
+					attack: 4,
+					frequency: 4,
+					amp: -1,
+				},
+			},
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: .5, wtpos: 0 },
+			],
+		} );
+	},
 	ringing: when => {
 		for ( let i = 0; i < 32; ++i ) {
 			osc.$oscPushNote( GSUuuid(), {
