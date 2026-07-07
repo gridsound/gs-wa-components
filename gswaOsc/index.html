@@ -9,6 +9,9 @@
 		align-items: center;
 		justify-content: center;
 	}
+	pre {
+		margin: 0;
+	}
 </style>
 <link rel="stylesheet" type="text/css" href="../assets/fonts/fonts.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui.css" />
@@ -21,12 +24,15 @@
 </head>
 <body data-skin="gray">
 
-<gs-flex x ycenter g16>
+<gs-flex x g16>
 	<gs-flex y g8>
-		<gs-flex x g6 style="flex-wrap: wrap; width: 200px">
+		<gs-flex y g6>
+			<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
+			<gsui-com-button disabled text="kick"></gsui-com-button>
 			<gsui-com-button disabled text="env_lp"></gsui-com-button>
 			<gsui-com-button disabled text="env_det"></gsui-com-button>
 			<gsui-com-button disabled text="env_gain"></gsui-com-button>
+			<gsui-com-button type="danger" text="Kill"></gsui-com-button>
 		</gs-flex>
 		<gs-flex y>
 			<gs-flex x ycenter g4>
@@ -51,7 +57,7 @@
 			<!-- </gs-flex> -->
 		</gs-flex>
 	</gs-flex>
-	<pre id="status"></pre>
+	<pre id="status" style="width: 200px"></pre>
 </gs-flex>
 
 <!-- ....................................................................... -->
@@ -77,7 +83,8 @@
 <script type="module">
 "use strict";
 
-const btns = $( "gsui-com-button" );
+const btns = $( "gsui-com-button:not([type=danger])" );
+const btnKill = $( "gsui-com-button[text=Kill]" );
 const status = $( "#status" );
 const panInput = $( "#panInput" );
 const gainInput = $( "#gainInput" );
@@ -125,14 +132,19 @@ function ctxIsReady() {
 	return true;
 }
 
+btnKill.$onclick( () => {
+	osc.$oscKill();
+	log( `Osc killed: ${ ctx.currentTime.toFixed( 3 ) }s` );
+} );
+
 btns.$onclick( e => {
 	if ( ctxIsReady() ) {
 		const tar = $( e.target );
 		const name = tar.$getAttr( "text" );
-		const now = ctx.currentTime + .05;
+		const now = ctx.currentTime + .2;
 		const d = 1;
 
-		map[ name ]();
+		map[ name ]( now );
 		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
 
 		/** /
@@ -163,27 +175,32 @@ btns.$onclick( e => {
 	}
 } );
 
+const envDefault = {
+	attack: 1,
+	hold: 1,
+	decay: 1,
+	sustain: .2,
+	release: 1,
+};
+
 const map = {
-	env_lp: () => {
+	subkeys2_lp: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
 				gain: {
+					attack: 0.01,
+					decay: 0.1,
+					sustain: 0.2,
 					release: 1,
-				},
-				lowpass: {
-					attack: .2,
-					hold: .5,
-					decay: .4,
-					sustain: .2,
-					q: 6,
 				},
 			},
 			keys: [
-				{ when: ctx.currentTime, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
+				{ when: when + 0.0, duration: 0.5, frequency: 100, gain: 1, wtpos: 1, lowpass: 1.0 },
+				{ when: when + 0.7, duration: 0.2, frequency: 100, gain: 1, wtpos: 1, lowpass: 0.2 },
 			],
 		} );
 	},
-	env_det: () => {
+	kick: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
 				gain: {
@@ -198,23 +215,41 @@ const map = {
 				},
 			},
 			keys: [
-				{ when: ctx.currentTime, duration: .15, frequency: 60, gain: 1 },
+				{ when, duration: .15, frequency: 60, gain: 1 },
 			],
 		} );
 	},
-	env_gain: () => {
-		for ( let i = 0; i < 3; ++i ) {
-			osc.$oscPushNote( `note${ i }`, {
-				envs: {
-					gain: {
-						release: .2,
-					},
-				},
-				keys: [
-					{ when: ctx.currentTime + i * .2, duration: .1, frequency: 300, gain: .5, pan: -0, wtpos: 0 },
-				],
-			} );
-		}
+	env_lp: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: { release: envDefault.release },
+				lowpass: { ...envDefault, q: 1 },
+			},
+			keys: [
+				{ when, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
+			],
+		} );
+	},
+	env_det: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: { release: envDefault.release },
+				detune: { ...envDefault, pitch: 1200 },
+			},
+			keys: [
+				{ when, duration: 4, frequency: 300, gain: .5 },
+			],
+		} );
+	},
+	env_gain: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: { ...envDefault },
+			},
+			keys: [
+				{ when, duration: 4, frequency: 300, gain: .5, wtpos: 1 },
+			],
+		} );
 	},
 };
 
