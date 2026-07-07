@@ -8,39 +8,21 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 100vh;
-		margin: 0;
-		color: #fff;
-		font-family: system-ui, sans-serif;
-		background-color: #111;
-	}
-	button {
-		padding: 16px 28px;
-		border-radius: 6px;
-		border: none;
-		color: #fff;
-		font-size: 20px;
-		cursor: pointer;
-		background-color: #4a5;
-
-		&:disabled {
-			background: #555;
-			cursor: not-allowed;
-		}
-	}
-	#status {
-		white-space: pre;
-		font-family: monospace;
-		color: #9ad;
 	}
 </style>
+<link rel="stylesheet" type="text/css" href="../assets/fonts/fonts.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui.css" />
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-flex.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-gray.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiIcon/gsuiIcon.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiRipple/gsuiRipple.css" />
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiComButton/gsuiComButton.css" />
 </head>
-<body>
+<body data-skin="gray">
 
 <gs-flex x ycenter g16>
 	<gs-flex y g8>
-		<button id="playBtn" disabled>Loading…</button>
+		<gsui-com-button id="playBtn" disabled text="Loading…"></gsui-com-button>
 		<gs-flex y>
 			<gs-flex x ycenter g4>
 				<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
@@ -64,15 +46,21 @@
 			<!-- </gs-flex> -->
 		</gs-flex>
 	</gs-flex>
-	<div id="status"></div>
+	<pre id="status"></pre>
 </gs-flex>
 
 <!-- ....................................................................... -->
 <script src="../../gs-utils/gs-utils"></script>
+<script src="../../gs-utils/gs-utils-func"></script>
 <script src="../../gs-utils/gs-utils-math"></script>
 <script src="../../gs-utils/gs-utils-jquery"></script>
 <script src="../../gs-utils/gs-utils-audio"></script>
 <script src="../../gs-utils/gs-utils-audio-nodes"></script>
+
+<!-- ....................................................................... -->
+<script src="../../gs-ui-components/gsui0ne/gsui0ne.js"></script>
+<script src="../../gs-ui-components/gsuiRipple/gsuiRipple.js"></script>
+<script src="../../gs-ui-components/gsuiComButton/gsuiComButton.js"></script>
 
 <!-- ....................................................................... -->
 <script src="../gswaWTbuffers/gswaWTbuffers.js"></script>
@@ -118,7 +106,7 @@ function setup() {
 		osc.$oscConnect( ctx.destination );
 		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
 		$( "input[type=range]" ).$trigger( "oninput" );
-		btn.$disabled( false ).$text( "Play" );
+		btn.$disabled( false ).$setAttr( "text", "Play" );
 		log( "Ready." );
 	} );
 }
