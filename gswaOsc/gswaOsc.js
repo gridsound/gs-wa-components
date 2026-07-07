@@ -28,7 +28,9 @@ class gswaOsc {
 		this.#node.port.onmessage = this.#onmsg.bind( this );
 	}
 	#onmsg( e ) {
-		switch ( e.data.type ) {
+		const [ type ] = e.data;
+
+		switch ( type ) {
 			case "ready": this.#ready = true; break;
 		}
 	}
@@ -44,16 +46,16 @@ class gswaOsc {
 		return this.#node.disconnect( ...args );
 	}
 	$oscClear() {
-		this.#node.port.postMessage( { type: "clear" } );
+		this.#node.port.postMessage( [ "clear" ] );
 	}
 	$oscKill() {
-		this.#node.port.postMessage( { type: "kill" } );
+		this.#node.port.postMessage( [ "kill" ] );
 	}
 	$oscWavetable( wt ) {
 		this.#ready = false;
-		this.#node.port.postMessage( { type: "wavetable", buffer: wt } );
+		this.#node.port.postMessage( [ "wavetable", wt ] );
 	}
 	$oscPushNote( id, obj ) {
-		this.#node.port.postMessage( { type: "push", id, ...obj } );
+		this.#node.port.postMessage( [ "push", id, obj ] );
 	}
 }

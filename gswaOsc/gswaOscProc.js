@@ -26,9 +26,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	#onmsg( e ) {
-		const d = e.data;
+		const [ type, a0, a1 ] = e.data;
 
-		switch ( d.type ) {
+		switch ( type ) {
 			case "kill":
 				this.#ok = false;
 				break;
@@ -36,11 +36,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.#clear();
 				break;
 			case "wavetable":
-				this.#wtdata = new Float32Array( d.buffer );
-				this.port.postMessage( { type: "ready" } );
+				this.#wtdata = new Float32Array( a0 );
+				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":
-				this.#keys.set( d.id, gswaOscProc.#format_new_key( d ) );
+				this.#keys.set( a0, gswaOscProc.#format_new_key( a0, a1 ) );
 				break;
 		}
 	}
@@ -67,7 +67,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$a1: 0, $a2: 0,
 		};
 	}
-	static #format_new_key( d ) {
+	static #format_new_key( id, d ) {
 		const klast = d.keys.at( -1 );
 		const envGain = d.envs?.gain;
 		const envDetune = d.envs?.detune;
@@ -76,7 +76,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const release = envGain?.release ?? .01;
 
 		return {
-			$id: d.id,
+			$id: id,
 			$phase: 0,
 			$phaseB: 0,
 			$keyInd: 0,
@@ -242,7 +242,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyGain *
 					envGainVal *
 					lfoGainVal *
-					this.#process_key_sample(
+					this.#process_key_wavetable(
 						o,
 						keyFrequency,
 						keyWtpos,
@@ -260,7 +260,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$phase = o.$phaseB;
 		lfoGain.$_phase = lfoGain.$_phaseB;
 	}
-	#process_key_sample( o, frequency, wtpos, apPhaseI, detune ) {
+	#process_key_wavetable( o, frequency, wtpos, apPhaseI, detune ) {
 		const wtdata = this.#wtdata;
 		const nbWaves = this.#wtdataN;
 		const waveLen = this.#wtdataL;
