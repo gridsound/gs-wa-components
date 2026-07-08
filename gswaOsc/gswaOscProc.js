@@ -73,6 +73,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const envDetune = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
 		const lfoGain = d.lfos?.gain;
+		const lfoDetune = d.lfos?.detune;
 		const release = envGain?.release ?? .01;
 
 		return {
@@ -114,6 +115,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$attack: lfoGain?.attack ?? 0,
 					$frequency: lfoGain?.frequency ?? 1,
 					$amp: gswaOscProc.#math_clamp( lfoGain?.amp ?? 0, -1, 1 ),
+					$_phase: 0,
+					$_phaseB: 0,
+				},
+				$detune: {
+					$wave: lfoDetune?.wave ?? "sine",
+					$delay: lfoDetune?.delay ?? 0,
+					$attack: lfoDetune?.attack ?? 0,
+					$frequency: lfoDetune?.frequency ?? 1,
+					$amp: gswaOscProc.#math_clamp( lfoDetune?.amp ?? 0, -1200, 1200 ),
 					$_phase: 0,
 					$_phaseB: 0,
 				},
@@ -184,9 +194,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const envDetune = o.$envs.$detune;
 		const envLP = o.$envs.$lowpass;
 		const lfoGain = o.$lfos.$gain;
+		const lfoDetune = o.$lfos.$detune;
 
 		o.$phaseB = o.$phase;
 		lfoGain.$_phaseB = lfoGain.$_phase;
+		lfoDetune.$_phaseB = lfoDetune.$_phase;
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
@@ -230,8 +242,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const elapsed = now - o.$when;
 				const remaining = o.$whenEnd - now;
 				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
+				const lfoGainVal = gswaOscProc.#process_lfo( lfoGain, elapsed ) + 1;
 				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, remaining );
-				const lfoGainVal = gswaOscProc.#process_lfo( o, lfoGain, elapsed );
+				const lfoDetuneVal = gswaOscProc.#process_lfo( lfoDetune, elapsed );
 
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
@@ -247,7 +260,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 						keyFrequency,
 						keyWtpos,
 						apPhaseI,
-						apDetuneI + envDetuneVal * envDetune.$pitch,
+						apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal,
 					);
 				const smp2 = gswaOscProc.#process_lowpass( o.$lp, smp, envLP, keyLowpass, elapsed, remaining );
 				const smp3 = gswaOscProc.#process_highpass( o.$hp, smp2, keyHighpass );
@@ -259,6 +272,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		o.$phase = o.$phaseB;
 		lfoGain.$_phase = lfoGain.$_phaseB;
+		lfoDetune.$_phase = lfoDetune.$_phaseB;
 	}
 	#process_key_wavetable( o, frequency, wtpos, apPhaseI, detune ) {
 		const wtdata = this.#wtdata;
@@ -295,7 +309,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lfo( o, lfo, elapsed ) {
+	static #process_lfo( lfo, elapsed ) {
 		const sinceDelay = elapsed - lfo.$delay;
 
 		lfo.$_phaseB += lfo.$frequency / sampleRate;
@@ -306,9 +320,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const depth = lfo.$attack > 0 ? gswaOscProc.#math_clamp( sinceDelay / lfo.$attack, 0, 1 ) : 1;
 			const wave = gswaOscProc.#process_lfo_wave( lfo.$wave, lfo.$_phaseB );
 
-			return 1 + wave * lfo.$amp * depth;
+			return wave * lfo.$amp * depth;
 		}
-		return 1;
+		return 0;
 	}
 	static #process_lfo_wave( type, p ) {
 		switch ( type ) {

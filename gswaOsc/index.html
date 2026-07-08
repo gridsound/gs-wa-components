@@ -99,6 +99,60 @@ const envDefault = {
 };
 
 const examples = {
+	lfo_detune_square_attack: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			lfos: {
+				detune: {
+					wave: "square",
+					attack: 2,
+					frequency: 2,
+					amp: 1200,
+				},
+			},
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: .5 },
+			],
+		} );
+	},
+	lfo_detune_square: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			lfos: {
+				detune: {
+					wave: "square",
+					frequency: 2,
+					amp: 1200,
+				},
+			},
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: .5 },
+			],
+		} );
+	},
+	lfo_detune_square_fake: when => {
+		for ( let i = 0; i < 100; ++i ) {
+			osc.$oscPushNote( GSUuuid(), {
+				keys: [ { when: when + i * .5 + 0.00, duration: .25, frequency: 800, gain: .5 } ],
+			} );
+			osc.$oscPushNote( GSUuuid(), {
+				keys: [ { when: when + i * .5 + 0.25, duration: .25, frequency: 200, gain: .5 } ],
+			} );
+		}
+	},
+	lfo_detune_sine: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			lfos: {
+				detune: {
+					wave: "sine",
+					attack: 1,
+					frequency: 4,
+					amp: 1200,
+				},
+			},
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: .5, wtpos: 0 },
+			],
+		} );
+	},
 	lfo_gain_sine: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
@@ -243,7 +297,7 @@ const examples = {
 				gain: { ...envDefault },
 			},
 			keys: [
-				{ when, duration: 4, frequency: 300, gain: .5, wtpos: 1 },
+				{ when, duration: 4, frequency: 300, gain: .8, wtpos: 0 },
 			],
 		} );
 	},
