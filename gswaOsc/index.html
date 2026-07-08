@@ -99,7 +99,49 @@ const envDefault = {
 };
 
 const examples = {
-	lfo_detune_square_attack: when => {
+	lfoGn_amp_anim: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
+				},
+			},
+			lfos: {
+				gain: {
+					wave: "sine",
+					attack: .3,
+					frequency: 8,
+					amp: 1,
+				},
+			},
+			keys: [
+				{ when: when + 0, duration: 1, frequency: 400, gain: .5, lfoGainAmp: 1.00 },
+				{ when: when + 3, duration: 1, frequency: 400, gain: .5, lfoGainAmp: 0.00 },
+			],
+		} );
+	},
+	lfoGn_hz_anim: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
+				},
+			},
+			lfos: {
+				gain: {
+					wave: "sine",
+					attack: .3,
+					frequency: 8,
+					amp: 1,
+				},
+			},
+			keys: [
+				{ when: when + 0, duration: 1, frequency: 400, gain: .5, lfoGainFrequency: 1.00 },
+				{ when: when + 3, duration: 1, frequency: 400, gain: .5, lfoGainFrequency: 0.00 },
+			],
+		} );
+	},
+	lfoDt_squ_att: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
 				detune: {
@@ -114,7 +156,7 @@ const examples = {
 			],
 		} );
 	},
-	lfo_detune_square: when => {
+	lfoDt_squ: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
 				detune: {
@@ -128,7 +170,7 @@ const examples = {
 			],
 		} );
 	},
-	lfo_detune_square_fake: when => {
+	lfoDt_squ_fake: when => {
 		for ( let i = 0; i < 100; ++i ) {
 			osc.$oscPushNote( GSUuuid(), {
 				keys: [ { when: when + i * .5 + 0.00, duration: .25, frequency: 800, gain: .5 } ],
@@ -138,7 +180,7 @@ const examples = {
 			} );
 		}
 	},
-	lfo_detune_sine: when => {
+	lfoDt_sin: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
 				detune: {
@@ -153,7 +195,7 @@ const examples = {
 			],
 		} );
 	},
-	lfo_gain_sine: when => {
+	lfoGn_sin: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
 				gain: {
@@ -168,7 +210,7 @@ const examples = {
 			],
 		} );
 	},
-	lfo_gain_sawtooth: when => {
+	lfoGn_saw: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
 				gain: {
@@ -269,7 +311,7 @@ const examples = {
 			],
 		} );
 	},
-	env_lp: when => {
+	envLP: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
 				gain: { release: envDefault.release },
@@ -280,7 +322,7 @@ const examples = {
 			],
 		} );
 	},
-	env_det: when => {
+	envDt: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
 				gain: { release: envDefault.release },
@@ -291,7 +333,7 @@ const examples = {
 			],
 		} );
 	},
-	env_gain: when => {
+	envGn: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
 				gain: { ...envDefault },
@@ -348,7 +390,7 @@ function log( msg ) {
 
 function setup() {
 	log( "Init..." );
-	uiAnaly.$setAttr( "resolution", "100 300" );
+	uiAnaly.$setAttr( "resolution", "100 400" );
 	return gswaOsc.$oscLoadModule( ctx ).then( () => {
 		dest = GSUaudioGain( ctx );
 

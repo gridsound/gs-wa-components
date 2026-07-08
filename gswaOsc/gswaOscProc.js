@@ -139,6 +139,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$pan: gswaOscProc.#math_clamp( k.pan ?? 0, -1, 1 ),
 				$lowpass: gswaOscProc.#math_clamp( k.lowpass ?? 1, 0, 1 ),
 				$highpass: gswaOscProc.#math_clamp( k.highpass ?? 1, 0, 1 ),
+				$lfoGainAmp: gswaOscProc.#math_clamp( k.lfoGainAmp ?? 1, 0, 4 ),
+				$lfoGainFrequency: gswaOscProc.#math_clamp( k.lfoGainFrequency ?? 1, 0, 4 ),
 			} ) ),
 		};
 	}
@@ -217,6 +219,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let keyFrequency;
 				let keyLowpass;
 				let keyHighpass;
+				let keyLfoGainAmp;
+				let keyLfoGainFrequency;
 
 				if ( now >= key.$when ) {
 					keyPan = key.$pan;
@@ -225,6 +229,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyLowpass = key.$lowpass;
 					keyHighpass = key.$highpass;
 					keyFrequency = key.$frequency;
+					keyLfoGainAmp = key.$lfoGainAmp;
+					keyLfoGainFrequency = key.$lfoGainFrequency;
 				} else {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
@@ -237,14 +243,26 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyLowpass = prev.$lowpass + ( key.$lowpass - prev.$lowpass ) * frac;
 					keyHighpass = prev.$highpass + ( key.$highpass - prev.$highpass ) * frac;
 					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
+					keyLfoGainAmp = prev.$lfoGainAmp + ( key.$lfoGainAmp - prev.$lfoGainAmp ) * frac;
+					keyLfoGainFrequency = prev.$lfoGainFrequency + ( key.$lfoGainFrequency - prev.$lfoGainFrequency ) * frac;
 				}
 
 				const elapsed = now - o.$when;
 				const remaining = o.$whenEnd - now;
 				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
-				const lfoGainVal = gswaOscProc.#process_lfo( lfoGain, elapsed ) + 1;
 				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, remaining );
-				const lfoDetuneVal = gswaOscProc.#process_lfo( lfoDetune, elapsed );
+				const lfoGainVal = gswaOscProc.#process_lfo(
+					lfoGain,
+					lfoGain.$amp * keyLfoGainAmp,
+					lfoGain.$frequency * keyLfoGainFrequency,
+					elapsed
+				) + 1;
+				const lfoDetuneVal = gswaOscProc.#process_lfo(
+					lfoDetune,
+					lfoDetune.$amp,
+					lfoDetune.$frequency,
+					elapsed
+				);
 
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
@@ -328,18 +346,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lfo( lfo, elapsed ) {
+	static #process_lfo( lfo, amp, hz, elapsed ) {
 		const sinceDelay = elapsed - lfo.$delay;
 
-		lfo.$_phaseB += lfo.$frequency / sampleRate;
+		lfo.$_phaseB += hz / sampleRate;
 		if ( lfo.$_phaseB >= 1 ) {
 			lfo.$_phaseB -= gswaOscProc.#math_floor( lfo.$_phaseB );
 		}
-		if ( sinceDelay > 0 && lfo.$amp !== 0 ) {
+		if ( sinceDelay > 0 && amp !== 0 ) {
 			const depth = lfo.$attack > 0 ? gswaOscProc.#math_clamp( sinceDelay / lfo.$attack, 0, 1 ) : 1;
 			const wave = gswaOscProc.#process_lfo_wave( lfo.$wave, lfo.$_phaseB );
 
-			return wave * lfo.$amp * depth;
+			return wave * amp * depth;
 		}
 		return 0;
 	}
