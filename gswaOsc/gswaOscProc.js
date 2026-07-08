@@ -215,44 +215,33 @@ class gswaOscProc extends AudioWorkletProcessor {
 				}
 
 				const key = keys[ o.$keyInd ];
-				let keyPan;
-				let keyGain;
-				let keyWtpos;
-				let keyFrequency;
-				let keyLowpass;
-				let keyHighpass;
-				let keyLfoGainAmp;
-				let keyLfoGainFrequency;
-				let keyLfoDetuneAmp;
-				let keyLfoDetuneFrequency;
+				let keyPan = key.$pan;
+				let keyGain = key.$gain;
+				let keyWtpos = key.$wtpos;
+				let keyLowpass = key.$lowpass;
+				let keyHighpass = key.$highpass;
+				let keyFrequency = key.$frequency;
+				let keyLfoGainAmp = key.$lfoGainAmp;
+				let keyLfoGainFrequency = key.$lfoGainFrequency;
+				let keyLfoDetuneAmp = key.$lfoDetuneAmp;
+				let keyLfoDetuneFrequency = key.$lfoDetuneFrequency;
 
-				if ( now >= key.$when ) {
-					keyPan = key.$pan;
-					keyGain = key.$gain;
-					keyWtpos = key.$wtpos;
-					keyLowpass = key.$lowpass;
-					keyHighpass = key.$highpass;
-					keyFrequency = key.$frequency;
-					keyLfoGainAmp = key.$lfoGainAmp;
-					keyLfoGainFrequency = key.$lfoGainFrequency;
-					keyLfoDetuneAmp = key.$lfoDetuneAmp;
-					keyLfoDetuneFrequency = key.$lfoDetuneFrequency;
-				} else {
+				if ( now < key.$when ) {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
 					const gapLen = key.$when - prevEnd;
 					const frac = gapLen > 0 ? gswaOscProc.#math_clamp( ( now - prevEnd ) / gapLen, 0, 1 ) : 1;
 
-					keyPan = prev.$pan + ( key.$pan - prev.$pan ) * frac;
-					keyGain = prev.$gain + ( key.$gain - prev.$gain ) * frac;
-					keyWtpos = prev.$wtpos + ( key.$wtpos - prev.$wtpos ) * frac;
-					keyLowpass = prev.$lowpass + ( key.$lowpass - prev.$lowpass ) * frac;
-					keyHighpass = prev.$highpass + ( key.$highpass - prev.$highpass ) * frac;
-					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
-					keyLfoGainAmp = prev.$lfoGainAmp + ( key.$lfoGainAmp - prev.$lfoGainAmp ) * frac;
-					keyLfoGainFrequency = prev.$lfoGainFrequency + ( key.$lfoGainFrequency - prev.$lfoGainFrequency ) * frac;
-					keyLfoDetuneAmp = prev.$lfoDetuneAmp + ( key.$lfoDetuneAmp - prev.$lfoDetuneAmp ) * frac;
-					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( key.$lfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
+					keyPan = prev.$pan + ( keyPan - prev.$pan ) * frac;
+					keyGain = prev.$gain + ( keyGain - prev.$gain ) * frac;
+					keyWtpos = prev.$wtpos + ( keyWtpos - prev.$wtpos ) * frac;
+					keyLowpass = prev.$lowpass + ( keyLowpass - prev.$lowpass ) * frac;
+					keyHighpass = prev.$highpass + ( keyHighpass - prev.$highpass ) * frac;
+					keyFrequency = prev.$frequency + ( keyFrequency - prev.$frequency ) * frac;
+					keyLfoGainAmp = prev.$lfoGainAmp + ( keyLfoGainAmp - prev.$lfoGainAmp ) * frac;
+					keyLfoGainFrequency = prev.$lfoGainFrequency + ( keyLfoGainFrequency - prev.$lfoGainFrequency ) * frac;
+					keyLfoDetuneAmp = prev.$lfoDetuneAmp + ( keyLfoDetuneAmp - prev.$lfoDetuneAmp ) * frac;
+					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( keyLfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
 				}
 
 				const elapsed = now - o.$when;
