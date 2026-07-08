@@ -16,7 +16,10 @@
 <body data-skin="gray" style="display: flex; align-items: center; justify-content: center;">
 
 <gs-flex y g16 style="width: 800px;">
-	<h1 style="opacity: .4">gridsound.gswaOsc</h1>
+	<gs-flex x g16>
+		<h1 style="opacity: .4">gridsound.gswaOsc</h1>
+		<input type="range" id="appGain" min="0" max="1" step=".01" value=".4" style="width: 60px"/>
+	</gs-flex>
 	<gs-flex x g16>
 		<gs-flex y g16 style="flex: 2">
 			<gs-flex x xstart g6 wrap>
@@ -97,6 +100,7 @@
 <script type="module">
 "use strict";
 
+const appGain = $( "#appGain" );
 const btns = $( "gsui-com-button:not([type=danger])" );
 const btnStop = $( "gsui-com-button[text=Stop]" );
 const btnKill = $( "gsui-com-button[text=Kill]" );
@@ -109,6 +113,7 @@ const uiAnaly = $( "gsui-analyser-hist" );
 const histModes = $( "[name=histType]" );
 
 const ctx = GSUaudioContext();
+let dest = null;
 let osc = null;
 let split = null;
 let waAnL = null;
@@ -122,6 +127,7 @@ gswaWTbuffers.$wtSet( "sine-to-square", [
 	GSUmathWaveSawtooth( 2048 ),
 ] );
 
+appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
 panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
 gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
 phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
@@ -139,6 +145,8 @@ function setup() {
 	log( "Init..." );
 	uiAnaly.$setAttr( "resolution", "100 300" );
 	return gswaOsc.$oscLoadModule( ctx ).then( () => {
+		dest = GSUaudioGain( ctx );
+
 		waAnL = GSUaudioAnalyser( ctx );
 		waAnR = GSUaudioAnalyser( ctx );
 		waAnL.fftSize = fftSize;
@@ -153,7 +161,8 @@ function setup() {
 		osc = new gswaOsc( ctx );
 		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
 		osc.$oscConnect( split );
-		osc.$oscConnect( ctx.destination );
+		osc.$oscConnect( dest );
+		dest.connect( ctx.destination );
 		$( "input[type=range]" ).$trigger( "oninput" );
 		btns.$disabled( false );
 		log( "Ready." );
