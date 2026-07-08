@@ -22,18 +22,7 @@
 	</gs-flex>
 	<gs-flex x g16>
 		<gs-flex y g16 style="flex: 2">
-			<gs-flex x xstart g6 wrap>
-				<gsui-com-button disabled text="lfo_gain_sine"></gsui-com-button>
-				<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
-				<gsui-com-button disabled text="ringing"></gsui-com-button>
-				<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
-				<gsui-com-button disabled text="subkeys2_lp"></gsui-com-button>
-				<gsui-com-button disabled text="kick"></gsui-com-button>
-				<gsui-com-button disabled text="ding"></gsui-com-button>
-				<gsui-com-button disabled text="env_lp"></gsui-com-button>
-				<gsui-com-button disabled text="env_det"></gsui-com-button>
-				<gsui-com-button disabled text="env_gain"></gsui-com-button>
-			</gs-flex>
+			<gs-flex id="examples" x xstart g6 wrap></gs-flex>
 			<gs-flex x xstart g6 wrap style="width: 280px">
 				<gsui-com-button type="danger" text="Stop"></gsui-com-button>
 				<gsui-com-button type="danger" text="Kill"></gsui-com-button>
@@ -100,119 +89,6 @@
 <!-- ....................................................................... -->
 <script type="module">
 "use strict";
-
-const appGain = $( "#appGain" );
-const btns = $( "gsui-com-button:not([type=danger])" );
-const btnStop = $( "gsui-com-button[text=Stop]" );
-const btnKill = $( "gsui-com-button[text=Kill]" );
-const status = $( "#status" );
-const panInput = $( "#panInput" );
-const gainInput = $( "#gainInput" );
-const phaseInput = $( "#phaseInput" );
-const detuneInput = $( "#detuneInput" );
-const uiAnaly = $( "gsui-analyser-hist" );
-const histModes = $( "[name=histType]" );
-
-const ctx = GSUaudioContext();
-let dest = null;
-let osc = null;
-let split = null;
-let waAnL = null;
-let waAnR = null;
-const fftSize = 2048;
-const dataChanL = new Float32Array( fftSize / 2 );
-const dataChanR = new Float32Array( fftSize / 2 );
-
-gswaWTbuffers.$wtSet( "sine-to-square", [
-	GSUmathWaveSine( 2048 ),
-	GSUmathWaveSawtooth( 2048 ),
-] );
-
-appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
-panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
-gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
-phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
-detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
-
-histModes.$onchange( e => {
-	uiAnaly.$setAttr( "type", e.target.value );
-} );
-
-function log( msg ) {
-	status.$text( status.$text() + msg + "\n" ).$scrollY( 9999999 );
-}
-
-function setup() {
-	log( "Init..." );
-	uiAnaly.$setAttr( "resolution", "100 300" );
-	return gswaOsc.$oscLoadModule( ctx ).then( () => {
-		dest = GSUaudioGain( ctx );
-
-		waAnL = GSUaudioAnalyser( ctx );
-		waAnR = GSUaudioAnalyser( ctx );
-		waAnL.fftSize = fftSize;
-		waAnR.fftSize = fftSize;
-		waAnL.smoothingTimeConstant = 0;
-		waAnR.smoothingTimeConstant = 0;
-
-		split = GSUaudioChannelSplitter( ctx, 2 );
-		split.connect( waAnL, 0 );
-		split.connect( waAnR, 1 );
-
-		osc = new gswaOsc( ctx );
-		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
-		osc.$oscConnect( split );
-		osc.$oscConnect( dest );
-		dest.connect( ctx.destination );
-		$( "input[type=range]" ).$trigger( "oninput" );
-		btns.$disabled( false );
-		log( "Ready." );
-		GSUsetInterval( loop );
-	} );
-}
-
-function loop() {
-	if ( uiAnaly.$getAttr( "type" ) === "td" ) {
-		waAnL.getFloatTimeDomainData( dataChanL );
-		waAnR.getFloatTimeDomainData( dataChanR );
-	} else {
-		waAnL.getFloatFrequencyData( dataChanL );
-		waAnR.getFloatFrequencyData( dataChanR );
-	}
-	uiAnaly.$get( 0 ).$draw( dataChanL, dataChanR );
-}
-
-function ctxIsReady() {
-	if ( ctx.state === "suspended" ) {
-		log( `Context suspended: ${ ctx.currentTime.toFixed( 3 ) }s` );
-		ctx.resume();
-		return false;
-	}
-	return true;
-}
-
-btnKill.$onclick( () => {
-	osc.$oscKill();
-	log( `Osc killed: ${ ctx.currentTime.toFixed( 3 ) }s` );
-} );
-
-btnStop.$onclick( () => {
-	osc.$oscClear();
-	log( `Osc cleared: ${ ctx.currentTime.toFixed( 3 ) }s` );
-} );
-
-btns.$onclick( e => {
-	if ( ctxIsReady() ) {
-		const tar = $( e.target );
-		const name = tar.$getAttr( "text" );
-		const now = ctx.currentTime + .1;
-
-		examples[ name ]( now );
-		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
-	}
-} );
-
-setup().catch( err => log( "Setup error: " + err.message ) );
 
 const envDefault = {
 	attack: 1,
@@ -372,6 +248,121 @@ const examples = {
 		} );
 	},
 };
+
+const appGain = $( "#appGain" );
+const btns = $( Object.keys( examples ).map( n => $.$elem( "gsui-com-button", { disabled: true, text: n } ) ) );
+const btnStop = $( "gsui-com-button[text=Stop]" );
+const btnKill = $( "gsui-com-button[text=Kill]" );
+const status = $( "#status" );
+const panInput = $( "#panInput" );
+const gainInput = $( "#gainInput" );
+const phaseInput = $( "#phaseInput" );
+const detuneInput = $( "#detuneInput" );
+const uiAnaly = $( "gsui-analyser-hist" );
+const histModes = $( "[name=histType]" );
+
+$( "#examples" ).$append( btns );
+
+const ctx = GSUaudioContext();
+let dest = null;
+let osc = null;
+let split = null;
+let waAnL = null;
+let waAnR = null;
+const fftSize = 2048;
+const dataChanL = new Float32Array( fftSize / 2 );
+const dataChanR = new Float32Array( fftSize / 2 );
+
+gswaWTbuffers.$wtSet( "sine-to-square", [
+	GSUmathWaveSine( 2048 ),
+	GSUmathWaveSawtooth( 2048 ),
+] );
+
+appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
+panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
+gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
+phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
+detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
+
+histModes.$onchange( e => {
+	uiAnaly.$setAttr( "type", e.target.value );
+} );
+
+function log( msg ) {
+	status.$text( status.$text() + msg + "\n" ).$scrollY( 9999999 );
+}
+
+function setup() {
+	log( "Init..." );
+	uiAnaly.$setAttr( "resolution", "100 300" );
+	return gswaOsc.$oscLoadModule( ctx ).then( () => {
+		dest = GSUaudioGain( ctx );
+
+		waAnL = GSUaudioAnalyser( ctx );
+		waAnR = GSUaudioAnalyser( ctx );
+		waAnL.fftSize = fftSize;
+		waAnR.fftSize = fftSize;
+		waAnL.smoothingTimeConstant = 0;
+		waAnR.smoothingTimeConstant = 0;
+
+		split = GSUaudioChannelSplitter( ctx, 2 );
+		split.connect( waAnL, 0 );
+		split.connect( waAnR, 1 );
+
+		osc = new gswaOsc( ctx );
+		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
+		osc.$oscConnect( split );
+		osc.$oscConnect( dest );
+		dest.connect( ctx.destination );
+		$( "input[type=range]" ).$trigger( "oninput" );
+		btns.$disabled( false );
+		log( "Ready." );
+		GSUsetInterval( loop );
+	} );
+}
+
+function loop() {
+	if ( uiAnaly.$getAttr( "type" ) === "td" ) {
+		waAnL.getFloatTimeDomainData( dataChanL );
+		waAnR.getFloatTimeDomainData( dataChanR );
+	} else {
+		waAnL.getFloatFrequencyData( dataChanL );
+		waAnR.getFloatFrequencyData( dataChanR );
+	}
+	uiAnaly.$get( 0 ).$draw( dataChanL, dataChanR );
+}
+
+function ctxIsReady() {
+	if ( ctx.state === "suspended" ) {
+		log( `Context suspended: ${ ctx.currentTime.toFixed( 3 ) }s` );
+		ctx.resume();
+		return false;
+	}
+	return true;
+}
+
+btnKill.$onclick( () => {
+	osc.$oscKill();
+	log( `Osc killed: ${ ctx.currentTime.toFixed( 3 ) }s` );
+} );
+
+btnStop.$onclick( () => {
+	osc.$oscClear();
+	log( `Osc cleared: ${ ctx.currentTime.toFixed( 3 ) }s` );
+} );
+
+btns.$onclick( e => {
+	if ( ctxIsReady() ) {
+		const tar = $( e.target );
+		const name = tar.$getAttr( "text" );
+		const now = ctx.currentTime + .1;
+
+		examples[ name ]( now );
+		log( `Push "${ name }": ${ now.toFixed( 3 ) }s` );
+	}
+} );
+
+setup().catch( err => log( "Setup error: " + err.message ) );
 </script>
 </body>
 </html>
