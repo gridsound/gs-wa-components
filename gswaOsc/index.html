@@ -3,31 +3,22 @@
 <head>
 <meta charset="utf-8"/>
 <title>gswaOsc</title>
-<style>
-	body {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-	pre {
-		margin: 0;
-	}
-</style>
-<link rel="stylesheet" type="text/css" href="../assets/fonts/fonts.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-flex.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-gray.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiIcon/gsuiIcon.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiCursor/gsuiCursor.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiRipple/gsuiRipple.css" />
-<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiComButton/gsuiComButton.css" />
+<link rel="stylesheet" type="text/css" href="../assets/fonts/fonts.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-flex.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsui-gray.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiIcon/gsuiIcon.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiCursor/gsuiCursor.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiRipple/gsuiRipple.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiComButton/gsuiComButton.css"/>
+<link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiAnalyserHist/gsuiAnalyserHist.css"/>
 </head>
-<body data-skin="gray">
+<body data-skin="gray" style="display: flex; align-items: center; justify-content: center;">
 
-<gs-flex y g16>
+<gs-flex y g16 style="width: 800px;">
 	<h1 style="opacity: .4">gridsound.gswaOsc</h1>
-	<gs-flex x g16 style="height: 260px">
-		<gs-flex y g8 style="width: 280px">
+	<gs-flex x g16>
+		<gs-flex y g16 style="flex: 2">
 			<gs-flex x xstart g6 wrap>
 				<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
 				<gsui-com-button disabled text="ringing"></gsui-com-button>
@@ -45,24 +36,39 @@
 			</gs-flex>
 			<gs-flex y>
 				<gs-flex x ycenter g4>
-					<input id="panInput" type="range" min="-1" max="1" step=".01" value="0" />
+					<input id="panInput" type="range" min="-1" max="1" step=".01" value="0"/>
 					<span>pan</span>
 				</gs-flex>
 				<gs-flex x ycenter g4>
-					<input id="gainInput" type="range" min="0" max="1" step=".01" value="1" />
+					<input id="gainInput" type="range" min="0" max="1" step=".01" value="1"/>
 					<span>gain</span>
 				</gs-flex>
 				<gs-flex x ycenter g4>
-					<input id="phaseInput" type="range" min="0" max="1" step=".01" value="0" />
+					<input id="phaseInput" type="range" min="0" max="1" step=".01" value="0"/>
 					<span>phase</span>
 				</gs-flex>
 				<gs-flex x ycenter g4>
-					<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0" />
+					<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0"/>
 					<span>detune</span>
 				</gs-flex>
 			</gs-flex>
+			<gs-flex x g8>
+				<label>
+					<input type="radio" name="histType" value="td"/>
+					<span>td</span>
+				</label>
+				<label>
+					<input type="radio" name="histType" value="hz" checked/>
+					<span>hz</span>
+				</label>
+			</gs-flex>
 		</gs-flex>
-		<pre id="status" style="width: 200px; height: 100%; overflow-y: scroll; background: #0004; scrollbar-width: auto;"></pre>
+		<gs-flex style="position: relative; flex: 2">
+			<pre id="status" style="position: absolute; inset: 0; margin: 0; overflow-y: scroll; background: #0004; scrollbar-width: auto;"></pre>
+		</gs-flex>
+		<gs-flex style="position: relative; flex: 1; background: red;">
+			<gsui-analyser-hist></gsui-analyser-hist>
+		</gs-flex>
 	</gs-flex>
 </gs-flex>
 
@@ -78,6 +84,8 @@
 <script src="../../gs-ui-components/gsui0ne/gsui0ne.js"></script>
 <script src="../../gs-ui-components/gsuiRipple/gsuiRipple.js"></script>
 <script src="../../gs-ui-components/gsuiComButton/gsuiComButton.js"></script>
+<script src="../../gs-ui-components/gsuiAnalyserHz/gsuiAnalyserHz.js"></script>
+<script src="../../gs-ui-components/gsuiAnalyserHist/gsuiAnalyserHist.js"></script>
 
 <!-- ....................................................................... -->
 <script src="../gswaWTbuffers/gswaWTbuffers.js"></script>
@@ -97,9 +105,17 @@ const panInput = $( "#panInput" );
 const gainInput = $( "#gainInput" );
 const phaseInput = $( "#phaseInput" );
 const detuneInput = $( "#detuneInput" );
+const uiAnaly = $( "gsui-analyser-hist" );
+const histModes = $( "[name=histType]" );
 
 const ctx = GSUaudioContext();
 let osc = null;
+let split = null;
+let waAnL = null;
+let waAnR = null;
+const fftSize = 2048;
+const dataChanL = new Float32Array( fftSize / 2 );
+const dataChanR = new Float32Array( fftSize / 2 );
 
 gswaWTbuffers.$wtSet( "sine-to-square", [
 	GSUmathWaveSine( 2048 ),
@@ -111,20 +127,49 @@ gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
 phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
 detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
 
+histModes.$onchange( e => {
+	uiAnaly.$setAttr( "type", e.target.value );
+} );
+
 function log( msg ) {
-	status.$text( status.$text() + msg + "\n" ).$scrollY( Infinity );
+	status.$text( status.$text() + msg + "\n" ).$scrollY( 9999999 );
 }
 
 function setup() {
 	log( "Init..." );
+	uiAnaly.$setAttr( "resolution", "100 300" );
 	return gswaOsc.$oscLoadModule( ctx ).then( () => {
+		waAnL = GSUaudioAnalyser( ctx );
+		waAnR = GSUaudioAnalyser( ctx );
+		waAnL.fftSize = fftSize;
+		waAnR.fftSize = fftSize;
+		waAnL.smoothingTimeConstant = 0;
+		waAnR.smoothingTimeConstant = 0;
+
+		split = GSUaudioChannelSplitter( ctx, 2 );
+		split.connect( waAnL, 0 );
+		split.connect( waAnR, 1 );
+
 		osc = new gswaOsc( ctx );
-		osc.$oscConnect( ctx.destination );
 		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
+		osc.$oscConnect( split );
+		osc.$oscConnect( ctx.destination );
 		$( "input[type=range]" ).$trigger( "oninput" );
 		btns.$disabled( false );
 		log( "Ready." );
+		GSUsetInterval( loop );
 	} );
+}
+
+function loop() {
+	if ( uiAnaly.$getAttr( "type" ) === "td" ) {
+		waAnL.getFloatTimeDomainData( dataChanL );
+		waAnR.getFloatTimeDomainData( dataChanR );
+	} else {
+		waAnL.getFloatFrequencyData( dataChanL );
+		waAnR.getFloatFrequencyData( dataChanR );
+	}
+	uiAnaly.$get( 0 ).$draw( dataChanL, dataChanR );
 }
 
 function ctxIsReady() {
