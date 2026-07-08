@@ -141,6 +141,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$highpass: gswaOscProc.#math_clamp( k.highpass ?? 1, 0, 1 ),
 				$lfoGainAmp: gswaOscProc.#math_clamp( k.lfoGainAmp ?? 1, 0, 4 ),
 				$lfoGainFrequency: gswaOscProc.#math_clamp( k.lfoGainFrequency ?? 1, 0, 4 ),
+				$lfoDetuneAmp: gswaOscProc.#math_clamp( k.lfoDetuneAmp ?? 1, 0, 4 ),
+				$lfoDetuneFrequency: gswaOscProc.#math_clamp( k.lfoDetuneFrequency ?? 1, 0, 4 ),
 			} ) ),
 		};
 	}
@@ -221,6 +223,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let keyHighpass;
 				let keyLfoGainAmp;
 				let keyLfoGainFrequency;
+				let keyLfoDetuneAmp;
+				let keyLfoDetuneFrequency;
 
 				if ( now >= key.$when ) {
 					keyPan = key.$pan;
@@ -231,6 +235,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyFrequency = key.$frequency;
 					keyLfoGainAmp = key.$lfoGainAmp;
 					keyLfoGainFrequency = key.$lfoGainFrequency;
+					keyLfoDetuneAmp = key.$lfoDetuneAmp;
+					keyLfoDetuneFrequency = key.$lfoDetuneFrequency;
 				} else {
 					const prev = keys[ o.$keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
@@ -245,6 +251,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyFrequency = prev.$frequency + ( key.$frequency - prev.$frequency ) * frac;
 					keyLfoGainAmp = prev.$lfoGainAmp + ( key.$lfoGainAmp - prev.$lfoGainAmp ) * frac;
 					keyLfoGainFrequency = prev.$lfoGainFrequency + ( key.$lfoGainFrequency - prev.$lfoGainFrequency ) * frac;
+					keyLfoDetuneAmp = prev.$lfoDetuneAmp + ( key.$lfoDetuneAmp - prev.$lfoDetuneAmp ) * frac;
+					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( key.$lfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
 				}
 
 				const elapsed = now - o.$when;
@@ -259,8 +267,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				) + 1;
 				const lfoDetuneVal = gswaOscProc.#process_lfo(
 					lfoDetune,
-					lfoDetune.$amp,
-					lfoDetune.$frequency,
+					lfoDetune.$amp * keyLfoDetuneAmp,
+					lfoDetune.$frequency * keyLfoDetuneFrequency,
 					elapsed
 				);
 

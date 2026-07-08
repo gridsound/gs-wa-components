@@ -99,6 +99,50 @@ const envDefault = {
 };
 
 const examples = {
+	lfoDt_amp_anim: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
+				},
+			},
+			lfos: {
+				detune: {
+					wave: "sine",
+					delay: .2,
+					attack: 1,
+					frequency: 8,
+					amp: 1200,
+				},
+			},
+			keys: [
+				{ when: when + 0, duration: 1, frequency: 400, gain: .5, lfoDetuneAmp: 1.00 },
+				{ when: when + 3, duration: 1, frequency: 400, gain: .5, lfoDetuneAmp: 0.00 },
+			],
+		} );
+	},
+	lfoDt_hz_anim: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			envs: {
+				gain: {
+					release: 1,
+				},
+			},
+			lfos: {
+				detune: {
+					wave: "sine",
+					delay: .2,
+					attack: 1,
+					frequency: 8,
+					amp: 1200,
+				},
+			},
+			keys: [
+				{ when: when + 0, duration: 1, frequency: 400, gain: .5, lfoDetuneFrequency: 1.00 },
+				{ when: when + 3, duration: 1, frequency: 400, gain: .5, lfoDetuneFrequency: 0.00 },
+			],
+		} );
+	},
 	lfoGn_amp_anim: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
