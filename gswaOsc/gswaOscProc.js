@@ -250,34 +250,32 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const smp =
-					apGainI *
-					keyGain *
-					envGainVal *
-					lfoGainVal *
-					this.#process_key_wavetable(
-						o,
-						keyFrequency,
-						keyWtpos,
-						apPhaseI,
-						apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal,
-					);
-				const smp2 = gswaOscProc.#process_lowpass( o.$lp, smp, envLP, keyLowpass, elapsed, remaining );
-				const smp3 = gswaOscProc.#process_highpass( o.$hp, smp2, keyHighpass );
+				const smp = gswaOscProc.#process_sample_wavetable(
+					o,
+					keyFrequency,
+					keyWtpos,
+					apPhaseI,
+					apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal,
+					this.#wtdata,
+					this.#wtdataN,
+					this.#wtdataL,
+				);
+				const smp2 = smp * apGainI * keyGain * envGainVal * lfoGainVal;
+				const smp3 = gswaOscProc.#process_lowpass( o.$lp, smp2, envLP, keyLowpass, elapsed, remaining );
+				const smp4 = gswaOscProc.#process_highpass( o.$hp, smp3, keyHighpass );
 				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
 
-				chanL[ i ] += smp3 * ( pan > 0 ? 1 - pan : 1 );
-				chanR[ i ] += smp3 * ( pan < 0 ? 1 + pan : 1 );
+				chanL[ i ] += smp4 * ( pan > 0 ? 1 - pan : 1 );
+				chanR[ i ] += smp4 * ( pan < 0 ? 1 + pan : 1 );
 			}
 		}
 		o.$phase = o.$phaseB;
 		lfoGain.$_phase = lfoGain.$_phaseB;
 		lfoDetune.$_phase = lfoDetune.$_phaseB;
 	}
-	#process_key_wavetable( o, frequency, wtpos, apPhaseI, detune ) {
-		const wtdata = this.#wtdata;
-		const nbWaves = this.#wtdataN;
-		const waveLen = this.#wtdataL;
+
+	// .........................................................................
+	static #process_sample_wavetable( o, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
 		const fEff = frequency * 2 ** ( detune / 1200 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = gswaOscProc.#math_clamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
@@ -306,6 +304,27 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const smpB = wtdata[ baseB + sLoww ] + sFrac * ( wtdata[ baseB + sHigh ] - wtdata[ baseB + sLoww ] );
 
 		return smpA + tFrac * ( smpB - smpA );
+	}
+
+	// .........................................................................
+	static #process_env( e, t, remaining ) {
+		let val;
+
+		if ( t < e.$attack ) {
+			val = e.$attack <= 0 ? 1 : t / e.$attack;
+		} else if ( t < e.$attack + e.$hold ) {
+			val = 1;
+		} else if ( t < e.$attack + e.$hold + e.$decay ) {
+			val = e.$decay <= 0 ? e.$sustain : 1 - ( 1 - e.$sustain ) * ( t - e.$attack - e.$hold ) / e.$decay;
+		} else {
+			val = e.$sustain;
+		}
+		if ( e.$release > 0 ) {
+			val *= gswaOscProc.#math_clamp( remaining / e.$release, 0, 1 );
+		} else if ( remaining <= 0 ) {
+			val = 0;
+		}
+		return val;
 	}
 
 	// .........................................................................
@@ -386,27 +405,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$b2 = o.$b0;
 		o.$a1 = ( -2 * cosw0 ) / a0;
 		o.$a2 = ( 1 - alpha ) / a0;
-	}
-
-	// .........................................................................
-	static #process_env( e, t, remaining ) {
-		let val;
-
-		if ( t < e.$attack ) {
-			val = e.$attack <= 0 ? 1 : t / e.$attack;
-		} else if ( t < e.$attack + e.$hold ) {
-			val = 1;
-		} else if ( t < e.$attack + e.$hold + e.$decay ) {
-			val = e.$decay <= 0 ? e.$sustain : 1 - ( 1 - e.$sustain ) * ( t - e.$attack - e.$hold ) / e.$decay;
-		} else {
-			val = e.$sustain;
-		}
-		if ( e.$release > 0 ) {
-			val *= gswaOscProc.#math_clamp( remaining / e.$release, 0, 1 );
-		} else if ( remaining <= 0 ) {
-			val = 0;
-		}
-		return val;
 	}
 
 	// .........................................................................
