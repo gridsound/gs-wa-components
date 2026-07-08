@@ -23,6 +23,7 @@
 	<gs-flex x g16>
 		<gs-flex y g16 style="flex: 2">
 			<gs-flex x xstart g6 wrap>
+				<gsui-com-button disabled text="lfo_gain_sine"></gsui-com-button>
 				<gsui-com-button disabled text="lfo_gain_sawtooth"></gsui-com-button>
 				<gsui-com-button disabled text="ringing"></gsui-com-button>
 				<gsui-com-button disabled text="subkeys2_hp"></gsui-com-button>
@@ -222,6 +223,21 @@ const envDefault = {
 };
 
 const examples = {
+	lfo_gain_sine: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			lfos: {
+				gain: {
+					wave: "sine",
+					attack: 1,
+					frequency: 4,
+					amp: 1,
+				},
+			},
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: .5, wtpos: 0 },
+			],
+		} );
+	},
 	lfo_gain_sawtooth: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			lfos: {
