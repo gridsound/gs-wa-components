@@ -13,9 +13,9 @@
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiComButton/gsuiComButton.css"/>
 <link rel="stylesheet" type="text/css" href="../../gs-ui-components/gsuiAnalyserHist/gsuiAnalyserHist.css"/>
 </head>
-<body data-skin="gray" style="display: flex; align-items: center; justify-content: center;">
+<body data-skin="gray" style="display: flex; align-items: center; justify-content: center">
 
-<gs-flex y g16 style="width: 800px;">
+<gs-flex y g16 style="width: 800px">
 	<gs-flex x g16>
 		<h1 style="opacity: .4">gridsound.gswaOsc</h1>
 		<input type="range" id="appGain" min="0" max="1" step=".01" value=".4" style="width: 60px"/>
@@ -59,7 +59,7 @@
 			</gs-flex>
 		</gs-flex>
 		<gs-flex style="position: relative; flex: 3">
-			<pre id="status" style="position: absolute; inset: 0; margin: 0; overflow-y: scroll; background: #0004; scrollbar-width: auto;"></pre>
+			<pre id="status" style="position: absolute; inset: 0; margin: 0; overflow-y: scroll; background: #0004; scrollbar-width: auto"></pre>
 		</gs-flex>
 		<gs-flex style="position: relative; flex: 1">
 			<gsui-analyser-hist type="hz"></gsui-analyser-hist>
@@ -454,7 +454,7 @@ function log( msg ) {
 
 function setup() {
 	log( "Init..." );
-	uiAnaly.$setAttr( "resolution", "100 400" );
+	uiAnaly.$setAttr( "resolution", `${ uiAnaly.$width() } ${ uiAnaly.$height() }` );
 	return gswaOsc.$oscLoadModule( ctx ).then( () => {
 		dest = GSUaudioGain( ctx );
 
