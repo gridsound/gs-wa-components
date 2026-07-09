@@ -57,9 +57,9 @@ class gswaOsc {
 	$oscKill() {
 		this.#node.port.postMessage( [ "kill" ] );
 	}
-	$oscWavetable( wt ) {
+	$oscSource( type, src ) {
 		this.#ready = false;
-		this.#node.port.postMessage( [ "wavetable", wt ] );
+		this.#node.port.postMessage( [ "source", type, src ] );
 	}
 	$oscPushNote( id, obj ) {
 		this.#node.port.postMessage( [ "push", id, obj ] );

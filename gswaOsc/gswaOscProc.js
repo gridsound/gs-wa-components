@@ -39,8 +39,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "clear":
 				this.#clear();
 				break;
-			case "wavetable":
-				this.#wtdata = new Float32Array( a0 );
+			case "source":
+				this.#wtdata = a0 !== "wavetable" ? null : new Float32Array( a1 );
 				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":

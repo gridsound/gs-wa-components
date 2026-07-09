@@ -482,7 +482,7 @@ function setup() {
 		split.connect( waAnR, 1 );
 
 		osc = new gswaOsc( ctx );
-		osc.$oscWavetable( gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
+		osc.$oscSource( "wavetable", gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
 		osc.$oscConnect( split );
 		osc.$oscConnect( dest );
 		dest.connect( ctx.destination );
