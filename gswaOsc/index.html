@@ -44,6 +44,18 @@
 					<input id="detuneInput" type="range" min="-1200" max="1200" step="1" value="0"/>
 					<span>detune</span>
 				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="unisonvoicesInput" type="range" min="1" max="9" step="1" value="1"/>
+					<span>unison-voices</span>
+				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="unisondetuneInput" type="range" min="0" max="200" step=".01" value="0"/>
+					<span>unison-detune</span>
+				</gs-flex>
+				<gs-flex x ycenter g4>
+					<input id="unisonblendInput" type="range" min="0" max="1" step=".01" value="0"/>
+					<span>unison-blend</span>
+				</gs-flex>
 			</gs-flex>
 			<gs-flex x g8>
 				<label>
@@ -99,6 +111,20 @@ const envDefault = {
 };
 
 const examples = {
+	sine: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: 1 },
+			],
+		} );
+	},
+	saw: when => {
+		osc.$oscPushNote( GSUuuid(), {
+			keys: [
+				{ when, duration: 60, frequency: 400, gain: 1, wtpos: 1 },
+			],
+		} );
+	},
 	lfoDt_amp_anim: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
@@ -398,6 +424,9 @@ const panInput = $( "#panInput" );
 const gainInput = $( "#gainInput" );
 const phaseInput = $( "#phaseInput" );
 const detuneInput = $( "#detuneInput" );
+const unisonvoicesInput = $( "#unisonvoicesInput" );
+const unisondetuneInput = $( "#unisondetuneInput" );
+const unisonblendInput = $( "#unisonblendInput" );
 const uiAnaly = $( "gsui-analyser-hist" );
 const histModes = $( "[name=histType]" );
 
@@ -423,6 +452,9 @@ panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
 gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
 phaseInput.$oninput( () => GSUaudioParamSet( osc.phase, +phaseInput.$value() ) );
 detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() ) );
+unisonvoicesInput.$oninput( () => GSUaudioParamSet( osc.unisonvoices, +unisonvoicesInput.$value() ) );
+unisondetuneInput.$oninput( () => GSUaudioParamSet( osc.unisondetune, +unisondetuneInput.$value() ) );
+unisonblendInput.$oninput( () => GSUaudioParamSet( osc.unisonblend, +unisonblendInput.$value() ) );
 
 histModes.$onchange( e => {
 	uiAnaly.$setAttr( "type", e.target.value );

@@ -4,6 +4,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	static #wtdataHeaderSize = 4;
 	static #filterCoefUpdateRate = 32;
 	static #filterMinFreq = 20;
+	static #unisonMaxVoices = 9;
 	#ok = true;
 	#keys = new Map();
 	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
@@ -13,10 +14,13 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 	static get parameterDescriptors() {
 		return [
-			{ automationRate: "a-rate", name: "pan",    defaultValue: 0, minValue: -1, maxValue: 1 },
-			{ automationRate: "a-rate", name: "gain",   defaultValue: 1                            },
-			{ automationRate: "a-rate", name: "phase",  defaultValue: 0, minValue:  0, maxValue: 1 },
-			{ automationRate: "a-rate", name: "detune", defaultValue: 0                            },
+			{ automationRate: "a-rate", name: "pan",          defaultValue: 0, minValue:   -1, maxValue:   1 },
+			{ automationRate: "a-rate", name: "gain",         defaultValue: 1                                },
+			{ automationRate: "a-rate", name: "phase",        defaultValue: 0, minValue:    0, maxValue:   1 },
+			{ automationRate: "a-rate", name: "detune",       defaultValue: 0                                },
+			{ automationRate: "a-rate", name: "unisonvoices", defaultValue: 1, minValue:    1, maxValue:   9 },
+			{ automationRate: "a-rate", name: "unisondetune", defaultValue: 0, minValue:    0, maxValue: 200 },
+			{ automationRate: "a-rate", name: "unisonblend",  defaultValue: 0, minValue:    0, maxValue:   1 },
 		];
 	}
 
@@ -78,13 +82,13 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 		return {
 			$_id: id,
-			$_phase: 0,
-			$_phaseB: 0,
 			$_keyInd: 0,
 			$_when: d.keys[ 0 ].when,
 			$_whenEnd: klast.when + klast.duration + release,
 			$_lp: gswaOscProc.#format_new_key_coeff(),
 			$_hp: gswaOscProc.#format_new_key_coeff(),
+			$_unisonPhase: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$envs: {
 				$gain: {
 					$attack: envGain?.attack ?? .01,
@@ -193,6 +197,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apGain = params.gain;
 		const apPhase = params.phase;
 		const apDetune = params.detune;
+		const apUnisonVoices = params.unisonvoices;
+		const apUnisonDetune = params.unisondetune;
+		const apUnisonBlend = params.unisonblend;
 		const keys = o.$keys;
 		const envGain = o.$envs.$gain;
 		const envDetune = o.$envs.$detune;
@@ -200,9 +207,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const lfoGain = o.$lfos.$gain;
 		const lfoDetune = o.$lfos.$detune;
 
-		o.$_phaseB = o.$_phase;
 		lfoGain.$_phaseB = lfoGain.$_phase;
 		lfoDetune.$_phaseB = lfoDetune.$_phase;
+		o.$_unisonPhaseB.set( o.$_unisonPhase );
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
@@ -265,15 +272,20 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const smp = gswaOscProc.#process_sample_wavetable(
+				const apUnisonVoicesI = apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ];
+				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
+				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
+				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
+
+				const smp = this.#process_unison(
 					o,
 					keyFrequency,
 					keyWtpos,
 					apPhaseI,
-					apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal,
-					this.#wtdata,
-					this.#wtdataN,
-					this.#wtdataL,
+					baseDetune,
+					Math.round( apUnisonVoicesI ),
+					apUnisonDetuneI,
+					apUnisonBlendI,
 				);
 				const smp2 = smp * apGainI * keyGain * envGainVal * lfoGainVal;
 				const smp3 = gswaOscProc.#process_lowpass( o.$_lp, smp2, envLP, keyLowpass, elapsed, remaining );
@@ -284,13 +296,51 @@ class gswaOscProc extends AudioWorkletProcessor {
 				chanR[ i ] += smp4 * ( pan < 0 ? 1 + pan : 1 );
 			}
 		}
-		o.$_phase = o.$_phaseB;
 		lfoGain.$_phase = lfoGain.$_phaseB;
 		lfoDetune.$_phase = lfoDetune.$_phaseB;
+		o.$_unisonPhase.set( o.$_unisonPhaseB );
 	}
 
 	// .........................................................................
-	static #process_sample_wavetable( o, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
+	#process_unison( o, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
+		let val = 0;
+		let div = 0;
+
+		for ( let v = 0; v < univoices; ++v ) {
+			const uDetu = gswaOscProc.#process_unison_detune( univoices, v );
+			const uGain = gswaOscProc.#process_unison_gain( univoices, v, uniblend );
+			const detune = baseDetune + uDetu * unidetune;
+			const smp = this.#process_wavetable(
+				o.$_unisonPhaseB,
+				v,
+				frequency,
+				wtpos,
+				apPhaseI,
+				detune,
+			);
+
+			val += uGain * smp;
+			div += uGain;
+		}
+		return val / div;
+	}
+	static #process_unison_detune( nb, v ) {
+		return nb === 1
+			? 0
+			: -1 + 2 * v / ( nb - 1 );
+	}
+	static #process_unison_gain( nb, v, blend ) {
+		const midF = nb / 2;
+		const midI = midF | 0;
+
+		return ( v === midI || ( midF === midI && v === midI - 1 ) ) ? 1 : blend;
+	}
+
+	// .........................................................................
+	#process_wavetable( phaseArr, voiceInd, frequency, wtpos, apPhaseI, detune ) {
+		const wtdata = this.#wtdata;
+		const nbWaves = this.#wtdataN;
+		const waveLen = this.#wtdataL;
 		const fEff = frequency * 2 ** ( detune / 1200 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = gswaOscProc.#math_clamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
@@ -298,12 +348,13 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const tHigh = gswaOscProc.#math_min( tLoww + 1, nbWaves - 1 );
 		const tFrac = tPosi - tLoww;
 
-		o.$_phaseB += phaseInc;
-		if ( o.$_phaseB >= 1 ) {
-			o.$_phaseB -= gswaOscProc.#math_floor( o.$_phaseB );
+		let phaseB = phaseArr[ voiceInd ] + phaseInc;
+		if ( phaseB >= 1 ) {
+			phaseB -= gswaOscProc.#math_floor( phaseB );
 		}
+		phaseArr[ voiceInd ] = phaseB;
 
-		let phaseC = apPhaseI + o.$_phaseB;
+		let phaseC = apPhaseI + phaseB;
 
 		if ( phaseC >= 1 ) { phaseC -= gswaOscProc.#math_floor( phaseC ); }
 		if ( phaseC <  0 ) { ++phaseC; }

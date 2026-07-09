@@ -8,6 +8,9 @@ class gswaOsc {
 	gain = null;
 	phase = null;
 	detune = null;
+	unisonvoices = null;
+	unisondetune = null;
+	unisonblend = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -25,6 +28,9 @@ class gswaOsc {
 		this.gain = this.#node.parameters.get( "gain" );
 		this.phase = this.#node.parameters.get( "phase" );
 		this.detune = this.#node.parameters.get( "detune" );
+		this.unisonvoices = this.#node.parameters.get( "unisonvoices" );
+		this.unisondetune = this.#node.parameters.get( "unisondetune" );
+		this.unisonblend = this.#node.parameters.get( "unisonblend" );
 		this.#node.port.onmessage = this.#onmsg.bind( this );
 	}
 	#onmsg( e ) {
