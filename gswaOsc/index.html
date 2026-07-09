@@ -21,7 +21,7 @@
 		<input type="range" id="appGain" min="0" max="1" step=".01" value=".4" style="width: 60px"/>
 	</gs-flex>
 	<gs-flex x g16>
-		<gs-flex y g16 style="flex: 2">
+		<gs-flex y g16 style="flex: 3">
 			<gs-flex id="examples" x xstart g6 wrap></gs-flex>
 			<gs-flex x xstart g6 wrap style="width: 280px">
 				<gsui-com-button type="danger" text="Stop"></gsui-com-button>
@@ -57,22 +57,15 @@
 					<span>unison-blend</span>
 				</gs-flex>
 			</gs-flex>
-			<gs-flex x g8>
-				<label>
-					<input type="radio" name="histType" value="td"/>
-					<span>td</span>
-				</label>
-				<label>
-					<input type="radio" name="histType" value="hz" checked/>
-					<span>hz</span>
-				</label>
-			</gs-flex>
 		</gs-flex>
-		<gs-flex style="position: relative; flex: 2">
+		<gs-flex style="position: relative; flex: 3">
 			<pre id="status" style="position: absolute; inset: 0; margin: 0; overflow-y: scroll; background: #0004; scrollbar-width: auto;"></pre>
 		</gs-flex>
-		<gs-flex style="position: relative; flex: 1; background: red;">
-			<gsui-analyser-hist></gsui-analyser-hist>
+		<gs-flex style="position: relative; flex: 1">
+			<gsui-analyser-hist type="hz"></gsui-analyser-hist>
+		</gs-flex>
+		<gs-flex style="position: relative; flex: 1">
+			<gsui-analyser-hist type="td"></gsui-analyser-hist>
 		</gs-flex>
 	</gs-flex>
 </gs-flex>
@@ -428,7 +421,6 @@ const unisonvoicesInput = $( "#unisonvoicesInput" );
 const unisondetuneInput = $( "#unisondetuneInput" );
 const unisonblendInput = $( "#unisonblendInput" );
 const uiAnaly = $( "gsui-analyser-hist" );
-const histModes = $( "[name=histType]" );
 
 $( "#examples" ).$append( btns );
 
@@ -455,10 +447,6 @@ detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() 
 unisonvoicesInput.$oninput( () => GSUaudioParamSet( osc.unisonvoices, +unisonvoicesInput.$value() ) );
 unisondetuneInput.$oninput( () => GSUaudioParamSet( osc.unisondetune, +unisondetuneInput.$value() ) );
 unisonblendInput.$oninput( () => GSUaudioParamSet( osc.unisonblend, +unisonblendInput.$value() ) );
-
-histModes.$onchange( e => {
-	uiAnaly.$setAttr( "type", e.target.value );
-} );
 
 function log( msg ) {
 	status.$text( status.$text() + msg + "\n" ).$scrollY( 9999999 );
@@ -494,14 +482,12 @@ function setup() {
 }
 
 function loop() {
-	if ( uiAnaly.$getAttr( "type" ) === "td" ) {
-		waAnL.getFloatTimeDomainData( dataChanL );
-		waAnR.getFloatTimeDomainData( dataChanR );
-	} else {
-		waAnL.getFloatFrequencyData( dataChanL );
-		waAnR.getFloatFrequencyData( dataChanR );
-	}
+	waAnL.getFloatFrequencyData( dataChanL );
+	waAnR.getFloatFrequencyData( dataChanR );
 	uiAnaly.$get( 0 ).$draw( dataChanL, dataChanR );
+	waAnL.getFloatTimeDomainData( dataChanL );
+	waAnR.getFloatTimeDomainData( dataChanR );
+	uiAnaly.$get( 1 ).$draw( dataChanL, dataChanR );
 }
 
 function ctxIsReady() {
