@@ -21,11 +21,17 @@
 		<input type="range" id="appGain" min="0" max="1" step=".01" value=".4" style="width: 60px"/>
 	</gs-flex>
 	<gs-flex x g16>
-		<gs-flex y g16 style="flex: 3">
+		<gs-flex y g16 style="flex: 5">
 			<gs-flex id="examples" x xstart g6 wrap></gs-flex>
 			<gs-flex x xstart g6 wrap style="width: 280px">
 				<gsui-com-button type="danger" text="Stop"></gsui-com-button>
 				<gsui-com-button type="danger" text="Kill"></gsui-com-button>
+			</gs-flex>
+			<gs-flex y xstart g8>
+				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="wavetable"/><span>wavetable</span></label>
+				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_white"/><span>noise-white</span></label>
+				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_pink"/><span>noise-pink</span></label>
+				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_brown"/><span>noise-brown</span></label>
 			</gs-flex>
 			<gs-flex y>
 				<gs-flex x ycenter g4>
@@ -421,6 +427,7 @@ const unisonvoicesInput = $( "#unisonvoicesInput" );
 const unisondetuneInput = $( "#unisondetuneInput" );
 const unisonblendInput = $( "#unisonblendInput" );
 const uiAnaly = $( "gsui-analyser-hist" );
+const oscSource = $( "[name=oscSource]" );
 
 $( "#examples" ).$append( btns );
 
@@ -439,6 +446,8 @@ gswaWTbuffers.$wtSet( "sine-to-square", [
 	GSUmathWaveSawtooth( 2048 ),
 ] );
 
+const wtBuffer = gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" );
+
 appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
 panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
 gainInput.$oninput( () => GSUaudioParamSet( osc.gain, +gainInput.$value() ) );
@@ -447,6 +456,16 @@ detuneInput.$oninput( () => GSUaudioParamSet( osc.detune, +detuneInput.$value() 
 unisonvoicesInput.$oninput( () => GSUaudioParamSet( osc.unisonvoices, +unisonvoicesInput.$value() ) );
 unisondetuneInput.$oninput( () => GSUaudioParamSet( osc.unisondetune, +unisondetuneInput.$value() ) );
 unisonblendInput.$oninput( () => GSUaudioParamSet( osc.unisonblend, +unisonblendInput.$value() ) );
+
+oscSource.$onchange( e => {
+	switch ( e.target.value ) {
+		case "wavetable": osc.$oscSource( "wavetable", wtBuffer ); break;
+		case "noise_white": osc.$oscSource( "noise", "white" ); break;
+		case "noise_pink": osc.$oscSource( "noise", "pink" ); break;
+		case "noise_brown": osc.$oscSource( "noise", "brown" ); break;
+	}
+	log( `Source: "${ e.target.value }"` );
+} );
 
 function log( msg ) {
 	status.$text( status.$text() + msg + "\n" ).$scrollY( 9999999 );
@@ -470,10 +489,10 @@ function setup() {
 		split.connect( waAnR, 1 );
 
 		osc = new gswaOsc( ctx );
-		osc.$oscSource( "wavetable", gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" ) );
 		osc.$oscConnect( split );
 		osc.$oscConnect( dest );
 		dest.connect( ctx.destination );
+		oscSource.$filter( "[value=wavetable]" ).$click();
 		$( "input[type=range]" ).$trigger( "oninput" );
 		btns.$disabled( false );
 		log( "Ready." );

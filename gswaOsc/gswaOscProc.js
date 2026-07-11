@@ -7,7 +7,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 	static #unisonMaxVoices = 9;
 	#ok = true;
 	#keys = new Map();
-	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
+	#noise = null; // null or String "white" | "pink" | "brown"
+	#wtdata = null; // null or SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
 	#wtdataN = 0;
 	#wtdataL = 0;
 	#currentTimeInt = 0;
@@ -40,6 +41,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.#clear();
 				break;
 			case "source":
+				this.#noise = a0 !== "noise" ? null : a1;
 				this.#wtdata = a0 !== "wavetable" ? null : new Float32Array( a1 );
 				this.port.postMessage( [ "ready" ] );
 				break;
@@ -89,6 +91,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_hp: gswaOscProc.#format_new_key_coeff(),
 			$_unisonPhase: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_unisonPhaseB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
+			$_noiseBrown: { $b0: 0 },
 			$envs: {
 				$gain: {
 					$attack: envGain?.attack ?? .01,
@@ -172,7 +176,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 					return false;
 				}
 			}
-			this.#process_keys( chanL, chanR, params );
+			if ( wtdata || this.#noise ) {
+				this.#process_keys( chanL, chanR, params );
+			}
 		}
 		return this.#ok;
 	}
@@ -279,29 +285,76 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
 				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
 				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
+				const finalGain = apGainI * keyGain * envGainVal * lfoGainVal;
+				const finalPan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
 
-				const smp = this.#process_unison(
-					o,
-					keyFrequency,
-					keyWtpos,
-					apPhaseI,
-					baseDetune,
-					Math.round( apUnisonVoicesI ),
-					apUnisonDetuneI,
-					apUnisonBlendI,
-				);
-				const smp2 = smp * apGainI * keyGain * envGainVal * lfoGainVal;
-				const smp3 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smp2 );
-				const smp4 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smp3 );
-				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
+				if ( this.#wtdata ) {
+					const smp1 = this.#process_unison(
+						o,
+						keyFrequency,
+						keyWtpos,
+						apPhaseI,
+						baseDetune,
+						Math.round( apUnisonVoicesI ),
+						apUnisonDetuneI,
+						apUnisonBlendI,
+					) * finalGain;
+					const smp2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smp1 );
+					const smp3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smp2 );
 
-				chanL[ i ] += smp4 * ( pan > 0 ? 1 - pan : 1 );
-				chanR[ i ] += smp4 * ( pan < 0 ? 1 + pan : 1 );
+					chanL[ i ] += smp3 * ( finalPan > 0 ? 1 - finalPan : 1 );
+					chanR[ i ] += smp3 * ( finalPan < 0 ? 1 + finalPan : 1 );
+				} else {
+					const smpA1 = gswaOscProc.#process_noise( o, this.#noise ) * finalGain;
+					const smpB1 = gswaOscProc.#process_noise( o, this.#noise ) * finalGain;
+					const smpA2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpA1 );
+					const smpB2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpB1 );
+					const smpA3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpA2 );
+					const smpB3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpB2 );
+
+					chanL[ i ] += smpA3 * ( finalPan > 0 ? 1 - finalPan : 1 );
+					chanR[ i ] += smpB3 * ( finalPan < 0 ? 1 + finalPan : 1 );
+				}
 			}
 		}
 		lfoGain.$_phase = lfoGain.$_phaseB;
 		lfoDetune.$_phase = lfoDetune.$_phaseB;
 		o.$_unisonPhase.set( o.$_unisonPhaseB );
+	}
+
+	// .........................................................................
+	static #process_noise( o, noise ) {
+		switch ( noise ) {
+			case "white": return gswaOscProc.#process_noise_white();
+			case "pink": return gswaOscProc.#process_noise_pink( o.$_noisePink );
+			case "brown": return gswaOscProc.#process_noise_brown( o.$_noiseBrown );
+		}
+	}
+	static #process_noise_white() {
+		return Math.random() * 2 - 1;
+	}
+	static #process_noise_pink( b ) {
+		const white = gswaOscProc.#process_noise_white();
+		let smp;
+
+		b.$b0 = .99886 * b.$b0 + white * .0555179;
+		b.$b1 = .99332 * b.$b1 + white * .0750759;
+		b.$b2 = .96900 * b.$b2 + white * .1538520;
+		b.$b3 = .86650 * b.$b3 + white * .3104856;
+		b.$b4 = .55000 * b.$b4 + white * .5329522;
+		b.$b5 = -.7616 * b.$b5 - white * .0168980;
+		smp = b.$b0 + b.$b1 + b.$b2 + b.$b3 + b.$b4 + b.$b5 + b.$b6 + white * .5362;
+		smp *= .18; // gain
+		b.$b6 = white * .115926;
+		return smp;
+	}
+	static #process_noise_brown( b ) {
+		const white = gswaOscProc.#process_noise_white();
+		let smp = ( b.$b0 + ( .02 * white ) ) / 1.02;
+
+		b.$b0 = smp;
+		smp *= 5; // gain
+		return smp;
 	}
 
 	// .........................................................................
