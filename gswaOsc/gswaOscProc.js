@@ -9,6 +9,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#keys = new Map();
 	#noise = null; // null or String "white" | "pink" | "brown"
 	#wtdata = null; // null or SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
+	#bufferL = null;
+	#bufferR = null;
 	#wtdataN = 0;
 	#wtdataL = 0;
 	#currentTimeInt = 0;
@@ -37,7 +39,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	#onmsg( e ) {
-		const [ type, a0, a1 ] = e.data;
+		const [ type, a0, a1, a2 ] = e.data;
 
 		switch ( type ) {
 			case "kill":
@@ -50,6 +52,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.#noise = a0 !== "noise" ? null : a1;
 				this.#noiseFn = a0 !== "noise" ? null : gswaOscProc.#noiseFns[ a1 ];
 				this.#wtdata = a0 !== "wavetable" ? null : new Float32Array( a1 );
+				this.#bufferL = a0 !== "buffer" ? null : new Float32Array( a1 );
+				this.#bufferR = a0 !== "buffer" ? null : new Float32Array( a2 );
 				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":
@@ -288,7 +292,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
 				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const apUnisonVoicesI = apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ];
+				const apUnisonVoicesI = Math.round( apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ] );
 				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
 				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
 				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
@@ -296,22 +300,45 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let smpR;
 
 				if ( this.#wtdata ) {
-					smpL = this.#process_unison(
+					smpL = this.#process_unison_wavetable(
 						o,
 						keyFrequency,
 						keyWtpos,
 						apPhaseI,
 						baseDetune,
-						Math.round( apUnisonVoicesI ),
+						apUnisonVoicesI,
 						apUnisonDetuneI,
 						apUnisonBlendI,
 					);
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
 					smpR = smpL;
-				} else {
+				} else if ( this.#noise ) {
 					smpL = this.#noiseFn( o );
 					smpR = this.#noiseFn( o );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpR );
+				} else {
+					smpL = this.#process_unison_buffer(
+						o,
+						keyFrequency,
+						baseDetune,
+						this.#bufferL,
+						apUnisonVoicesI,
+						apUnisonDetuneI,
+						apUnisonBlendI,
+					);
+					smpR = this.#process_unison_buffer(
+						o,
+						keyFrequency,
+						baseDetune,
+						this.#bufferR,
+						apUnisonVoicesI,
+						apUnisonDetuneI,
+						apUnisonBlendI,
+					);
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
 					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpR );
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
@@ -361,7 +388,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	#process_unison( o, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
+	#process_unison_buffer( o, frequency, baseDetune, buffer, univoices, unidetune, uniblend ) {
 		let val = 0;
 		let div = 0;
 
@@ -369,13 +396,37 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const uDetu = gswaOscProc.#process_unison_detune( univoices, v );
 			const uGain = gswaOscProc.#process_unison_gain( univoices, v, uniblend );
 			const detune = baseDetune + uDetu * unidetune;
-			const smp = this.#process_wavetable(
+			const smp = gswaOscProc.#process_buffer(
+				o.$_unisonPhaseB,
+				v,
+				frequency,
+				detune,
+				buffer,
+			);
+
+			val += uGain * smp;
+			div += uGain;
+		}
+		return val / div;
+	}
+	#process_unison_wavetable( o, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
+		let val = 0;
+		let div = 0;
+
+		for ( let v = 0; v < univoices; ++v ) {
+			const uDetu = gswaOscProc.#process_unison_detune( univoices, v );
+			const uGain = gswaOscProc.#process_unison_gain( univoices, v, uniblend );
+			const detune = baseDetune + uDetu * unidetune;
+			const smp = gswaOscProc.#process_wavetable(
 				o.$_unisonPhaseB,
 				v,
 				frequency,
 				wtpos,
 				apPhaseI,
 				detune,
+				this.#wtdata,
+				this.#wtdataN,
+				this.#wtdataL,
 			);
 
 			val += uGain * smp;
@@ -396,10 +447,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	#process_wavetable( phaseArr, voiceInd, frequency, wtpos, apPhaseI, detune ) {
-		const wtdata = this.#wtdata;
-		const nbWaves = this.#wtdataN;
-		const waveLen = this.#wtdataL;
+	static #process_buffer( phaseArr, voiceInd, frequency, detune, buffer ) {
+		// ???
+	}
+	static #process_wavetable( phaseArr, voiceInd, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
 		const fEff = frequency * 2 ** ( detune / 1200 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = gswaOscProc.#math_clamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
