@@ -268,6 +268,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed
 				);
 
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lp, keyLowpass, envLP, elapsed, remaining );
+				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hp, keyHighpass );
+
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
 				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
@@ -288,8 +291,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					apUnisonBlendI,
 				);
 				const smp2 = smp * apGainI * keyGain * envGainVal * lfoGainVal;
-				const smp3 = gswaOscProc.#process_lowpass( o.$_lp, smp2, envLP, keyLowpass, elapsed, remaining );
-				const smp4 = gswaOscProc.#process_highpass( o.$_hp, smp3, keyHighpass );
+				const smp3 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smp2 );
+				const smp4 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smp3 );
 				const pan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
 
 				chanL[ i ] += smp4 * ( pan > 0 ? 1 - pan : 1 );
@@ -423,19 +426,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lowpass( cf, x, envLP, keyLowpass, elapsed, remaining ) {
+	static #process_lowpass_coeffs_recalc( cf, keyLowpass, env, elapsed, remaining ) {
 		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
-			const envVal = gswaOscProc.#process_env( envLP, elapsed, remaining );
+			const envVal = gswaOscProc.#process_env( env, elapsed, remaining );
 			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;
-			const q = .707 + gswaOscProc.#math_max( 0, envLP.$q );
+			const q = .707 + gswaOscProc.#math_max( 0, env.$q );
 
 			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, q, "lp" );
 		}
-		return gswaOscProc.#process_filter_coeffs_update( cf, x );
 	}
-	static #process_highpass( cf, x, keyHighpass ) {
+	static #process_highpass_coeffs_recalc( cf, keyHighpass ) {
 		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
 			const openness = gswaOscProc.#math_clamp( keyHighpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
@@ -443,7 +445,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, .707, "hp" );
 		}
-		return gswaOscProc.#process_filter_coeffs_update( cf, x );
 	}
 	static #process_filter_coeffs_update( cf, x ) {
 		const y0 = cf.$b0 * x + cf.$b1 * cf.$x1 + cf.$b2 * cf.$x2 - cf.$a1 * cf.$y1 - cf.$a2 * cf.$y2;
