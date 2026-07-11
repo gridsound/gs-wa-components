@@ -12,6 +12,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#wtdataN = 0;
 	#wtdataL = 0;
 	#currentTimeInt = 0;
+	#noiseFn = null;
+	static #noiseFns = {
+		white: gswaOscProc.#process_noise_white,
+		pink: gswaOscProc.#process_noise_pink,
+		brown: gswaOscProc.#process_noise_brown,
+	}
 
 	static get parameterDescriptors() {
 		return [
@@ -42,6 +48,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				break;
 			case "source":
 				this.#noise = a0 !== "noise" ? null : a1;
+				this.#noiseFn = a0 !== "noise" ? null : gswaOscProc.#noiseFns[ a1 ];
 				this.#wtdata = a0 !== "wavetable" ? null : new Float32Array( a1 );
 				this.port.postMessage( [ "ready" ] );
 				break;
@@ -285,11 +292,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
 				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
 				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
-				const finalGain = apGainI * keyGain * envGainVal * lfoGainVal;
-				const finalPan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
+				let smpL;
+				let smpR;
 
 				if ( this.#wtdata ) {
-					const smp1 = this.#process_unison(
+					smpL = this.#process_unison(
 						o,
 						keyFrequency,
 						keyWtpos,
@@ -298,23 +305,24 @@ class gswaOscProc extends AudioWorkletProcessor {
 						Math.round( apUnisonVoicesI ),
 						apUnisonDetuneI,
 						apUnisonBlendI,
-					) * finalGain;
-					const smp2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smp1 );
-					const smp3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smp2 );
-
-					chanL[ i ] += smp3 * ( finalPan > 0 ? 1 - finalPan : 1 );
-					chanR[ i ] += smp3 * ( finalPan < 0 ? 1 + finalPan : 1 );
+					);
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
+					smpR = smpL;
 				} else {
-					const smpA1 = gswaOscProc.#process_noise( o, this.#noise ) * finalGain;
-					const smpB1 = gswaOscProc.#process_noise( o, this.#noise ) * finalGain;
-					const smpA2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpA1 );
-					const smpB2 = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpB1 );
-					const smpA3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpA2 );
-					const smpB3 = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpB2 );
-
-					chanL[ i ] += smpA3 * ( finalPan > 0 ? 1 - finalPan : 1 );
-					chanR[ i ] += smpB3 * ( finalPan < 0 ? 1 + finalPan : 1 );
+					smpL = this.#noiseFn( o );
+					smpR = this.#noiseFn( o );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpR );
 				}
+
+				const finalGain = apGainI * keyGain * envGainVal * lfoGainVal;
+				const finalPan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
+
+				chanL[ i ] += smpL * finalGain * ( finalPan > 0 ? 1 - finalPan : 1 );
+				chanR[ i ] += smpR * finalGain * ( finalPan < 0 ? 1 + finalPan : 1 );
 			}
 		}
 		lfoGain.$_phase = lfoGain.$_phaseB;
@@ -323,17 +331,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_noise( o, noise ) {
-		switch ( noise ) {
-			case "white": return gswaOscProc.#process_noise_white();
-			case "pink": return gswaOscProc.#process_noise_pink( o.$_noisePink );
-			case "brown": return gswaOscProc.#process_noise_brown( o.$_noiseBrown );
-		}
-	}
 	static #process_noise_white() {
 		return Math.random() * 2 - 1;
 	}
-	static #process_noise_pink( b ) {
+	static #process_noise_pink( o ) {
+		const b = o.$_noisePink;
 		const white = gswaOscProc.#process_noise_white();
 		let smp;
 
@@ -348,7 +350,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 		b.$b6 = white * .115926;
 		return smp;
 	}
-	static #process_noise_brown( b ) {
+	static #process_noise_brown( o ) {
+		const b = o.$_noiseBrown;
 		const white = gswaOscProc.#process_noise_white();
 		let smp = ( b.$b0 + ( .02 * white ) ) / 1.02;
 
