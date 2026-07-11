@@ -444,15 +444,11 @@ let waAnR = null;
 const fftSize = 2048;
 const dataChanL = new Float32Array( fftSize / 2 );
 const dataChanR = new Float32Array( fftSize / 2 );
-let bufferSharedL = null;
-let bufferSharedR = null;
 
 gswaBuffers.$sabSetWavetable( "sine-to-square", [
 	GSUmathWaveSine( 2048 ),
 	GSUmathWaveSawtooth( 2048 ),
 ] );
-
-const wtBuffer = gswaBuffers.$sabGetWavetable( "sine-to-square" );
 
 appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
 panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
@@ -465,8 +461,8 @@ unisonblendInput.$oninput( () => GSUaudioParamSet( osc.unisonblend, +unisonblend
 
 oscSource.$onchange( e => {
 	switch ( e.target.value ) {
-		case "buffer": osc.$oscSource( "buffer", bufferSharedL, bufferSharedR ); break;
-		case "wavetable": osc.$oscSource( "wavetable", wtBuffer ); break;
+		case "buffer": osc.$oscSource( "buffer", ...gswaBuffers.$sabGetBuffer( "piano" ) ); break;
+		case "wavetable": osc.$oscSource( "wavetable", gswaBuffers.$sabGetWavetable( "sine-to-square" ) ); break;
 		case "noise_white": osc.$oscSource( "noise", "white" ); break;
 		case "noise_pink": osc.$oscSource( "noise", "pink" ); break;
 		case "noise_brown": osc.$oscSource( "noise", "brown" ); break;
@@ -484,15 +480,7 @@ function setup() {
 	return fetch( "piano-c5.wav" )
 		.then( res => res.arrayBuffer() )
 		.then( arr => ctx.decodeAudioData( arr ) )
-		.then( buf => {
-			const bufL = buf.getChannelData( 0 );
-			const bufR = buf.getChannelData( 1 );
-
-			bufferSharedL = new SharedArrayBuffer( bufL.length * Float32Array.BYTES_PER_ELEMENT );
-			bufferSharedR = new SharedArrayBuffer( bufR.length * Float32Array.BYTES_PER_ELEMENT );
-			new Float32Array( bufferSharedL ).set( bufL, 0 );
-			new Float32Array( bufferSharedR ).set( bufR, 0 );
-		} )
+		.then( buf => gswaBuffers.$sabSetBuffer( "piano", buf ) )
 		.then( () => gswaOsc.$oscLoadModule( ctx ) )
 		.then( () => {
 			dest = GSUaudioGain( ctx );
