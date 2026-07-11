@@ -1,6 +1,7 @@
 "use strict";
 
 class gswaOscProc extends AudioWorkletProcessor {
+	static #bufferRootFreq = 1046.5; // C5(MIDI)
 	static #wtdataHeaderSize = 4;
 	static #filterCoefUpdateRate = 32;
 	static #filterMinFreq = 20;
@@ -187,7 +188,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					return false;
 				}
 			}
-			if ( wtdata || this.#noise ) {
+			if ( wtdata || this.#noise || ( this.#bufferL && this.#bufferR ) ) {
 				this.#process_keys( chanL, chanR, params );
 			}
 		}
@@ -301,7 +302,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 				if ( this.#wtdata ) {
 					smpL = this.#process_unison_wavetable(
-						o,
+						o.$_unisonPhaseB,
 						keyFrequency,
 						keyWtpos,
 						apPhaseI,
@@ -322,7 +323,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpR );
 				} else {
 					smpL = this.#process_unison_buffer(
-						o,
+						o.$_unisonPhaseB,
 						keyFrequency,
 						baseDetune,
 						this.#bufferL,
@@ -331,7 +332,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apUnisonBlendI,
 					);
 					smpR = this.#process_unison_buffer(
-						o,
+						o.$_unisonPhaseB,
 						keyFrequency,
 						baseDetune,
 						this.#bufferR,
@@ -388,7 +389,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	#process_unison_buffer( o, frequency, baseDetune, buffer, univoices, unidetune, uniblend ) {
+	#process_unison_buffer( phaseArr, frequency, baseDetune, buf, univoices, unidetune, uniblend ) {
 		let val = 0;
 		let div = 0;
 
@@ -397,11 +398,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const uGain = gswaOscProc.#process_unison_gain( univoices, v, uniblend );
 			const detune = baseDetune + uDetu * unidetune;
 			const smp = gswaOscProc.#process_buffer(
-				o.$_unisonPhaseB,
+				phaseArr,
 				v,
 				frequency,
 				detune,
-				buffer,
+				buf,
 			);
 
 			val += uGain * smp;
@@ -409,7 +410,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		return val / div;
 	}
-	#process_unison_wavetable( o, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
+	#process_unison_wavetable( phaseArr, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
 		let val = 0;
 		let div = 0;
 
@@ -418,7 +419,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const uGain = gswaOscProc.#process_unison_gain( univoices, v, uniblend );
 			const detune = baseDetune + uDetu * unidetune;
 			const smp = gswaOscProc.#process_wavetable(
-				o.$_unisonPhaseB,
+				phaseArr,
 				v,
 				frequency,
 				wtpos,
@@ -447,8 +448,21 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_buffer( phaseArr, voiceInd, frequency, detune, buffer ) {
-		// ???
+	static #process_buffer( phaseArr, voiceInd, frequency, detune, buf ) {
+		const pos = phaseArr[ voiceInd ];
+
+		if ( pos >= buf.length - 1 ) {
+			return 0;
+		}
+
+		const rate = ( frequency * 2 ** ( detune / 1200 ) ) / gswaOscProc.#bufferRootFreq;
+		const i0 = pos | 0;
+		const i1 = gswaOscProc.#math_min( i0 + 1, buf.length - 1 );
+		const frac = pos - i0;
+		const smp = buf[ i0 ] + frac * ( buf[ i1 ] - buf[ i0 ] );
+
+		phaseArr[ voiceInd ] = pos + rate;
+		return smp;
 	}
 	static #process_wavetable( phaseArr, voiceInd, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
 		const fEff = frequency * 2 ** ( detune / 1200 );

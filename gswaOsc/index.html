@@ -32,6 +32,7 @@
 				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_white"/><span>noise-white</span></label>
 				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_pink"/><span>noise-pink</span></label>
 				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="noise_brown"/><span>noise-brown</span></label>
+				<label style="display: flex; align-items: center; gap: 8px"><input type="radio" name="oscSource" value="buffer"/><span>buffer</span></label>
 			</gs-flex>
 			<gs-flex y>
 				<gs-flex x ycenter g4>
@@ -101,6 +102,8 @@
 <script type="module">
 "use strict";
 
+const C5 = 523.251;
+
 const envDefault = {
 	attack: 1,
 	hold: 1,
@@ -113,14 +116,14 @@ const examples = {
 	sine: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			keys: [
-				{ when, duration: 60, frequency: 400, gain: 1 },
+				{ when, duration: 60, frequency: C5, gain: 1 },
 			],
 		} );
 	},
 	saw: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			keys: [
-				{ when, duration: 60, frequency: 400, gain: 1, wtpos: 1 },
+				{ when, duration: 60, frequency: C5, gain: 1, wtpos: 1 },
 			],
 		} );
 	},
@@ -440,6 +443,8 @@ let waAnR = null;
 const fftSize = 2048;
 const dataChanL = new Float32Array( fftSize / 2 );
 const dataChanR = new Float32Array( fftSize / 2 );
+let bufferSharedL = null;
+let bufferSharedR = null;
 
 gswaWTbuffers.$wtSet( "sine-to-square", [
 	GSUmathWaveSine( 2048 ),
@@ -459,6 +464,7 @@ unisonblendInput.$oninput( () => GSUaudioParamSet( osc.unisonblend, +unisonblend
 
 oscSource.$onchange( e => {
 	switch ( e.target.value ) {
+		case "buffer": osc.$oscSource( "buffer", bufferSharedL, bufferSharedR ); break;
 		case "wavetable": osc.$oscSource( "wavetable", wtBuffer ); break;
 		case "noise_white": osc.$oscSource( "noise", "white" ); break;
 		case "noise_pink": osc.$oscSource( "noise", "pink" ); break;
@@ -474,30 +480,40 @@ function log( msg ) {
 function setup() {
 	log( "Init..." );
 	uiAnaly.$setAttr( "resolution", `${ uiAnaly.$width() } ${ uiAnaly.$height() }` );
-	return gswaOsc.$oscLoadModule( ctx ).then( () => {
-		dest = GSUaudioGain( ctx );
+	return fetch( "piano-c5.wav" )
+		.then( res => res.arrayBuffer() )
+		.then( arr => ctx.decodeAudioData( arr ) )
+		.then( buf => {
+			const bufL = buf.getChannelData( 0 );
+			const bufR = buf.getChannelData( 1 );
 
-		waAnL = GSUaudioAnalyser( ctx );
-		waAnR = GSUaudioAnalyser( ctx );
-		waAnL.fftSize = fftSize;
-		waAnR.fftSize = fftSize;
-		waAnL.smoothingTimeConstant = 0;
-		waAnR.smoothingTimeConstant = 0;
-
-		split = GSUaudioChannelSplitter( ctx, 2 );
-		split.connect( waAnL, 0 );
-		split.connect( waAnR, 1 );
-
-		osc = new gswaOsc( ctx );
-		osc.$oscConnect( split );
-		osc.$oscConnect( dest );
-		dest.connect( ctx.destination );
-		oscSource.$filter( "[value=wavetable]" ).$click();
-		$( "input[type=range]" ).$trigger( "oninput" );
-		btns.$disabled( false );
-		log( "Ready." );
-		GSUsetInterval( loop );
-	} );
+			bufferSharedL = new SharedArrayBuffer( bufL.length * Float32Array.BYTES_PER_ELEMENT );
+			bufferSharedR = new SharedArrayBuffer( bufR.length * Float32Array.BYTES_PER_ELEMENT );
+			new Float32Array( bufferSharedL ).set( bufL, 0 );
+			new Float32Array( bufferSharedR ).set( bufR, 0 );
+		} )
+		.then( () => gswaOsc.$oscLoadModule( ctx ) )
+		.then( () => {
+			dest = GSUaudioGain( ctx );
+			waAnL = GSUaudioAnalyser( ctx );
+			waAnR = GSUaudioAnalyser( ctx );
+			waAnL.fftSize =
+			waAnR.fftSize = fftSize;
+			waAnL.smoothingTimeConstant =
+			waAnR.smoothingTimeConstant = 0;
+			split = GSUaudioChannelSplitter( ctx, 2 );
+			split.connect( waAnL, 0 );
+			split.connect( waAnR, 1 );
+			osc = new gswaOsc( ctx );
+			osc.$oscConnect( split );
+			osc.$oscConnect( dest );
+			dest.connect( ctx.destination );
+			oscSource.$filter( "[value=wavetable]" ).$click();
+			$( "input[type=range]" ).$trigger( "oninput" );
+			btns.$disabled( false );
+			log( "Ready." );
+			GSUsetInterval( loop );
+		} );
 }
 
 function loop() {

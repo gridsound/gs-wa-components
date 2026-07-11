@@ -57,9 +57,9 @@ class gswaOsc {
 	$oscKill() {
 		this.#node.port.postMessage( [ "kill" ] );
 	}
-	$oscSource( type, src ) {
+	$oscSource( type, a1, a2 ) {
 		this.#ready = false;
-		this.#node.port.postMessage( [ "source", type, src ] );
+		this.#node.port.postMessage( [ "source", type, a1, a2 ] );
 	}
 	$oscPushNote( id, obj ) {
 		this.#node.port.postMessage( [ "push", id, obj ] );
