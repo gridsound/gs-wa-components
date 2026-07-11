@@ -1,7 +1,7 @@
 "use strict";
 
 class gswaOscProc extends AudioWorkletProcessor {
-	static #bufferRootFreq = 1046.5; // C5(MIDI)
+	static #bufferRootFreq = 523.251; // C4 (MIDI)
 	static #wtdataHeaderSize = 4;
 	static #filterCoefUpdateRate = 32;
 	static #filterMinFreq = 20;
@@ -99,10 +99,14 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_keyInd: 0,
 			$_when: d.keys[ 0 ].when,
 			$_whenEnd: klast.when + klast.duration + release,
-			$_lp: gswaOscProc.#format_new_key_coeff(),
-			$_hp: gswaOscProc.#format_new_key_coeff(),
-			$_unisonPhase: new Float64Array( gswaOscProc.#unisonMaxVoices ),
-			$_unisonPhaseB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_lpL: gswaOscProc.#format_new_key_coeff(),
+			$_lpR: gswaOscProc.#format_new_key_coeff(),
+			$_hpL: gswaOscProc.#format_new_key_coeff(),
+			$_hpR: gswaOscProc.#format_new_key_coeff(),
+			$_unisonPhaseLA: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseLB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseRA: new Float64Array( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseRB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
 			$_noiseBrown: { $b0: 0 },
 			$envs: {
@@ -227,7 +231,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 		lfoGain.$_phaseB = lfoGain.$_phase;
 		lfoDetune.$_phaseB = lfoDetune.$_phase;
-		o.$_unisonPhaseB.set( o.$_unisonPhase );
+		o.$_unisonPhaseLB.set( o.$_unisonPhaseLA );
+		o.$_unisonPhaseRB.set( o.$_unisonPhaseRA );
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
 
@@ -286,8 +291,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed
 				);
 
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lp, keyLowpass, envLP, elapsed, remaining );
-				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hp, keyHighpass );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLowpass, envLP, elapsed, remaining );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLowpass, envLP, elapsed, remaining );
+				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
+				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
 
 				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
 				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
@@ -302,7 +309,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 				if ( this.#wtdata ) {
 					smpL = this.#process_unison_wavetable(
-						o.$_unisonPhaseB,
+						o.$_unisonPhaseLB,
 						keyFrequency,
 						keyWtpos,
 						apPhaseI,
@@ -311,19 +318,19 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apUnisonDetuneI,
 						apUnisonBlendI,
 					);
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lpL, smpL );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hpL, smpL );
 					smpR = smpL;
 				} else if ( this.#noise ) {
 					smpL = this.#noiseFn( o );
 					smpR = this.#noiseFn( o );
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
-					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpR );
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
-					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lpL, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lpR, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hpL, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hpR, smpR );
 				} else {
 					smpL = this.#process_unison_buffer(
-						o.$_unisonPhaseB,
+						o.$_unisonPhaseLB,
 						keyFrequency,
 						baseDetune,
 						this.#bufferL,
@@ -332,7 +339,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apUnisonBlendI,
 					);
 					smpR = this.#process_unison_buffer(
-						o.$_unisonPhaseB,
+						o.$_unisonPhaseRB,
 						keyFrequency,
 						baseDetune,
 						this.#bufferR,
@@ -340,10 +347,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 						apUnisonDetuneI,
 						apUnisonBlendI,
 					);
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpL );
-					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lp, smpR );
-					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpL );
-					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hp, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lpL, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lpR, smpR );
+					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hpL, smpL );
+					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hpR, smpR );
 				}
 
 				const finalGain = apGainI * keyGain * envGainVal * lfoGainVal;
@@ -355,7 +362,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		lfoGain.$_phase = lfoGain.$_phaseB;
 		lfoDetune.$_phase = lfoDetune.$_phaseB;
-		o.$_unisonPhase.set( o.$_unisonPhaseB );
+		o.$_unisonPhaseLA.set( o.$_unisonPhaseLB );
+		o.$_unisonPhaseRA.set( o.$_unisonPhaseRB );
 	}
 
 	// .........................................................................

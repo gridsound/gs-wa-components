@@ -102,7 +102,8 @@
 <script type="module">
 "use strict";
 
-const C5 = 523.251;
+const C5 = 1046.5;
+const C4 = 523.251;
 
 const envDefault = {
 	attack: 1,
@@ -116,14 +117,14 @@ const examples = {
 	sine: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			keys: [
-				{ when, duration: 60, frequency: C5, gain: 1 },
+				{ when, duration: 60, frequency: C4, gain: 1 },
 			],
 		} );
 	},
 	saw: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			keys: [
-				{ when, duration: 60, frequency: C5, gain: 1, wtpos: 1 },
+				{ when, duration: 60, frequency: C4, gain: 1, wtpos: 1 },
 			],
 		} );
 	},
