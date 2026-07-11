@@ -114,7 +114,7 @@ class gswaLFO {
 		}
 	}
 	#setType() {
-		this.#oscNode.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( this.#data.type ) );
+		this.#oscNode.$setWavetable( gswaBuffers.$sabGetWavetable( this.#data.type ) );
 	}
 	#setAmpAtt() {
 		const d = this.#data;

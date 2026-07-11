@@ -115,7 +115,7 @@ class gswaSource {
 
 		osc.$init( ctx );
 		osc.$connect( this.#output );
-		osc.$setWavetable( gswaWTbuffers.$wtGetSharedBuffer( wt ) );
+		osc.$setWavetable( gswaBuffers.$sabGetWavetable( wt ) );
 		this.#type = "osc";
 		this.#src = osc;
 	}

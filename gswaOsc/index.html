@@ -93,7 +93,7 @@
 <script src="../../gs-ui-components/gsuiAnalyserHist/gsuiAnalyserHist.js"></script>
 
 <!-- ....................................................................... -->
-<script src="../gswaWTbuffers/gswaWTbuffers.js"></script>
+<script src="../gswaBuffers/gswaBuffers.js"></script>
 
 <!-- ....................................................................... -->
 <script src="gswaOsc.js"></script>
@@ -447,12 +447,12 @@ const dataChanR = new Float32Array( fftSize / 2 );
 let bufferSharedL = null;
 let bufferSharedR = null;
 
-gswaWTbuffers.$wtSet( "sine-to-square", [
+gswaBuffers.$sabSetWavetable( "sine-to-square", [
 	GSUmathWaveSine( 2048 ),
 	GSUmathWaveSawtooth( 2048 ),
 ] );
 
-const wtBuffer = gswaWTbuffers.$wtGetSharedBuffer( "sine-to-square" );
+const wtBuffer = gswaBuffers.$sabGetWavetable( "sine-to-square" );
 
 appGain.$oninput( () => GSUaudioParamSet( dest.gain, +appGain.$value() ) );
 panInput.$oninput( () => GSUaudioParamSet( osc.pan, +panInput.$value() ) );
@@ -509,7 +509,7 @@ function setup() {
 			osc.$oscConnect( split );
 			osc.$oscConnect( dest );
 			dest.connect( ctx.destination );
-			oscSource.$filter( "[value=wavetable]" ).$click();
+			oscSource.$filter( "[value=buffer]" ).$click();
 			$( "input[type=range]" ).$trigger( "oninput" );
 			btns.$disabled( false );
 			log( "Ready." );
