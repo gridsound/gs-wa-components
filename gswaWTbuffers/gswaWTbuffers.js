@@ -2,7 +2,7 @@
 
 class gswaWTbuffers {
 	static #headerSize = 4;
-	static #list = new Map( [
+	static #wtlist = new Map( [
 		[ "sine",     gswaWTbuffers.#format( [ GSUmathWaveSine(     2048 ) ] ) ],
 		[ "triangle", gswaWTbuffers.#format( [ GSUmathWaveTriangle( 2048 ) ] ) ],
 		[ "sawtooth", gswaWTbuffers.#format( [ GSUmathWaveSawtooth( 2048 ) ] ) ],
@@ -11,13 +11,13 @@ class gswaWTbuffers {
 
 	// .........................................................................
 	static $wtClear() {
-		this.#list.clear();
+		this.#wtlist.clear();
 	}
 	static $wtDelete( id ) {
-		this.#list.delete( id );
+		this.#wtlist.delete( id );
 	}
 	static $wtGetSharedBuffer( id ) {
-		return this.#list.get( id ).$sab;
+		return this.#wtlist.get( id ).$sab;
 	}
 	static $wtSet( id, waves ) {
 		if ( __LOCALHOST__ ) {
@@ -27,13 +27,13 @@ class gswaWTbuffers {
 			return;
 		}
 
-		const arr = this.#list.get( id )?.$arr;
+		const arr = this.#wtlist.get( id )?.$arr;
 		const wlen = waves[ 0 ].length;
 
 		if ( arr && arr.length === gswaWTbuffers.#headerSize + waves.length * wlen ) {
 			GSUforEach( waves, ( wv, i ) => arr.set( wv, gswaWTbuffers.#headerSize + i * wlen ) );
 		} else {
-			this.#list.set( id, gswaWTbuffers.#format( waves ) );
+			this.#wtlist.set( id, gswaWTbuffers.#format( waves ) );
 		}
 	}
 
