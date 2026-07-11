@@ -164,15 +164,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 			if ( wtdata ) {
 				this.#wtdataN = wtdata[ 0 ] | 0;
 				this.#wtdataL = wtdata[ 1 ] | 0;
-
 				if (
-					this.#wtdataN > 0 &&
-					this.#wtdataL > 1 &&
-					wtdata.length === gswaOscProc.#wtdataHeaderSize + this.#wtdataN * this.#wtdataL
+					this.#wtdataN < 1 ||
+					this.#wtdataL < 2 ||
+					wtdata.length !== gswaOscProc.#wtdataHeaderSize + this.#wtdataN * this.#wtdataL
 				) {
-					this.#process_keys( chanL, chanR, params );
+					return false;
 				}
 			}
+			this.#process_keys( chanL, chanR, params );
 		}
 		return this.#ok;
 	}
