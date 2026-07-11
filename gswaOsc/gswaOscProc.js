@@ -446,16 +446,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, .707, "hp" );
 		}
 	}
-	static #process_filter_coeffs_update( cf, x ) {
-		const y0 = cf.$b0 * x + cf.$b1 * cf.$x1 + cf.$b2 * cf.$x2 - cf.$a1 * cf.$y1 - cf.$a2 * cf.$y2;
-
-		++cf.$counter;
-		cf.$x2 = cf.$x1;
-		cf.$x1 = x;
-		cf.$y2 = cf.$y1;
-		cf.$y1 = y0;
-		return y0;
-	}
 	static #process_filter_coeffs_recalc( o, hz, q, type ) {
 		const w0 = 2 * Math.PI * gswaOscProc.#math_clamp( hz, 1, sampleRate * .49 ) / sampleRate;
 		const alpha = Math.sin( w0 ) / ( 2 * q );
@@ -472,6 +462,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$b2 = o.$b0;
 		o.$a1 = ( -2 * cosw0 ) / a0;
 		o.$a2 = ( 1 - alpha ) / a0;
+	}
+	static #process_filter_coeffs_update( cf, x ) {
+		const y0 = cf.$b0 * x + cf.$b1 * cf.$x1 + cf.$b2 * cf.$x2 - cf.$a1 * cf.$y1 - cf.$a2 * cf.$y2;
+
+		++cf.$counter;
+		cf.$x2 = cf.$x1;
+		cf.$x1 = x;
+		cf.$y2 = cf.$y1;
+		cf.$y1 = y0;
+		return y0;
 	}
 
 	// .........................................................................
