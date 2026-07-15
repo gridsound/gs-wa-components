@@ -64,4 +64,7 @@ class gswaOsc {
 	$oscPushNote( id, obj ) {
 		this.#node.port.postMessage( [ "push", id, obj ] );
 	}
+	$oscPopNote( id ) {
+		this.#node.port.postMessage( [ "pop", id ] );
+	}
 }

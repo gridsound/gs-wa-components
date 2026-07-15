@@ -20,7 +20,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		white: gswaOscProc.#process_noise_white,
 		pink: gswaOscProc.#process_noise_pink,
 		brown: gswaOscProc.#process_noise_brown,
-	}
+	};
 
 	static get parameterDescriptors() {
 		return [
@@ -60,18 +60,30 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "push":
 				this.#keys.set( a0, gswaOscProc.#format_new_key( a0, a1 ) );
 				break;
+			case "pop":
+				this.#popKey( a0 );
+				break;
 		}
 	}
 
 	// .........................................................................
 	#clear() {
 		for ( const o of this.#keys.values() ) {
-			if ( o.$_when >= currentTime || o.$_whenEnd <= currentTime ) {
-				this.#keys.delete( o.$_id );
-			} else if ( o.$_whenEnd > currentTime ) {
-				o.$envs.$gain.$release = .1;
-				o.$_whenEnd = currentTime + .1;
-			}
+			this.#stopKey( o );
+		}
+	}
+	#popKey( id ) {
+		const o = this.#keys.get( id );
+
+		if ( o ) {
+			this.#stopKey( o );
+		}
+	}
+	#stopKey( o ) {
+		if ( o.$_when >= currentTime || o.$_whenEnd <= currentTime ) {
+			this.#keys.delete( o.$_id );
+		} else if ( o.$_whenEnd > currentTime ) {
+			o.$_whenEnd = currentTime + o.$envs.$gain.$release;
 		}
 	}
 
@@ -452,7 +464,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const midF = nb / 2;
 		const midI = midF | 0;
 
-		return ( v === midI || ( midF === midI && v === midI - 1 ) ) ? 1 : blend;
+		return v === midI || ( midF === midI && v === midI - 1 ) ? 1 : blend;
 	}
 
 	// .........................................................................
@@ -593,7 +605,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$a2 = ( 1 - alpha ) / a0;
 	}
 	static #process_filter_coeffs_update( cf, x ) {
-		const y0 = cf.$b0 * x + cf.$b1 * cf.$x1 + cf.$b2 * cf.$x2 - cf.$a1 * cf.$y1 - cf.$a2 * cf.$y2;
+		const y0 =
+			cf.$b0 * x +
+			cf.$b1 * cf.$x1 +
+			cf.$b2 * cf.$x2 -
+			cf.$a1 * cf.$y1 -
+			cf.$a2 * cf.$y2;
 
 		++cf.$counter;
 		cf.$x2 = cf.$x1;
