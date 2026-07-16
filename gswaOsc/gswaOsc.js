@@ -61,8 +61,14 @@ class gswaOsc {
 		this.#ready = false;
 		this.#node.port.postMessage( [ "source", type, a1, a2 ] );
 	}
-	$oscPushNote( id, obj ) {
-		this.#node.port.postMessage( [ "push", id, obj ] );
+	$oscPushNote( id, obj, whn, off, dur ) {
+		const kA = obj.keys[ 0 ];
+		const kZ = obj.keys.at( -1 );
+		const w = whn ?? kA?.when;
+		const o = off ?? 0;
+		const d = dur ?? ( !kZ ? 0 : Math.max( 0, kZ.when + kZ.duration - kA.when - o ) );
+
+		this.#node.port.postMessage( [ "push", id, obj, w, o, d ] );
 	}
 	$oscPopNote( id ) {
 		this.#node.port.postMessage( [ "pop", id ] );

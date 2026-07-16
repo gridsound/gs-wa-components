@@ -40,7 +40,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	#onmsg( e ) {
-		const [ type, a0, a1, a2 ] = e.data;
+		const [ type, a0, a1, a2, a3, a4 ] = e.data;
 
 		switch ( type ) {
 			case "kill":
@@ -58,7 +58,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":
-				this.#keys.set( a0, gswaOscProc.#format_new_key( a0, a1 ) );
+				this.#keys.set( a0, gswaOscProc.#format_new_key( a0, a1, a2, a3, a4 ) );
 				break;
 			case "pop":
 				this.#popKey( a0 );
@@ -97,20 +97,25 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$a1: 0, $a2: 0,
 		};
 	}
-	static #format_new_key( id, d ) {
+	static #format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
 		const envGain = d.envs?.gain;
 		const envDetune = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
 		const lfoGain = d.lfos?.gain;
 		const lfoDetune = d.lfos?.detune;
-		const release = envGain?.release ?? .01;
+		const envGnRel = envGain?.release ?? .01;
+		const lfoGnFre = lfoGain?.frequency ?? 1;
+		const lfoDtFre = lfoDetune?.frequency ?? 1;
+		const lfoGnDel = lfoGain?.delay ?? 0;
+		const lfoDtDel = lfoDetune?.delay ?? 0;
 
 		return {
 			$_id: id,
 			$_keyInd: 0,
-			$_when: d.keys[ 0 ].when,
-			$_whenEnd: klast.when + klast.duration + release,
+			$_when: when,
+			$_offset: offset,
+			$_whenEnd: when + duration + envGnRel,
 			$_lpL: gswaOscProc.#format_new_key_coeff(),
 			$_lpR: gswaOscProc.#format_new_key_coeff(),
 			$_hpL: gswaOscProc.#format_new_key_coeff(),
@@ -127,7 +132,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$hold: envGain?.hold ?? 0,
 					$decay: envGain?.decay ?? 0,
 					$sustain: envGain?.sustain ?? 1,
-					$release: release,
+					$release: envGnRel,
 				},
 				$detune: {
 					$attack: envDetune?.attack ?? 0,
@@ -149,21 +154,21 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$lfos: {
 				$gain: {
 					$wave: lfoGain?.wave ?? "sine",
-					$delay: lfoGain?.delay ?? 0,
+					$delay: lfoGnDel,
 					$attack: lfoGain?.attack ?? 0,
-					$frequency: lfoGain?.frequency ?? 1,
+					$frequency: lfoGnFre,
 					$amp: gswaOscProc.#math_clamp( lfoGain?.amp ?? 0, -1, 1 ),
-					$_phase: 0,
-					$_phaseB: 0,
+					$_phase: lfoGnFre * ( offset - lfoGnDel ) % 1,
+					$_phaseB: lfoGnFre * ( offset - lfoGnDel ) % 1,
 				},
 				$detune: {
 					$wave: lfoDetune?.wave ?? "sine",
-					$delay: lfoDetune?.delay ?? 0,
+					$delay: lfoDtDel,
 					$attack: lfoDetune?.attack ?? 0,
-					$frequency: lfoDetune?.frequency ?? 1,
+					$frequency: lfoDtFre,
 					$amp: gswaOscProc.#math_clamp( lfoDetune?.amp ?? 0, -1200, 1200 ),
-					$_phase: 0,
-					$_phaseB: 0,
+					$_phase: lfoDtFre * ( offset - lfoDtDel ) % 1,
+					$_phaseB: lfoDtFre * ( offset - lfoDtDel ) % 1,
 				},
 			},
 			$keys: d.keys.map( k => ( {
@@ -247,11 +252,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$_unisonPhaseRB.set( o.$_unisonPhaseRA );
 		for ( let i = 0; i < chanLen; ++i ) {
 			const now = currentTime + i / sampleRate;
+			const nowOff = now + o.$_offset;
 
 			if ( o.$_when <= now && now < o.$_whenEnd ) {
 				while (
 					o.$_keyInd < keys.length - 1 &&
-					now >= keys[ o.$_keyInd ].$when + keys[ o.$_keyInd ].$duration
+					nowOff >= keys[ o.$_keyInd ].$when + keys[ o.$_keyInd ].$duration
 				) {
 					++o.$_keyInd;
 				}
@@ -268,11 +274,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let keyLfoDetuneAmp = key.$lfoDetuneAmp;
 				let keyLfoDetuneFrequency = key.$lfoDetuneFrequency;
 
-				if ( now < key.$when ) {
+				if ( nowOff < key.$when ) {
 					const prev = keys[ o.$_keyInd - 1 ];
 					const prevEnd = prev.$when + prev.$duration;
 					const gapLen = key.$when - prevEnd;
-					const frac = gapLen > 0 ? gswaOscProc.#math_clamp( ( now - prevEnd ) / gapLen, 0, 1 ) : 1;
+					const frac = gapLen > 0 ? gswaOscProc.#math_clamp( ( nowOff - prevEnd ) / gapLen, 0, 1 ) : 1;
 
 					keyPan = prev.$pan + ( keyPan - prev.$pan ) * frac;
 					keyGain = prev.$gain + ( keyGain - prev.$gain ) * frac;
@@ -286,7 +292,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( keyLfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
 				}
 
-				const elapsed = now - o.$_when;
+				const elapsed = nowOff - o.$_when;
 				const envGnRemain = o.$_whenEnd - now;
 				const envDtRemain = envGnRemain - ( envGain.$release - envDetune.$release );
 				const envLpRemain = envGnRemain - ( envGain.$release - envLP.$release );

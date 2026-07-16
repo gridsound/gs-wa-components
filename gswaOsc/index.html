@@ -117,9 +117,9 @@ const examples = {
 	sine: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			keys: [
-				{ when, duration: 60, frequency: C4, gain: 1 },
+				{ when: 0, duration: 60, frequency: C4, gain: 1 },
 			],
-		} );
+		}, when, 0, 60 );
 	},
 	saw: when => {
 		osc.$oscPushNote( GSUuuid(), {
@@ -234,7 +234,7 @@ const examples = {
 			lfos: {
 				detune: {
 					wave: "square",
-					frequency: 2,
+					frequency: 1,
 					amp: 1200,
 				},
 			},
@@ -387,8 +387,8 @@ const examples = {
 	envLP: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
-				gain: { release: envDefault.release },
-				lowpass: { ...envDefault, q: 1 },
+				gain: { release: 5 },
+				lowpass: { ...envDefault, q: 1, release: .1, sustain: .5 },
 			},
 			keys: [
 				{ when, duration: 4, frequency: 100, gain: 1, wtpos: 1 },
@@ -398,8 +398,8 @@ const examples = {
 	envDt: when => {
 		osc.$oscPushNote( GSUuuid(), {
 			envs: {
-				gain: { release: envDefault.release },
-				detune: { ...envDefault, pitch: 1200 },
+				gain: { release: 16 },
+				detune: { ...envDefault, pitch: 2400, release: .2, sustain: .5 },
 			},
 			keys: [
 				{ when, duration: 4, frequency: 300, gain: .5 },
@@ -412,9 +412,9 @@ const examples = {
 				gain: { ...envDefault },
 			},
 			keys: [
-				{ when, duration: 4, frequency: 300, gain: .8, wtpos: 0 },
+				{ when: 0, duration: 4, frequency: 300, gain: .8, wtpos: 0 },
 			],
-		} );
+		}, when, 0, 1 );
 	},
 };
 
@@ -497,7 +497,7 @@ function setup() {
 			osc.$oscConnect( split );
 			osc.$oscConnect( dest );
 			dest.connect( ctx.destination );
-			oscSource.$filter( "[value=buffer]" ).$click();
+			oscSource.$filter( "[value=wavetable]" ).$click();
 			$( "input[type=range]" ).$trigger( "oninput" );
 			btns.$disabled( false );
 			log( "Ready." );
