@@ -142,7 +142,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					$hold: envLP?.hold ?? 0,
 					$decay: envLP?.decay ?? 0,
 					$sustain: envLP?.sustain ?? 1,
-					$release: envLP?.release ?? .01,
+					$release: envLP?.release ?? 999999,
 					$q: envLP?.q ?? 0,
 				},
 			},
