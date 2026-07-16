@@ -287,9 +287,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 				}
 
 				const elapsed = now - o.$_when;
-				const remaining = o.$_whenEnd - now;
-				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, remaining );
-				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, remaining - ( envGain.$release - envDetune.$release ) );
+				const envGnRemain = o.$_whenEnd - now;
+				const envDtRemain = envGnRemain - ( envGain.$release - envDetune.$release );
+				const envLpRemain = envGnRemain - ( envGain.$release - envLP.$release );
+				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, envGnRemain );
+				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, envDtRemain );
 				const lfoGainVal = gswaOscProc.#process_lfo(
 					lfoGain,
 					lfoGain.$amp * keyLfoGainAmp,
@@ -303,8 +305,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed
 				);
 
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLowpass, envLP, envGain, elapsed, remaining );
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLowpass, envLP, envGain, elapsed, remaining );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLowpass, envLP, elapsed, envLpRemain );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLowpass, envLP, elapsed, envLpRemain );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
 
@@ -517,7 +519,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_env( e, t, remaining ) {
+	static #process_env( e, t, remain ) {
 		let val;
 
 		if ( t < e.$attack ) {
@@ -530,8 +532,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			val = e.$sustain;
 		}
 		if ( e.$release > 0 ) {
-			val *= gswaOscProc.#math_clamp( remaining / e.$release, 0, 1 );
-		} else if ( remaining <= 0 ) {
+			val *= gswaOscProc.#math_clamp( remain / e.$release, 0, 1 );
+		} else if ( remain <= 0 ) {
 			val = 0;
 		}
 		return val;
@@ -567,9 +569,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lowpass_coeffs_recalc( cf, keyLowpass, envLP, envGain, elapsed, remaining ) {
+	static #process_lowpass_coeffs_recalc( cf, keyLowpass, envLP, elapsed, remain ) {
 		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
-			const envVal = gswaOscProc.#process_env( envLP, elapsed, remaining - ( envGain.$release - envLP.$release ) );
+			const envVal = gswaOscProc.#process_env( envLP, elapsed, remain );
 			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;
