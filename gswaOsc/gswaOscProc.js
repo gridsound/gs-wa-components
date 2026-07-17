@@ -22,15 +22,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 		brown: gswaOscProc.#process_noise_brown,
 	};
 
+	static #audpar( name, n, a, b ) {
+		return { name, defaultValue: n, minValue: a, maxValue: b, automationRate: "a-rate" };
+	}
 	static get parameterDescriptors() {
 		return [
-			{ automationRate: "a-rate", name: "pan",          defaultValue: 0, minValue:   -1, maxValue:   1 },
-			{ automationRate: "a-rate", name: "gain",         defaultValue: 1                                },
-			{ automationRate: "a-rate", name: "phase",        defaultValue: 0, minValue:    0, maxValue:   1 },
-			{ automationRate: "a-rate", name: "detune",       defaultValue: 0                                },
-			{ automationRate: "a-rate", name: "unisonvoices", defaultValue: 1, minValue:    1, maxValue:   9 },
-			{ automationRate: "a-rate", name: "unisondetune", defaultValue: 0, minValue:    0, maxValue: 200 },
-			{ automationRate: "a-rate", name: "unisonblend",  defaultValue: 0, minValue:    0, maxValue:   1 },
+			gswaOscProc.#audpar( "pan",          0,    -1,    1 ),
+			gswaOscProc.#audpar( "gain",         1,     0,    1 ),
+			gswaOscProc.#audpar( "phase",        0,     0,    1 ),
+			gswaOscProc.#audpar( "detune",       0, -2400, 2400 ),
+			gswaOscProc.#audpar( "unisonvoices", 1,     1,    9 ),
+			gswaOscProc.#audpar( "unisondetune", 0,     0,  200 ),
+			gswaOscProc.#audpar( "unisonblend",  0,     0,    1 ),
 		];
 	}
 
