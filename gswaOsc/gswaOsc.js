@@ -18,20 +18,23 @@ class gswaOsc {
 
 	// .........................................................................
 	constructor( ctx ) {
-		this.#node = new AudioWorkletNode( ctx, "gswaOscProc", {
+		const node = new AudioWorkletNode( ctx, "gswaOscProc", {
 			numberOfInputs: 0,
 			numberOfOutputs: 1,
 			outputChannelCount: [ 2 ],
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
-		this.$pan = this.#node.parameters.get( "pan" );
-		this.$gain = this.#node.parameters.get( "gain" );
-		this.$phase = this.#node.parameters.get( "phase" );
-		this.$detune = this.#node.parameters.get( "detune" );
-		this.$unisonvoices = this.#node.parameters.get( "unisonvoices" );
-		this.$unisondetune = this.#node.parameters.get( "unisondetune" );
-		this.$unisonblend = this.#node.parameters.get( "unisonblend" );
-		this.#node.port.onmessage = this.#onmsg.bind( this );
+		const params = node.parameters;
+
+		node.port.onmessage = this.#onmsg.bind( this );
+		this.#node = node;
+		this.$pan = params.get( "pan" );
+		this.$gain = params.get( "gain" );
+		this.$phase = params.get( "phase" );
+		this.$detune = params.get( "detune" );
+		this.$unisonvoices = params.get( "unisonvoices" );
+		this.$unisondetune = params.get( "unisondetune" );
+		this.$unisonblend = params.get( "unisonblend" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;
