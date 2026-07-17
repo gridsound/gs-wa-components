@@ -14,6 +14,7 @@ class gswaOsc {
 	$gain = null;
 	$phase = null;
 	$detune = null;
+	// uni
 	$unisonvoices = null;
 	$unisondetune = null;
 	$unisonblend = null;
@@ -43,6 +44,12 @@ class gswaOsc {
 	$lfoGnAtt = null;
 	$lfoGnFrq = null;
 	$lfoGnAmp = null;
+	// lfoDt
+	$lfoDtWav = null;
+	$lfoDtDel = null;
+	$lfoDtAtt = null;
+	$lfoDtFrq = null;
+	$lfoDtAmp = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -93,6 +100,12 @@ class gswaOsc {
 		this.$lfoGnAtt = params.get( "lfoGnAtt" );
 		this.$lfoGnFrq = params.get( "lfoGnFrq" );
 		this.$lfoGnAmp = params.get( "lfoGnAmp" );
+		// lfoDt
+		this.$lfoDtWav = params.get( "lfoDtWav" );
+		this.$lfoDtDel = params.get( "lfoDtDel" );
+		this.$lfoDtAtt = params.get( "lfoDtAtt" );
+		this.$lfoDtFrq = params.get( "lfoDtFrq" );
+		this.$lfoDtAmp = params.get( "lfoDtAmp" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;

@@ -41,6 +41,7 @@ class gswaSynth {
 		const envDt = d.envs.detune;
 		const envLp = d.envs.lowpass;
 		const lfoGn = d.lfos.gain;
+		const lfoDt = d.lfos.detune;
 		const bps = this.#bps;
 		const noise = obj.noise;
 
@@ -80,8 +81,14 @@ class gswaSynth {
 			GSUaudioParamSet( o.$waOsc.$lfoGnWav, lfoGn.toggle ? gswaOsc.$lfoWaveToIndex[ lfoGn.type ] : 0 );
 			GSUaudioParamSet( o.$waOsc.$lfoGnDel, lfoGn.toggle ? lfoGn.delay / bps  : 0 );
 			GSUaudioParamSet( o.$waOsc.$lfoGnAtt, lfoGn.toggle ? lfoGn.attack / bps : 0 );
-			GSUaudioParamSet( o.$waOsc.$lfoGnFrq, lfoGn.toggle ? lfoGn.speed * bps  : 1 );
+			GSUaudioParamSet( o.$waOsc.$lfoGnFrq, lfoGn.toggle ? lfoGn.speed * bps  : 0 );
 			GSUaudioParamSet( o.$waOsc.$lfoGnAmp, lfoGn.toggle ? lfoGn.amp          : 0 );
+			// lfoDt
+			GSUaudioParamSet( o.$waOsc.$lfoDtWav, lfoDt.toggle ? gswaOsc.$lfoWaveToIndex[ lfoDt.type ] : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoDtDel, lfoDt.toggle ? lfoDt.delay / bps  : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoDtAtt, lfoDt.toggle ? lfoDt.attack / bps : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoDtFrq, lfoDt.toggle ? lfoDt.speed * bps  : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoDtAmp, lfoDt.toggle ? lfoDt.amp * 100    : 0 );
 		} );
 	}
 	$synStopAllKeys() {
@@ -171,25 +178,10 @@ class gswaSynth {
 
 	// .........................................................................
 	#createKey( blcs, when ) {
-		const d = this.#data;
-		const bps = this.#bps;
-		const envLp = d.envs.lowpass;
-		const lfoGn = d.lfos.gain;
-		const lfoDt = d.lfos.detune;
-
 		return {
-			lfos: {
-				detune: lfoDt.toggle && {
-					wave: lfoDt.type,
-					delay: lfoDt.delay / bps,
-					attack: lfoDt.attack / bps,
-					frequency: lfoDt.speed * bps,
-					amp: lfoDt.amp * 100,
-				},
-			},
 			keys: blcs.map( ( [ , blc ] ) => ( {
-				when: when + ( blc.when - blcs[ 0 ][ 1 ].when ) / bps,
-				duration: blc.duration / bps,
+				when: when + ( blc.when - blcs[ 0 ][ 1 ].when ) / this.#bps,
+				duration: blc.duration / this.#bps,
 				frequency: gswaSynth.#getHz( blc.key ),
 				gain: blc.gain,
 				pan: blc.pan,
