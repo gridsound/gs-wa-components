@@ -39,6 +39,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "envGnDec",     0,     0,  999 ),
 			gswaOscProc.#audpar( "envGnSus",     1,     0,    1 ),
 			gswaOscProc.#audpar( "envGnRel",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtAtt",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtHld",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtDec",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtSus",     0,     0,    1 ),
+			gswaOscProc.#audpar( "envDtRel",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtAmp",     0, -2400, 2400 ),
 		];
 	}
 
@@ -107,7 +113,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	static #format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
-		const envDt = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
 		const lfoGn = d.lfos?.gain;
 		const lfoDt = d.lfos?.detune;
@@ -134,14 +139,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
 			$_noiseBrown: { $b0: 0 },
 			$envs: {
-				$detune: {
-					$attack: envDt?.attack ?? 0,
-					$hold: envDt?.hold ?? 0,
-					$decay: envDt?.decay ?? 0,
-					$sustain: envDt?.sustain ?? 0,
-					$release: envDt?.release ?? 0,
-					$pitch: envDt?.pitch ?? 0,
-				},
 				$lowpass: {
 					$attack: envLP?.attack ?? 0,
 					$hold: envLP?.hold ?? 0,
@@ -244,8 +241,13 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apEnvGnDec = params.envGnDec;
 		const apEnvGnSus = params.envGnSus;
 		const apEnvGnRel = params.envGnRel;
+		const apEnvDtAtt = params.envDtAtt;
+		const apEnvDtHld = params.envDtHld;
+		const apEnvDtDec = params.envDtDec;
+		const apEnvDtSus = params.envDtSus;
+		const apEnvDtRel = params.envDtRel;
+		const apEnvDtAmp = params.envDtAmp;
 		const keys = o.$keys;
-		const envDetune = o.$envs.$detune;
 		const envLP = o.$envs.$lowpass;
 		const lfoGain = o.$lfos.$gain;
 		const lfoDetune = o.$lfos.$detune;
@@ -308,12 +310,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apEnvGnDecI = apEnvGnDec[ apEnvGnDec.length > 1 ? i : 0 ];
 				const apEnvGnSusI = apEnvGnSus[ apEnvGnSus.length > 1 ? i : 0 ];
 				const apEnvGnRelI = apEnvGnRel[ apEnvGnRel.length > 1 ? i : 0 ];
+				const apEnvDtAttI = apEnvDtAtt[ apEnvDtAtt.length > 1 ? i : 0 ];
+				const apEnvDtHldI = apEnvDtHld[ apEnvDtHld.length > 1 ? i : 0 ];
+				const apEnvDtDecI = apEnvDtDec[ apEnvDtDec.length > 1 ? i : 0 ];
+				const apEnvDtSusI = apEnvDtSus[ apEnvDtSus.length > 1 ? i : 0 ];
+				const apEnvDtRelI = apEnvDtRel[ apEnvDtRel.length > 1 ? i : 0 ];
+				const apEnvDtAmpI = apEnvDtAmp[ apEnvDtAmp.length > 1 ? i : 0 ];
 
 				o.$_release = apEnvGnRelI;
 
 				const elapsed = nowOff - o.$_when;
 				const envGnRemain = o.$_whenEnd + o.$_release - now;
-				const envDtRemain = envGnRemain - ( o.$_release - envDetune.$release );
+				const envDtRemain = envGnRemain - ( o.$_release - apEnvDtRelI );
 				const envLpRemain = envGnRemain - ( o.$_release - envLP.$release );
 				const envGainVal = gswaOscProc.#process_env(
 					apEnvGnAttI,
@@ -325,11 +333,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 					envGnRemain
 				);
 				const envDetuneVal = gswaOscProc.#process_env(
-					envDetune.$attack,
-					envDetune.$hold,
-					envDetune.$decay,
-					envDetune.$sustain,
-					envDetune.$release,
+					apEnvDtAttI,
+					apEnvDtHldI,
+					apEnvDtDecI,
+					apEnvDtSusI,
+					apEnvDtRelI,
 					elapsed,
 					envDtRemain
 				);
@@ -351,7 +359,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
 
-				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
+				const baseDetune = apDetuneI + envDetuneVal * apEnvDtAmpI + lfoDetuneVal;
 				let smpL;
 				let smpR;
 

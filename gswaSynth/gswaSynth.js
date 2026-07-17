@@ -38,6 +38,7 @@ class gswaSynth {
 	$synChange( ctx, obj ) {
 		const d = this.#data;
 		const envGn = d.envs.gain;
+		const envDt = d.envs.detune;
 		const bps = this.#bps;
 		const noise = obj.noise;
 
@@ -53,11 +54,19 @@ class gswaSynth {
 			}
 		}
 		this.#oscList.forEach( o => {
+			// envGn
 			GSUaudioParamSet( o.$waOsc.$envGnAtt, envGn.toggle ? envGn.attack / bps  : 0 );
 			GSUaudioParamSet( o.$waOsc.$envGnHld, envGn.toggle ? envGn.hold / bps    : 0 );
 			GSUaudioParamSet( o.$waOsc.$envGnDec, envGn.toggle ? envGn.decay / bps   : 0 );
 			GSUaudioParamSet( o.$waOsc.$envGnSus, envGn.toggle ? envGn.sustain       : 1 );
 			GSUaudioParamSet( o.$waOsc.$envGnRel, envGn.toggle ? envGn.release / bps : 0 );
+			// envDt
+			GSUaudioParamSet( o.$waOsc.$envDtAtt, envDt.toggle ? envDt.attack / bps  : 0 );
+			GSUaudioParamSet( o.$waOsc.$envDtHld, envDt.toggle ? envDt.hold / bps    : 0 );
+			GSUaudioParamSet( o.$waOsc.$envDtDec, envDt.toggle ? envDt.decay / bps   : 0 );
+			GSUaudioParamSet( o.$waOsc.$envDtSus, envDt.toggle ? envDt.sustain       : 0 );
+			GSUaudioParamSet( o.$waOsc.$envDtRel, envDt.toggle ? envDt.release / bps : 0 );
+			GSUaudioParamSet( o.$waOsc.$envDtAmp, envDt.toggle ? envDt.amp * 100     : 0 );
 		} );
 	}
 	$synStopAllKeys() {
@@ -149,21 +158,12 @@ class gswaSynth {
 	#createKey( blcs, when ) {
 		const d = this.#data;
 		const bps = this.#bps;
-		const envDt = d.envs.detune;
 		const envLp = d.envs.lowpass;
 		const lfoGn = d.lfos.gain;
 		const lfoDt = d.lfos.detune;
 
 		return {
 			envs: {
-				detune: envDt.toggle && {
-					attack: envDt.attack / bps,
-					hold: envDt.hold / bps,
-					decay: envDt.decay / bps,
-					sustain: envDt.sustain,
-					release: envDt.release / bps,
-					pitch: envDt.amp * 100,
-				},
 				lowpass: envLp.toggle && {
 					attack: envLp.attack / bps,
 					hold: envLp.hold / bps,

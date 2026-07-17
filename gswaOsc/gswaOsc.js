@@ -16,6 +16,12 @@ class gswaOsc {
 	$envGnDec = null;
 	$envGnSus = null;
 	$envGnRel = null;
+	$envDtAtt = null;
+	$envDtHld = null;
+	$envDtDec = null;
+	$envDtSus = null;
+	$envDtRel = null;
+	$envDtAmp = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -45,6 +51,12 @@ class gswaOsc {
 		this.$envGnDec = params.get( "envGnDec" );
 		this.$envGnSus = params.get( "envGnSus" );
 		this.$envGnRel = params.get( "envGnRel" );
+		this.$envDtAtt = params.get( "envDtAtt" );
+		this.$envDtHld = params.get( "envDtHld" );
+		this.$envDtDec = params.get( "envDtDec" );
+		this.$envDtSus = params.get( "envDtSus" );
+		this.$envDtRel = params.get( "envDtRel" );
+		this.$envDtAmp = params.get( "envDtAmp" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;
