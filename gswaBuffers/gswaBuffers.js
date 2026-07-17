@@ -45,9 +45,11 @@ class gswaBuffers {
 		}
 	}
 	static $sabSetBuffer( id, buf ) {
+		const bufL = gswaBuffers.#bufToSab( buf, 0 );
+		const bufR = gswaBuffers.#bufToSab( buf, 1 );
 		const arr = [
-			gswaBuffers.#bufToSab( buf, 0 ),
-			gswaBuffers.#bufToSab( buf, 1 ),
+			bufL,
+			bufR || bufL,
 		];
 
 		gswaBuffers.#buflist.set( id, arr );
@@ -56,11 +58,13 @@ class gswaBuffers {
 
 	// .........................................................................
 	static #bufToSab( buf, chan ) {
-		const arr = buf.getChannelData( chan );
-		const sab = new SharedArrayBuffer( arr.length * Float32Array.BYTES_PER_ELEMENT );
+		if ( chan < buf.numberOfChannels ) {
+			const arr = buf.getChannelData( chan );
+			const sab = new SharedArrayBuffer( arr.length * Float32Array.BYTES_PER_ELEMENT );
 
-		new Float32Array( sab ).set( arr, 0 );
-		return sab;
+			new Float32Array( sab ).set( arr, 0 );
+			return sab;
+		}
 	}
 	static #format( wt ) {
 		const N = wt.length;
