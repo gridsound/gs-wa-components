@@ -2,6 +2,12 @@
 
 class gswaOsc {
 	static #path = "gswaOscProc.js";
+	static $lfoWaveToIndex = GSUdeepFreeze( {
+		sine: 0,
+		triangle: 1,
+		sawtooth: 2,
+		square: 3,
+	} );
 	#node = null;
 	#ready = false;
 	$pan = null;
@@ -31,6 +37,12 @@ class gswaOsc {
 	$envLpSus = null;
 	$envLpRel = null;
 	$envLpQ = null;
+	// lfoGn
+	$lfoGnWav = null;
+	$lfoGnDel = null;
+	$lfoGnAtt = null;
+	$lfoGnFrq = null;
+	$lfoGnAmp = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -75,6 +87,12 @@ class gswaOsc {
 		this.$envLpSus = params.get( "envLpSus" );
 		this.$envLpRel = params.get( "envLpRel" );
 		this.$envLpQ = params.get( "envLpQ" );
+		// lfoGn
+		this.$lfoGnWav = params.get( "lfoGnWav" );
+		this.$lfoGnDel = params.get( "lfoGnDel" );
+		this.$lfoGnAtt = params.get( "lfoGnAtt" );
+		this.$lfoGnFrq = params.get( "lfoGnFrq" );
+		this.$lfoGnAmp = params.get( "lfoGnAmp" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;

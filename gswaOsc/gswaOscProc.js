@@ -15,6 +15,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#wtdataN = 0;
 	#wtdataL = 0;
 	#currentTimeInt = 0;
+	#release = 10;
+	#lfoGnFrq = 0;
+	#lfoGnDel = 0;
 	#noiseFn = null;
 	static #noiseFns = {
 		white: gswaOscProc.#process_noise_white,
@@ -31,6 +34,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "gain",         1,     0,    1 ),
 			gswaOscProc.#audpar( "phase",        0,     0,    1 ),
 			gswaOscProc.#audpar( "detune",       0, -2400, 2400 ),
+			// uni
 			gswaOscProc.#audpar( "unisonvoices", 1,     1,    9 ),
 			gswaOscProc.#audpar( "unisondetune", 0,     0,  200 ),
 			gswaOscProc.#audpar( "unisonblend",  0,     0,    1 ),
@@ -54,6 +58,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "envLpSus",     1,     0,    1 ),
 			gswaOscProc.#audpar( "envLpRel",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpQ",       0,     0,   25 ),
+			// lfoGain
+			gswaOscProc.#audpar( "lfoGnWav",     0,     0,    3 ),
+			gswaOscProc.#audpar( "lfoGnDel",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoGnAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoGnFrq",     1,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoGnAmp",     1,    -1,    1 ),
 		];
 	}
 
@@ -81,7 +91,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":
-				this.#keys.set( a0, gswaOscProc.#format_new_key( a0, a1, a2, a3, a4 ) );
+				this.#keys.set( a0, this.#format_new_key( a0, a1, a2, a3, a4 ) );
 				break;
 			case "pop":
 				this.#popKey( a0 );
@@ -103,10 +113,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 	}
 	#stopKey( o ) {
-		if ( o.$_when >= currentTime || o.$_whenEnd + o.$_release <= currentTime ) {
+		if ( o.$_when >= currentTime || o.$_whenEnd + this.#release <= currentTime ) {
 			this.#keys.delete( o.$_id );
-		} else if ( o.$_whenEnd + o.$_release > currentTime ) {
-			o.$_whenEnd = currentTime + o.$_release;
+		} else if ( o.$_whenEnd + this.#release > currentTime ) {
+			o.$_whenEnd = currentTime + this.#release;
 		}
 	}
 
@@ -120,13 +130,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$a1: 0, $a2: 0,
 		};
 	}
-	static #format_new_key( id, d, when, offset, duration ) {
+	#format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
-		const lfoGn = d.lfos?.gain;
 		const lfoDt = d.lfos?.detune;
-		const lfoGnFre = lfoGn?.frequency ?? 1;
 		const lfoDtFre = lfoDt?.frequency ?? 1;
-		const lfoGnDel = lfoGn?.delay ?? 0;
 		const lfoDtDel = lfoDt?.delay ?? 0;
 
 		return {
@@ -135,7 +142,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_when: when,
 			$_offset: offset,
 			$_whenEnd: when + duration,
-			$_release: 10,
 			$_lpL: gswaOscProc.#format_new_key_coeff(),
 			$_lpR: gswaOscProc.#format_new_key_coeff(),
 			$_hpL: gswaOscProc.#format_new_key_coeff(),
@@ -148,13 +154,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_noiseBrown: { $b0: 0 },
 			$lfos: {
 				$gain: {
-					$wave: lfoGn?.wave ?? "sine",
-					$delay: lfoGnDel,
-					$attack: lfoGn?.attack ?? 0,
-					$frequency: lfoGnFre,
-					$amp: gswaOscProc.#math_clamp( lfoGn?.amp ?? 0, -1, 1 ),
-					$_phase: lfoGnFre * ( offset - lfoGnDel ) % 1,
-					$_phaseB: lfoGnFre * ( offset - lfoGnDel ) % 1,
+					$_phase: this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1,
+					$_phaseB: this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1,
 				},
 				$detune: {
 					$wave: lfoDt?.wave ?? "sine",
@@ -218,7 +219,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	#process_keys( chanL, chanR, params ) {
 		for ( const o of this.#keys.values() ) {
-			if ( o.$_whenEnd + o.$_release <= currentTime ) {
+			if ( o.$_whenEnd + this.#release <= currentTime ) {
 				this.#keys.delete( o.$_id );
 			} else if ( o.$_when < currentTime + chanL.length / sampleRate ) {
 				this.#process_key( chanL, chanR, params, o );
@@ -254,6 +255,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apEnvLpSus = params.envLpSus;
 		const apEnvLpRel = params.envLpRel;
 		const apEnvLpQ = params.envLpQ;
+		// lfoGn
+		const apLfoGnWav = params.lfoGnWav;
+		const apLfoGnDel = params.lfoGnDel;
+		const apLfoGnAtt = params.lfoGnAtt;
+		const apLfoGnFrq = params.lfoGnFrq;
+		const apLfoGnAmp = params.lfoGnAmp;
 		//
 		const keys = o.$keys;
 		const lfoGain = o.$lfos.$gain;
@@ -267,7 +274,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const now = currentTime + i / sampleRate;
 			const nowOff = now + o.$_offset;
 
-			if ( o.$_when <= now && now < o.$_whenEnd + o.$_release ) {
+			if ( o.$_when <= now && now < o.$_whenEnd + this.#release ) {
 				while (
 					o.$_keyInd < keys.length - 1 &&
 					nowOff >= keys[ o.$_keyInd ].$when + keys[ o.$_keyInd ].$duration
@@ -332,13 +339,21 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apEnvLpSusI = apEnvLpSus[ apEnvLpSus.length > 1 ? i : 0 ];
 				const apEnvLpRelI = apEnvLpRel[ apEnvLpRel.length > 1 ? i : 0 ];
 				const apEnvLpQI = apEnvLpQ[ apEnvLpQ.length > 1 ? i : 0 ];
+				// lfoGn
+				const apLfoGnWavI = Math.round( apLfoGnWav[ apLfoGnWav.length > 1 ? i : 0 ] );
+				const apLfoGnDelI = apLfoGnDel[ apLfoGnDel.length > 1 ? i : 0 ];
+				const apLfoGnAttI = apLfoGnAtt[ apLfoGnAtt.length > 1 ? i : 0 ];
+				const apLfoGnAmpI = apLfoGnAmp[ apLfoGnAmp.length > 1 ? i : 0 ];
+				const apLfoGnFrqI = apLfoGnFrq[ apLfoGnFrq.length > 1 ? i : 0 ];
 
-				o.$_release = apEnvGnRelI;
+				this.#release = apEnvGnRelI;
+				this.#lfoGnFrq = apLfoGnFrqI;
+				this.#lfoGnDel = apLfoGnDelI;
 
 				const elapsed = nowOff - o.$_when;
-				const envGnRemain = o.$_whenEnd + o.$_release - now;
-				const envDtRemain = envGnRemain - ( o.$_release - apEnvDtRelI );
-				const envLpRemain = envGnRemain - ( o.$_release - apEnvLpRelI );
+				const envGnRemain = o.$_whenEnd + this.#release - now;
+				const envDtRemain = envGnRemain - ( this.#release - apEnvDtRelI );
+				const envLpRemain = envGnRemain - ( this.#release - apEnvLpRelI );
 				const envGainVal = gswaOscProc.#process_env(
 					apEnvGnAttI,
 					apEnvGnHldI,
@@ -359,12 +374,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 				);
 				const lfoGainVal = gswaOscProc.#process_lfo(
 					lfoGain,
-					lfoGain.$amp * keyLfoGainAmp,
-					lfoGain.$frequency * keyLfoGainFrequency,
+					apLfoGnWavI,
+					apLfoGnDelI,
+					apLfoGnAttI,
+					apLfoGnAmpI * keyLfoGainAmp,
+					apLfoGnFrqI * keyLfoGainFrequency,
 					elapsed
 				) + 1;
 				const lfoDetuneVal = gswaOscProc.#process_lfo(
 					lfoDetune,
+					0,
+					lfoDetune.$delay,
+					lfoDetune.$attack,
 					lfoDetune.$amp * keyLfoDetuneAmp,
 					lfoDetune.$frequency * keyLfoDetuneFrequency,
 					elapsed
@@ -620,26 +641,26 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lfo( lfo, amp, hz, elapsed ) {
-		const sinceDelay = elapsed - lfo.$delay;
+	static #process_lfo( lfo, wave, del, att, amp, hz, elapsed ) {
+		const sinceDelay = elapsed - del;
 
 		lfo.$_phaseB += hz / sampleRate;
 		if ( lfo.$_phaseB >= 1 ) {
 			lfo.$_phaseB -= gswaOscProc.#math_floor( lfo.$_phaseB );
 		}
 		if ( sinceDelay > 0 && amp !== 0 ) {
-			const depth = lfo.$attack > 0 ? gswaOscProc.#math_clamp( sinceDelay / lfo.$attack, 0, 1 ) : 1;
-			const wave = gswaOscProc.#process_lfo_wave( lfo.$wave, lfo.$_phaseB );
+			const depth = att > 0 ? gswaOscProc.#math_clamp( sinceDelay / att, 0, 1 ) : 1;
+			const smp = gswaOscProc.#process_lfo_wave( wave, lfo.$_phaseB );
 
-			return wave * amp * depth;
+			return smp * amp * depth;
 		}
 		return 0;
 	}
-	static #process_lfo_wave( type, p ) {
-		switch ( type ) {
-			case "square": return p < .5 ? 1 : -1;
-			case "sawtooth": return p < .5 ? 2 * p : 2 * p - 2;
-			case "triangle": return (
+	static #process_lfo_wave( wave, p ) {
+		switch ( wave ) {
+			case 3: return p < .5 ? 1 : -1;
+			case 2: return p < .5 ? 2 * p : 2 * p - 2;
+			case 1: return (
 				p < .25 ? 4 * p :
 				p < .75 ? 2 - 4 * p :
 				4 * p - 4

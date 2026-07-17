@@ -40,6 +40,7 @@ class gswaSynth {
 		const envGn = d.envs.gain;
 		const envDt = d.envs.detune;
 		const envLp = d.envs.lowpass;
+		const lfoGn = d.lfos.gain;
 		const bps = this.#bps;
 		const noise = obj.noise;
 
@@ -75,6 +76,12 @@ class gswaSynth {
 			GSUaudioParamSet( o.$waOsc.$envLpSus, envLp.toggle ? envLp.sustain       : 1 );
 			GSUaudioParamSet( o.$waOsc.$envLpRel, envLp.toggle ? envLp.release / bps : 0 );
 			GSUaudioParamSet( o.$waOsc.$envLpQ,   envLp.toggle ? envLp.q             : 0 );
+			// lfoGn
+			GSUaudioParamSet( o.$waOsc.$lfoGnWav, lfoGn.toggle ? gswaOsc.$lfoWaveToIndex[ lfoGn.type ] : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoGnDel, lfoGn.toggle ? lfoGn.delay / bps  : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoGnAtt, lfoGn.toggle ? lfoGn.attack / bps : 0 );
+			GSUaudioParamSet( o.$waOsc.$lfoGnFrq, lfoGn.toggle ? lfoGn.speed * bps  : 1 );
+			GSUaudioParamSet( o.$waOsc.$lfoGnAmp, lfoGn.toggle ? lfoGn.amp          : 0 );
 		} );
 	}
 	$synStopAllKeys() {
@@ -172,13 +179,6 @@ class gswaSynth {
 
 		return {
 			lfos: {
-				gain: lfoGn.toggle && {
-					wave: lfoGn.type,
-					delay: lfoGn.delay / bps,
-					attack: lfoGn.attack / bps,
-					frequency: lfoGn.speed * bps,
-					amp: lfoGn.amp,
-				},
 				detune: lfoDt.toggle && {
 					wave: lfoDt.type,
 					delay: lfoDt.delay / bps,
