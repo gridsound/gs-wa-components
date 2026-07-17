@@ -34,6 +34,11 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "unisonvoices", 1,     1,    9 ),
 			gswaOscProc.#audpar( "unisondetune", 0,     0,  200 ),
 			gswaOscProc.#audpar( "unisonblend",  0,     0,    1 ),
+			gswaOscProc.#audpar( "envGnAtt",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envGnHld",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envGnDec",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envGnSus",     1,     0,    1 ),
+			gswaOscProc.#audpar( "envGnRel",     0,     0,  999 ),
 		];
 	}
 
@@ -83,10 +88,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 	}
 	#stopKey( o ) {
-		if ( o.$_when >= currentTime || o.$_whenEnd <= currentTime ) {
+		if ( o.$_when >= currentTime || o.$_whenEnd + o.$_release <= currentTime ) {
 			this.#keys.delete( o.$_id );
-		} else if ( o.$_whenEnd > currentTime ) {
-			o.$_whenEnd = currentTime + o.$envs.$gain.$release;
+		} else if ( o.$_whenEnd + o.$_release > currentTime ) {
+			o.$_whenEnd = currentTime + o.$_release;
 		}
 	}
 
@@ -102,12 +107,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	static #format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
-		const envGn = d.envs?.gain;
 		const envDt = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
 		const lfoGn = d.lfos?.gain;
 		const lfoDt = d.lfos?.detune;
-		const envGnRel = envGn?.release ?? .01;
 		const lfoGnFre = lfoGn?.frequency ?? 1;
 		const lfoDtFre = lfoDt?.frequency ?? 1;
 		const lfoGnDel = lfoGn?.delay ?? 0;
@@ -118,7 +121,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_keyInd: 0,
 			$_when: when,
 			$_offset: offset,
-			$_whenEnd: when + duration + envGnRel,
+			$_whenEnd: when + duration,
+			$_release: 10,
 			$_lpL: gswaOscProc.#format_new_key_coeff(),
 			$_lpR: gswaOscProc.#format_new_key_coeff(),
 			$_hpL: gswaOscProc.#format_new_key_coeff(),
@@ -130,13 +134,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
 			$_noiseBrown: { $b0: 0 },
 			$envs: {
-				$gain: {
-					$attack: envGn?.attack ?? .01,
-					$hold: envGn?.hold ?? 0,
-					$decay: envGn?.decay ?? 0,
-					$sustain: envGn?.sustain ?? 1,
-					$release: envGnRel,
-				},
 				$detune: {
 					$attack: envDt?.attack ?? 0,
 					$hold: envDt?.hold ?? 0,
@@ -226,7 +223,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	#process_keys( chanL, chanR, params ) {
 		for ( const o of this.#keys.values() ) {
-			if ( o.$_whenEnd <= currentTime ) {
+			if ( o.$_whenEnd + o.$_release <= currentTime ) {
 				this.#keys.delete( o.$_id );
 			} else if ( o.$_when < currentTime + chanL.length / sampleRate ) {
 				this.#process_key( chanL, chanR, params, o );
@@ -242,8 +239,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apUnisonVoices = params.unisonvoices;
 		const apUnisonDetune = params.unisondetune;
 		const apUnisonBlend = params.unisonblend;
+		const apEnvGnAtt = params.envGnAtt;
+		const apEnvGnHld = params.envGnHld;
+		const apEnvGnDec = params.envGnDec;
+		const apEnvGnSus = params.envGnSus;
+		const apEnvGnRel = params.envGnRel;
 		const keys = o.$keys;
-		const envGain = o.$envs.$gain;
 		const envDetune = o.$envs.$detune;
 		const envLP = o.$envs.$lowpass;
 		const lfoGain = o.$lfos.$gain;
@@ -257,7 +258,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			const now = currentTime + i / sampleRate;
 			const nowOff = now + o.$_offset;
 
-			if ( o.$_when <= now && now < o.$_whenEnd ) {
+			if ( o.$_when <= now && now < o.$_whenEnd + o.$_release ) {
 				while (
 					o.$_keyInd < keys.length - 1 &&
 					nowOff >= keys[ o.$_keyInd ].$when + keys[ o.$_keyInd ].$duration
@@ -295,12 +296,43 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( keyLfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
 				}
 
+				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
+				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
+				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
+				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
+				const apUnisonVoicesI = Math.round( apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ] );
+				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
+				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
+				const apEnvGnAttI = apEnvGnAtt[ apEnvGnAtt.length > 1 ? i : 0 ];
+				const apEnvGnHldI = apEnvGnHld[ apEnvGnHld.length > 1 ? i : 0 ];
+				const apEnvGnDecI = apEnvGnDec[ apEnvGnDec.length > 1 ? i : 0 ];
+				const apEnvGnSusI = apEnvGnSus[ apEnvGnSus.length > 1 ? i : 0 ];
+				const apEnvGnRelI = apEnvGnRel[ apEnvGnRel.length > 1 ? i : 0 ];
+
+				o.$_release = apEnvGnRelI;
+
 				const elapsed = nowOff - o.$_when;
-				const envGnRemain = o.$_whenEnd - now;
-				const envDtRemain = envGnRemain - ( envGain.$release - envDetune.$release );
-				const envLpRemain = envGnRemain - ( envGain.$release - envLP.$release );
-				const envGainVal = gswaOscProc.#process_env( envGain, elapsed, envGnRemain );
-				const envDetuneVal = gswaOscProc.#process_env( envDetune, elapsed, envDtRemain );
+				const envGnRemain = o.$_whenEnd + o.$_release - now;
+				const envDtRemain = envGnRemain - ( o.$_release - envDetune.$release );
+				const envLpRemain = envGnRemain - ( o.$_release - envLP.$release );
+				const envGainVal = gswaOscProc.#process_env(
+					apEnvGnAttI,
+					apEnvGnHldI,
+					apEnvGnDecI,
+					apEnvGnSusI,
+					apEnvGnRelI,
+					elapsed,
+					envGnRemain
+				);
+				const envDetuneVal = gswaOscProc.#process_env(
+					envDetune.$attack,
+					envDetune.$hold,
+					envDetune.$decay,
+					envDetune.$sustain,
+					envDetune.$release,
+					elapsed,
+					envDtRemain
+				);
 				const lfoGainVal = gswaOscProc.#process_lfo(
 					lfoGain,
 					lfoGain.$amp * keyLfoGainAmp,
@@ -319,13 +351,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
 
-				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
-				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
-				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
-				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const apUnisonVoicesI = Math.round( apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ] );
-				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
-				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
 				const baseDetune = apDetuneI + envDetuneVal * envDetune.$pitch + lfoDetuneVal;
 				let smpL;
 				let smpR;
@@ -528,20 +553,20 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_env( e, t, remain ) {
+	static #process_env( A, H, D, S, R, time, remain ) {
 		let val;
 
-		if ( t < e.$attack ) {
-			val = e.$attack <= 0 ? 1 : t / e.$attack;
-		} else if ( t < e.$attack + e.$hold ) {
+		if ( time < A ) {
+			val = A <= 0 ? 1 : time / A;
+		} else if ( time < A + H ) {
 			val = 1;
-		} else if ( t < e.$attack + e.$hold + e.$decay ) {
-			val = e.$decay <= 0 ? e.$sustain : 1 - ( 1 - e.$sustain ) * ( t - e.$attack - e.$hold ) / e.$decay;
+		} else if ( time < A + H + D ) {
+			val = D <= 0 ? S : 1 - ( 1 - S ) * ( time - A - H ) / D;
 		} else {
-			val = e.$sustain;
+			val = S;
 		}
-		if ( e.$release > 0 ) {
-			val *= gswaOscProc.#math_clamp( remain / e.$release, 0, 1 );
+		if ( R > 0 ) {
+			val *= gswaOscProc.#math_clamp( remain / R, 0, 1 );
 		} else if ( remain <= 0 ) {
 			val = 0;
 		}
@@ -580,7 +605,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 	// .........................................................................
 	static #process_lowpass_coeffs_recalc( cf, keyLowpass, envLP, elapsed, remain ) {
 		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
-			const envVal = gswaOscProc.#process_env( envLP, elapsed, remain );
+			const envVal = gswaOscProc.#process_env(
+				envLP.$attack,
+				envLP.$hold,
+				envLP.$decay,
+				envLP.$sustain,
+				envLP.$release,
+				elapsed,
+				remain
+			);
 			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;

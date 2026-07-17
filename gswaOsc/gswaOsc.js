@@ -11,6 +11,11 @@ class gswaOsc {
 	$unisonvoices = null;
 	$unisondetune = null;
 	$unisonblend = null;
+	$envGnAtt = null;
+	$envGnHld = null;
+	$envGnDec = null;
+	$envGnSus = null;
+	$envGnRel = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -35,6 +40,11 @@ class gswaOsc {
 		this.$unisonvoices = params.get( "unisonvoices" );
 		this.$unisondetune = params.get( "unisondetune" );
 		this.$unisonblend = params.get( "unisonblend" );
+		this.$envGnAtt = params.get( "envGnAtt" );
+		this.$envGnHld = params.get( "envGnHld" );
+		this.$envGnDec = params.get( "envGnDec" );
+		this.$envGnSus = params.get( "envGnSus" );
+		this.$envGnRel = params.get( "envGnRel" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;
