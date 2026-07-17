@@ -139,10 +139,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 		};
 	}
 	#format_new_key( id, d, when, offset, duration ) {
-		const klast = d.keys.at( -1 );
-		const lfoDt = d.lfos?.detune;
-		const lfoDtFre = lfoDt?.frequency ?? 1;
-		const lfoDtDel = lfoDt?.delay ?? 0;
+		const lfoGnPhase = this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1;
+		const lfoDtPhase = this.#lfoDtFrq * ( offset - this.#lfoDtDel ) % 1;
 
 		return {
 			$_id: id,
@@ -160,16 +158,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_unisonPhaseRB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
 			$_noiseBrown: { $b0: 0 },
-			$lfos: {
-				$gain: {
-					$_phase: this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1,
-					$_phaseB: this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1,
-				},
-				$detune: {
-					$_phase: this.#lfoDtFrq * ( offset - this.#lfoDtDel ) % 1,
-					$_phaseB: this.#lfoDtFrq * ( offset - this.#lfoDtDel ) % 1,
-				},
-			},
+			$_lfoGnPhase: [ lfoGnPhase, lfoGnPhase ],
+			$_lfoDtPhase: [ lfoDtPhase, lfoDtPhase ],
 			$keys: d.keys.map( k => ( {
 				$when: k.when,
 				$duration: k.duration,
@@ -272,11 +262,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apLfoDtAmp = params.lfoDtAmp;
 		//
 		const keys = o.$keys;
-		const lfoGain = o.$lfos.$gain;
-		const lfoDetune = o.$lfos.$detune;
 
-		lfoGain.$_phaseB = lfoGain.$_phase;
-		lfoDetune.$_phaseB = lfoDetune.$_phase;
+		o.$_lfoGnPhase[ 1 ] = o.$_lfoGnPhase[ 0 ];
+		o.$_lfoDtPhase[ 1 ] = o.$_lfoDtPhase[ 0 ];
 		o.$_unisonPhaseLB.set( o.$_unisonPhaseLA );
 		o.$_unisonPhaseRB.set( o.$_unisonPhaseRA );
 		for ( let i = 0; i < chanLen; ++i ) {
@@ -390,7 +378,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					envDtRemain
 				);
 				const lfoGainVal = gswaOscProc.#process_lfo(
-					lfoGain,
+					o.$_lfoGnPhase,
 					apLfoGnWavI,
 					apLfoGnDelI,
 					apLfoGnAttI,
@@ -399,7 +387,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed
 				) + 1;
 				const lfoDetuneVal = gswaOscProc.#process_lfo(
-					lfoDetune,
+					o.$_lfoDtPhase,
 					apLfoDtWavI,
 					apLfoDtDelI,
 					apLfoDtAttI,
@@ -492,8 +480,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				chanR[ i ] += smpR * finalGain * ( finalPan < 0 ? 1 + finalPan : 1 );
 			}
 		}
-		lfoGain.$_phase = lfoGain.$_phaseB;
-		lfoDetune.$_phase = lfoDetune.$_phaseB;
+		o.$_lfoGnPhase[ 0 ] = o.$_lfoGnPhase[ 1 ];
+		o.$_lfoDtPhase[ 0 ] = o.$_lfoDtPhase[ 1 ];
 		o.$_unisonPhaseLA.set( o.$_unisonPhaseLB );
 		o.$_unisonPhaseRA.set( o.$_unisonPhaseRB );
 	}
@@ -658,16 +646,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lfo( lfo, wave, del, att, amp, hz, elapsed ) {
+	static #process_lfo( phase, wave, del, att, amp, hz, elapsed ) {
 		const sinceDelay = elapsed - del;
 
-		lfo.$_phaseB += hz / sampleRate;
-		if ( lfo.$_phaseB >= 1 ) {
-			lfo.$_phaseB -= gswaOscProc.#math_floor( lfo.$_phaseB );
+		phase[ 1 ] += hz / sampleRate;
+		if ( phase[ 1 ] >= 1 ) {
+			phase[ 1 ] -= gswaOscProc.#math_floor( phase[ 1 ] );
 		}
 		if ( sinceDelay > 0 && amp !== 0 ) {
 			const depth = att > 0 ? gswaOscProc.#math_clamp( sinceDelay / att, 0, 1 ) : 1;
-			const smp = gswaOscProc.#process_lfo_wave( wave, lfo.$_phaseB );
+			const smp = gswaOscProc.#process_lfo_wave( wave, phase[ 1 ] );
 
 			return smp * amp * depth;
 		}
