@@ -61,7 +61,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "envLpHld",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpDec",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpSus",     1,     0,    1 ),
-			gswaOscProc.#audpar( "envLpRel",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envLpRel",  9999,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpQ",       0,     0,   25 ),
 			// lfoGn
 			gswaOscProc.#audpar( "lfoGnWav",     0,     0,    3 ),
@@ -126,8 +126,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#stopKey( o ) {
 		if ( o.$_when >= currentTime || o.$_whenEnd + this.#release <= currentTime ) {
 			this.#keys.delete( o.$_id );
-		} else if ( o.$_whenEnd + this.#release > currentTime ) {
-			o.$_whenEnd = currentTime + this.#release;
+		} else if ( o.$_whenEnd > currentTime ) {
+			o.$_whenEnd = currentTime;
 		}
 	}
 
