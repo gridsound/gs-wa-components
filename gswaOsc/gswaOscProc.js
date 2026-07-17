@@ -30,6 +30,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	static #audpar( name, n, a, b ) {
 		return { name, defaultValue: n, minValue: a, maxValue: b, automationRate: "a-rate" };
 	}
+	static #audparI( arr, i ) {
+		return arr[ arr.length > 1 ? i : 0 ];
+	}
 	static get parameterDescriptors() {
 		return [
 			gswaOscProc.#audpar( "pan",          0,    -1,    1 ),
@@ -309,45 +312,45 @@ class gswaOscProc extends AudioWorkletProcessor {
 					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( keyLfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
 				}
 
-				const apPanI = apPan[ apPan.length > 1 ? i : 0 ];
-				const apGainI = apGain[ apGain.length > 1 ? i : 0 ];
-				const apPhaseI = apPhase[ apPhase.length > 1 ? i : 0 ];
-				const apDetuneI = apDetune[ apDetune.length > 1 ? i : 0 ];
-				const apUnisonVoicesI = Math.round( apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ] );
-				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
-				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
+				const apPanI = gswaOscProc.#audparI( apPan, i );
+				const apGainI = gswaOscProc.#audparI( apGain, i );
+				const apPhaseI = gswaOscProc.#audparI( apPhase, i );
+				const apDetuneI = gswaOscProc.#audparI( apDetune, i );
+				const apUnisonVoicesI = Math.round( gswaOscProc.#audparI( apUnisonVoices, i ) );
+				const apUnisonDetuneI = gswaOscProc.#audparI( apUnisonDetune, i );
+				const apUnisonBlendI = gswaOscProc.#audparI( apUnisonBlend, i );
 				// envGn
-				const apEnvGnAttI = apEnvGnAtt[ apEnvGnAtt.length > 1 ? i : 0 ];
-				const apEnvGnHldI = apEnvGnHld[ apEnvGnHld.length > 1 ? i : 0 ];
-				const apEnvGnDecI = apEnvGnDec[ apEnvGnDec.length > 1 ? i : 0 ];
-				const apEnvGnSusI = apEnvGnSus[ apEnvGnSus.length > 1 ? i : 0 ];
-				const apEnvGnRelI = apEnvGnRel[ apEnvGnRel.length > 1 ? i : 0 ];
+				const apEnvGnAttI = gswaOscProc.#audparI( apEnvGnAtt, i );
+				const apEnvGnHldI = gswaOscProc.#audparI( apEnvGnHld, i );
+				const apEnvGnDecI = gswaOscProc.#audparI( apEnvGnDec, i );
+				const apEnvGnSusI = gswaOscProc.#audparI( apEnvGnSus, i );
+				const apEnvGnRelI = gswaOscProc.#audparI( apEnvGnRel, i );
 				// envDt
-				const apEnvDtAttI = apEnvDtAtt[ apEnvDtAtt.length > 1 ? i : 0 ];
-				const apEnvDtHldI = apEnvDtHld[ apEnvDtHld.length > 1 ? i : 0 ];
-				const apEnvDtDecI = apEnvDtDec[ apEnvDtDec.length > 1 ? i : 0 ];
-				const apEnvDtSusI = apEnvDtSus[ apEnvDtSus.length > 1 ? i : 0 ];
-				const apEnvDtRelI = apEnvDtRel[ apEnvDtRel.length > 1 ? i : 0 ];
-				const apEnvDtAmpI = apEnvDtAmp[ apEnvDtAmp.length > 1 ? i : 0 ];
+				const apEnvDtAttI = gswaOscProc.#audparI( apEnvDtAtt, i );
+				const apEnvDtHldI = gswaOscProc.#audparI( apEnvDtHld, i );
+				const apEnvDtDecI = gswaOscProc.#audparI( apEnvDtDec, i );
+				const apEnvDtSusI = gswaOscProc.#audparI( apEnvDtSus, i );
+				const apEnvDtRelI = gswaOscProc.#audparI( apEnvDtRel, i );
+				const apEnvDtAmpI = gswaOscProc.#audparI( apEnvDtAmp, i );
 				// envLp
-				const apEnvLpAttI = apEnvLpAtt[ apEnvLpAtt.length > 1 ? i : 0 ];
-				const apEnvLpHldI = apEnvLpHld[ apEnvLpHld.length > 1 ? i : 0 ];
-				const apEnvLpDecI = apEnvLpDec[ apEnvLpDec.length > 1 ? i : 0 ];
-				const apEnvLpSusI = apEnvLpSus[ apEnvLpSus.length > 1 ? i : 0 ];
-				const apEnvLpRelI = apEnvLpRel[ apEnvLpRel.length > 1 ? i : 0 ];
-				const apEnvLpQI = apEnvLpQ[ apEnvLpQ.length > 1 ? i : 0 ];
+				const apEnvLpAttI = gswaOscProc.#audparI( apEnvLpAtt, i );
+				const apEnvLpHldI = gswaOscProc.#audparI( apEnvLpHld, i );
+				const apEnvLpDecI = gswaOscProc.#audparI( apEnvLpDec, i );
+				const apEnvLpSusI = gswaOscProc.#audparI( apEnvLpSus, i );
+				const apEnvLpRelI = gswaOscProc.#audparI( apEnvLpRel, i );
+				const apEnvLpQI = gswaOscProc.#audparI( apEnvLpQ, i );
 				// lfoGn
-				const apLfoGnWavI = Math.round( apLfoGnWav[ apLfoGnWav.length > 1 ? i : 0 ] );
-				const apLfoGnDelI = apLfoGnDel[ apLfoGnDel.length > 1 ? i : 0 ];
-				const apLfoGnAttI = apLfoGnAtt[ apLfoGnAtt.length > 1 ? i : 0 ];
-				const apLfoGnAmpI = apLfoGnAmp[ apLfoGnAmp.length > 1 ? i : 0 ];
-				const apLfoGnFrqI = apLfoGnFrq[ apLfoGnFrq.length > 1 ? i : 0 ];
+				const apLfoGnWavI = Math.round( gswaOscProc.#audparI( apLfoGnWav, i ) );
+				const apLfoGnDelI = gswaOscProc.#audparI( apLfoGnDel, i );
+				const apLfoGnAttI = gswaOscProc.#audparI( apLfoGnAtt, i );
+				const apLfoGnAmpI = gswaOscProc.#audparI( apLfoGnAmp, i );
+				const apLfoGnFrqI = gswaOscProc.#audparI( apLfoGnFrq, i );
 				// lfoDt
-				const apLfoDtWavI = Math.round( apLfoDtWav[ apLfoDtWav.length > 1 ? i : 0 ] );
-				const apLfoDtDelI = apLfoDtDel[ apLfoDtDel.length > 1 ? i : 0 ];
-				const apLfoDtAttI = apLfoDtAtt[ apLfoDtAtt.length > 1 ? i : 0 ];
-				const apLfoDtAmpI = apLfoDtAmp[ apLfoDtAmp.length > 1 ? i : 0 ];
-				const apLfoDtFrqI = apLfoDtFrq[ apLfoDtFrq.length > 1 ? i : 0 ];
+				const apLfoDtWavI = Math.round( gswaOscProc.#audparI( apLfoDtWav, i ) );
+				const apLfoDtDelI = gswaOscProc.#audparI( apLfoDtDel, i );
+				const apLfoDtAttI = gswaOscProc.#audparI( apLfoDtAtt, i );
+				const apLfoDtAmpI = gswaOscProc.#audparI( apLfoDtAmp, i );
+				const apLfoDtFrqI = gswaOscProc.#audparI( apLfoDtFrq, i );
 
 				this.#release = apEnvGnRelI;
 				this.#lfoGnFrq = apLfoGnFrqI;
