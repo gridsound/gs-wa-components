@@ -156,8 +156,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_unisonPhaseLB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_unisonPhaseRA: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_unisonPhaseRB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
-			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
-			$_noiseBrown: { $b0: 0 },
+			$_noisePink: [ 0, 0, 0, 0, 0, 0, 0 ],
+			$_noiseBrown: [ 0 ],
 			$_lfoGnPhase: [ lfoGnPhase, lfoGnPhase ],
 			$_lfoDtPhase: [ lfoDtPhase, lfoDtPhase ],
 			$keys: d.keys.map( k => ( {
@@ -495,23 +495,23 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const white = gswaOscProc.#process_noise_white();
 		let smp;
 
-		b.$b0 = .99886 * b.$b0 + white * .0555179;
-		b.$b1 = .99332 * b.$b1 + white * .0750759;
-		b.$b2 = .96900 * b.$b2 + white * .1538520;
-		b.$b3 = .86650 * b.$b3 + white * .3104856;
-		b.$b4 = .55000 * b.$b4 + white * .5329522;
-		b.$b5 = -.7616 * b.$b5 - white * .0168980;
-		smp = b.$b0 + b.$b1 + b.$b2 + b.$b3 + b.$b4 + b.$b5 + b.$b6 + white * .5362;
+		b[ 0 ] = .99886 * b[ 0 ] + white * .0555179;
+		b[ 1 ] = .99332 * b[ 1 ] + white * .0750759;
+		b[ 2 ] = .96900 * b[ 2 ] + white * .1538520;
+		b[ 3 ] = .86650 * b[ 3 ] + white * .3104856;
+		b[ 4 ] = .55000 * b[ 4 ] + white * .5329522;
+		b[ 5 ] = -.7616 * b[ 5 ] - white * .0168980;
+		smp = b[ 0 ] + b[ 1 ] + b[ 2 ] + b[ 3 ] + b[ 4 ] + b[ 5 ] + b[ 6 ] + white * .5362;
 		smp *= .18; // gain
-		b.$b6 = white * .115926;
+		b[ 6 ] = white * .115926;
 		return smp;
 	}
 	static #process_noise_brown( o ) {
 		const b = o.$_noiseBrown;
 		const white = gswaOscProc.#process_noise_white();
-		let smp = ( b.$b0 + ( .02 * white ) ) / 1.02;
+		let smp = ( b[ 0 ] + ( .02 * white ) ) / 1.02;
 
-		b.$b0 = smp;
+		b[ 0 ] = smp;
 		smp *= 5; // gain
 		return smp;
 	}
