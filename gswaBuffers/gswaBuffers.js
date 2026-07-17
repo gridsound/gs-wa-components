@@ -22,7 +22,7 @@ class gswaBuffers {
 		gswaBuffers.#buflist.delete( id );
 	}
 	static $sabGetWavetable( id ) {
-		return gswaBuffers.#wtlist.get( id ).$sab;
+		return gswaBuffers.#wtlist.get( id )?.$sab;
 	}
 	static $sabGetBuffer( id ) {
 		return gswaBuffers.#buflist.get( id ) || [];
