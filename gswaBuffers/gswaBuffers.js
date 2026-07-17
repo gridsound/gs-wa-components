@@ -45,10 +45,13 @@ class gswaBuffers {
 		}
 	}
 	static $sabSetBuffer( id, buf ) {
-		gswaBuffers.#buflist.set( id, [
+		const arr = [
 			gswaBuffers.#bufToSab( buf, 0 ),
 			gswaBuffers.#bufToSab( buf, 1 ),
-		] );
+		];
+
+		gswaBuffers.#buflist.set( id, arr );
+		return arr;
 	}
 
 	// .........................................................................
