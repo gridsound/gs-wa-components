@@ -103,14 +103,14 @@ class gswaSynth {
 				case "source": this.#setOscSource( o, val ); break;
 				case "wave": this.#setOscWave( o, val ); break;
 				case "color": o.$waOsc.$oscSource( "noise", val ); break;
-				case "pan": GSUaudioParamSet( waOsc.pan, val ); break;
-				case "gain": GSUaudioParamSet( waOsc.gain, val ); break;
-				case "phaze": GSUaudioParamSet( waOsc.phase, val ); break;
-				case "detune": GSUaudioParamSet( waOsc.detune, ( val + osc.detunefine ) * 100 ); break;
-				case "detunefine": GSUaudioParamSet( waOsc.detune, ( osc.detune + val ) * 100 ); break;
-				case "unisonvoices": GSUaudioParamSet( waOsc.unisonvoices, val ); break;
-				case "unisondetune": GSUaudioParamSet( waOsc.unisondetune, val * 100 ); break;
-				case "unisonblend": GSUaudioParamSet( waOsc.unisonblend, val ); break;
+				case "pan": GSUaudioParamSet( waOsc.$pan, val ); break;
+				case "gain": GSUaudioParamSet( waOsc.$gain, val ); break;
+				case "phaze": GSUaudioParamSet( waOsc.$phase, val ); break;
+				case "detune": GSUaudioParamSet( waOsc.$detune, ( val + osc.detunefine ) * 100 ); break;
+				case "detunefine": GSUaudioParamSet( waOsc.$detune, ( osc.detune + val ) * 100 ); break;
+				case "unisonvoices": GSUaudioParamSet( waOsc.$unisonvoices, val ); break;
+				case "unisondetune": GSUaudioParamSet( waOsc.$unisondetune, val * 100 ); break;
+				case "unisonblend": GSUaudioParamSet( waOsc.$unisonblend, val ); break;
 			}
 		} );
 	}
