@@ -11,17 +11,26 @@ class gswaOsc {
 	$unisonvoices = null;
 	$unisondetune = null;
 	$unisonblend = null;
+	// envGn
 	$envGnAtt = null;
 	$envGnHld = null;
 	$envGnDec = null;
 	$envGnSus = null;
 	$envGnRel = null;
+	// envDt
 	$envDtAtt = null;
 	$envDtHld = null;
 	$envDtDec = null;
 	$envDtSus = null;
 	$envDtRel = null;
 	$envDtAmp = null;
+	// envLp
+	$envLpAtt = null;
+	$envLpHld = null;
+	$envLpDec = null;
+	$envLpSus = null;
+	$envLpRel = null;
+	$envLpQ = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -46,17 +55,26 @@ class gswaOsc {
 		this.$unisonvoices = params.get( "unisonvoices" );
 		this.$unisondetune = params.get( "unisondetune" );
 		this.$unisonblend = params.get( "unisonblend" );
+		// envGn
 		this.$envGnAtt = params.get( "envGnAtt" );
 		this.$envGnHld = params.get( "envGnHld" );
 		this.$envGnDec = params.get( "envGnDec" );
 		this.$envGnSus = params.get( "envGnSus" );
 		this.$envGnRel = params.get( "envGnRel" );
+		// envDt
 		this.$envDtAtt = params.get( "envDtAtt" );
 		this.$envDtHld = params.get( "envDtHld" );
 		this.$envDtDec = params.get( "envDtDec" );
 		this.$envDtSus = params.get( "envDtSus" );
 		this.$envDtRel = params.get( "envDtRel" );
 		this.$envDtAmp = params.get( "envDtAmp" );
+		// envLp
+		this.$envLpAtt = params.get( "envLpAtt" );
+		this.$envLpHld = params.get( "envLpHld" );
+		this.$envLpDec = params.get( "envLpDec" );
+		this.$envLpSus = params.get( "envLpSus" );
+		this.$envLpRel = params.get( "envLpRel" );
+		this.$envLpQ = params.get( "envLpQ" );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;

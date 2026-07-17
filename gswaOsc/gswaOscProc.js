@@ -34,17 +34,26 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "unisonvoices", 1,     1,    9 ),
 			gswaOscProc.#audpar( "unisondetune", 0,     0,  200 ),
 			gswaOscProc.#audpar( "unisonblend",  0,     0,    1 ),
-			gswaOscProc.#audpar( "envGnAtt",     0,     0,  999 ),
-			gswaOscProc.#audpar( "envGnHld",     0,     0,  999 ),
-			gswaOscProc.#audpar( "envGnDec",     0,     0,  999 ),
+			// envGn
+			gswaOscProc.#audpar( "envGnAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envGnHld",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envGnDec",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envGnSus",     1,     0,    1 ),
-			gswaOscProc.#audpar( "envGnRel",     0,     0,  999 ),
-			gswaOscProc.#audpar( "envDtAtt",     0,     0,  999 ),
-			gswaOscProc.#audpar( "envDtHld",     0,     0,  999 ),
-			gswaOscProc.#audpar( "envDtDec",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envGnRel",     0,     0, 9999 ),
+			// envDt
+			gswaOscProc.#audpar( "envDtAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envDtHld",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envDtDec",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envDtSus",     0,     0,    1 ),
-			gswaOscProc.#audpar( "envDtRel",     0,     0,  999 ),
+			gswaOscProc.#audpar( "envDtRel",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envDtAmp",     0, -2400, 2400 ),
+			// envLp
+			gswaOscProc.#audpar( "envLpAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envLpHld",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envLpDec",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envLpSus",     1,     0,    1 ),
+			gswaOscProc.#audpar( "envLpRel",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envLpQ",       0,     0,   25 ),
 		];
 	}
 
@@ -113,7 +122,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	static #format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
-		const envLP = d.envs?.lowpass;
 		const lfoGn = d.lfos?.gain;
 		const lfoDt = d.lfos?.detune;
 		const lfoGnFre = lfoGn?.frequency ?? 1;
@@ -138,16 +146,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_unisonPhaseRB: new Float64Array( gswaOscProc.#unisonMaxVoices ),
 			$_noisePink: { $b0: 0, $b1: 0, $b2: 0, $b3: 0, $b4: 0, $b5: 0, $b6: 0 },
 			$_noiseBrown: { $b0: 0 },
-			$envs: {
-				$lowpass: {
-					$attack: envLP?.attack ?? 0,
-					$hold: envLP?.hold ?? 0,
-					$decay: envLP?.decay ?? 0,
-					$sustain: envLP?.sustain ?? 1,
-					$release: envLP?.release ?? 999999,
-					$q: envLP?.q ?? 0,
-				},
-			},
 			$lfos: {
 				$gain: {
 					$wave: lfoGn?.wave ?? "sine",
@@ -236,19 +234,28 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apUnisonVoices = params.unisonvoices;
 		const apUnisonDetune = params.unisondetune;
 		const apUnisonBlend = params.unisonblend;
+		// envGn
 		const apEnvGnAtt = params.envGnAtt;
 		const apEnvGnHld = params.envGnHld;
 		const apEnvGnDec = params.envGnDec;
 		const apEnvGnSus = params.envGnSus;
 		const apEnvGnRel = params.envGnRel;
+		// envDt
 		const apEnvDtAtt = params.envDtAtt;
 		const apEnvDtHld = params.envDtHld;
 		const apEnvDtDec = params.envDtDec;
 		const apEnvDtSus = params.envDtSus;
 		const apEnvDtRel = params.envDtRel;
 		const apEnvDtAmp = params.envDtAmp;
+		// envLp
+		const apEnvLpAtt = params.envLpAtt;
+		const apEnvLpHld = params.envLpHld;
+		const apEnvLpDec = params.envLpDec;
+		const apEnvLpSus = params.envLpSus;
+		const apEnvLpRel = params.envLpRel;
+		const apEnvLpQ = params.envLpQ;
+		//
 		const keys = o.$keys;
-		const envLP = o.$envs.$lowpass;
 		const lfoGain = o.$lfos.$gain;
 		const lfoDetune = o.$lfos.$detune;
 
@@ -305,24 +312,33 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apUnisonVoicesI = Math.round( apUnisonVoices[ apUnisonVoices.length > 1 ? i : 0 ] );
 				const apUnisonDetuneI = apUnisonDetune[ apUnisonDetune.length > 1 ? i : 0 ];
 				const apUnisonBlendI = apUnisonBlend[ apUnisonBlend.length > 1 ? i : 0 ];
+				// envGn
 				const apEnvGnAttI = apEnvGnAtt[ apEnvGnAtt.length > 1 ? i : 0 ];
 				const apEnvGnHldI = apEnvGnHld[ apEnvGnHld.length > 1 ? i : 0 ];
 				const apEnvGnDecI = apEnvGnDec[ apEnvGnDec.length > 1 ? i : 0 ];
 				const apEnvGnSusI = apEnvGnSus[ apEnvGnSus.length > 1 ? i : 0 ];
 				const apEnvGnRelI = apEnvGnRel[ apEnvGnRel.length > 1 ? i : 0 ];
+				// envDt
 				const apEnvDtAttI = apEnvDtAtt[ apEnvDtAtt.length > 1 ? i : 0 ];
 				const apEnvDtHldI = apEnvDtHld[ apEnvDtHld.length > 1 ? i : 0 ];
 				const apEnvDtDecI = apEnvDtDec[ apEnvDtDec.length > 1 ? i : 0 ];
 				const apEnvDtSusI = apEnvDtSus[ apEnvDtSus.length > 1 ? i : 0 ];
 				const apEnvDtRelI = apEnvDtRel[ apEnvDtRel.length > 1 ? i : 0 ];
 				const apEnvDtAmpI = apEnvDtAmp[ apEnvDtAmp.length > 1 ? i : 0 ];
+				// envLp
+				const apEnvLpAttI = apEnvLpAtt[ apEnvLpAtt.length > 1 ? i : 0 ];
+				const apEnvLpHldI = apEnvLpHld[ apEnvLpHld.length > 1 ? i : 0 ];
+				const apEnvLpDecI = apEnvLpDec[ apEnvLpDec.length > 1 ? i : 0 ];
+				const apEnvLpSusI = apEnvLpSus[ apEnvLpSus.length > 1 ? i : 0 ];
+				const apEnvLpRelI = apEnvLpRel[ apEnvLpRel.length > 1 ? i : 0 ];
+				const apEnvLpQI = apEnvLpQ[ apEnvLpQ.length > 1 ? i : 0 ];
 
 				o.$_release = apEnvGnRelI;
 
 				const elapsed = nowOff - o.$_when;
 				const envGnRemain = o.$_whenEnd + o.$_release - now;
 				const envDtRemain = envGnRemain - ( o.$_release - apEnvDtRelI );
-				const envLpRemain = envGnRemain - ( o.$_release - envLP.$release );
+				const envLpRemain = envGnRemain - ( o.$_release - apEnvLpRelI );
 				const envGainVal = gswaOscProc.#process_env(
 					apEnvGnAttI,
 					apEnvGnHldI,
@@ -354,8 +370,30 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed
 				);
 
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLowpass, envLP, elapsed, envLpRemain );
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLowpass, envLP, elapsed, envLpRemain );
+				gswaOscProc.#process_lowpass_coeffs_recalc(
+					o.$_lpL,
+					keyLowpass,
+					apEnvLpAttI,
+					apEnvLpHldI,
+					apEnvLpDecI,
+					apEnvLpSusI,
+					apEnvLpRelI,
+					apEnvLpQI,
+					elapsed,
+					envLpRemain
+				);
+				gswaOscProc.#process_lowpass_coeffs_recalc(
+					o.$_lpR,
+					keyLowpass,
+					apEnvLpAttI,
+					apEnvLpHldI,
+					apEnvLpDecI,
+					apEnvLpSusI,
+					apEnvLpRelI,
+					apEnvLpQI,
+					elapsed,
+					envLpRemain
+				);
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
 
@@ -611,21 +649,13 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lowpass_coeffs_recalc( cf, keyLowpass, envLP, elapsed, remain ) {
+	static #process_lowpass_coeffs_recalc( cf, keyLowpass, A, H, D, S, R, Q, elapsed, remain ) {
 		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
-			const envVal = gswaOscProc.#process_env(
-				envLP.$attack,
-				envLP.$hold,
-				envLP.$decay,
-				envLP.$sustain,
-				envLP.$release,
-				elapsed,
-				remain
-			);
+			const envVal = gswaOscProc.#process_env( A, H, D, S, R, elapsed, remain );
 			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;
-			const q = .707 + gswaOscProc.#math_max( 0, envLP.$q );
+			const q = .707 + gswaOscProc.#math_max( 0, Q );
 
 			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, q, "lp" );
 		}
