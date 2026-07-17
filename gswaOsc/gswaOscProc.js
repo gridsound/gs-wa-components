@@ -90,7 +90,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	// .........................................................................
 	static #format_new_key_coeff() {
 		return {
-			$counter: 0,
+			$count: 0,
 			$x1: 0, $x2: 0,
 			$y1: 0, $y2: 0,
 			$b0: 1, $b1: 0, $b2: 0,
@@ -99,16 +99,16 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 	static #format_new_key( id, d, when, offset, duration ) {
 		const klast = d.keys.at( -1 );
-		const envGain = d.envs?.gain;
-		const envDetune = d.envs?.detune;
+		const envGn = d.envs?.gain;
+		const envDt = d.envs?.detune;
 		const envLP = d.envs?.lowpass;
-		const lfoGain = d.lfos?.gain;
-		const lfoDetune = d.lfos?.detune;
-		const envGnRel = envGain?.release ?? .01;
-		const lfoGnFre = lfoGain?.frequency ?? 1;
-		const lfoDtFre = lfoDetune?.frequency ?? 1;
-		const lfoGnDel = lfoGain?.delay ?? 0;
-		const lfoDtDel = lfoDetune?.delay ?? 0;
+		const lfoGn = d.lfos?.gain;
+		const lfoDt = d.lfos?.detune;
+		const envGnRel = envGn?.release ?? .01;
+		const lfoGnFre = lfoGn?.frequency ?? 1;
+		const lfoDtFre = lfoDt?.frequency ?? 1;
+		const lfoGnDel = lfoGn?.delay ?? 0;
+		const lfoDtDel = lfoDt?.delay ?? 0;
 
 		return {
 			$_id: id,
@@ -128,19 +128,19 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_noiseBrown: { $b0: 0 },
 			$envs: {
 				$gain: {
-					$attack: envGain?.attack ?? .01,
-					$hold: envGain?.hold ?? 0,
-					$decay: envGain?.decay ?? 0,
-					$sustain: envGain?.sustain ?? 1,
+					$attack: envGn?.attack ?? .01,
+					$hold: envGn?.hold ?? 0,
+					$decay: envGn?.decay ?? 0,
+					$sustain: envGn?.sustain ?? 1,
 					$release: envGnRel,
 				},
 				$detune: {
-					$attack: envDetune?.attack ?? 0,
-					$hold: envDetune?.hold ?? 0,
-					$decay: envDetune?.decay ?? 0,
-					$sustain: envDetune?.sustain ?? 0,
-					$release: envDetune?.release ?? 0,
-					$pitch: envDetune?.pitch ?? 0,
+					$attack: envDt?.attack ?? 0,
+					$hold: envDt?.hold ?? 0,
+					$decay: envDt?.decay ?? 0,
+					$sustain: envDt?.sustain ?? 0,
+					$release: envDt?.release ?? 0,
+					$pitch: envDt?.pitch ?? 0,
 				},
 				$lowpass: {
 					$attack: envLP?.attack ?? 0,
@@ -153,20 +153,20 @@ class gswaOscProc extends AudioWorkletProcessor {
 			},
 			$lfos: {
 				$gain: {
-					$wave: lfoGain?.wave ?? "sine",
+					$wave: lfoGn?.wave ?? "sine",
 					$delay: lfoGnDel,
-					$attack: lfoGain?.attack ?? 0,
+					$attack: lfoGn?.attack ?? 0,
 					$frequency: lfoGnFre,
-					$amp: gswaOscProc.#math_clamp( lfoGain?.amp ?? 0, -1, 1 ),
+					$amp: gswaOscProc.#math_clamp( lfoGn?.amp ?? 0, -1, 1 ),
 					$_phase: lfoGnFre * ( offset - lfoGnDel ) % 1,
 					$_phaseB: lfoGnFre * ( offset - lfoGnDel ) % 1,
 				},
 				$detune: {
-					$wave: lfoDetune?.wave ?? "sine",
+					$wave: lfoDt?.wave ?? "sine",
 					$delay: lfoDtDel,
-					$attack: lfoDetune?.attack ?? 0,
+					$attack: lfoDt?.attack ?? 0,
 					$frequency: lfoDtFre,
-					$amp: gswaOscProc.#math_clamp( lfoDetune?.amp ?? 0, -1200, 1200 ),
+					$amp: gswaOscProc.#math_clamp( lfoDt?.amp ?? 0, -1200, 1200 ),
 					$_phase: lfoDtFre * ( offset - lfoDtDel ) % 1,
 					$_phaseB: lfoDtFre * ( offset - lfoDtDel ) % 1,
 				},
@@ -576,7 +576,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 	// .........................................................................
 	static #process_lowpass_coeffs_recalc( cf, keyLowpass, envLP, elapsed, remain ) {
-		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
+		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
 			const envVal = gswaOscProc.#process_env( envLP, elapsed, remain );
 			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
@@ -587,7 +587,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 	}
 	static #process_highpass_coeffs_recalc( cf, keyHighpass ) {
-		if ( ( cf.$counter % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
+		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
 			const openness = gswaOscProc.#math_clamp( keyHighpass, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** ( 1 - openness );
@@ -620,7 +620,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			cf.$a1 * cf.$y1 -
 			cf.$a2 * cf.$y2;
 
-		++cf.$counter;
+		++cf.$count;
 		cf.$x2 = cf.$x1;
 		cf.$x1 = x;
 		cf.$y2 = cf.$y1;
