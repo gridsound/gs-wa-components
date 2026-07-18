@@ -8,18 +8,18 @@ class gswaOscProc extends AudioWorkletProcessor {
 	static #unisonMaxVoices = 9;
 	#ok = true;
 	#keys = new Map();
-	#noise = null; // null or String "white" | "pink" | "brown"
-	#wtdata = null; // null or SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
+	#noise = null; // String "white" | "pink" | "brown"
+	#wtdata = null; // SharedArrayBuffer [ N, L, 0, 0, ...N*L ]
 	#bufferL = null;
 	#bufferR = null;
 	#wtdataN = 0;
 	#wtdataL = 0;
-	#currentTimeInt = 0;
 	#release = 10;
 	#lfoGnFrq = 0;
 	#lfoGnDel = 0;
 	#lfoDtFrq = 0;
 	#lfoDtDel = 0;
+	// #debugTime = 0;
 	#noiseFn = null;
 	static #noiseFns = {
 		white: gswaOscProc.#process_noise_white,
@@ -186,7 +186,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const chanR = outputs[ 0 ]?.[ 1 ];
 		const wtdata = this.#wtdata;
 
-		this.#process_debug();
+		// this.#process_debug();
 		if ( chanR ) {
 			chanL.fill( 0 );
 			chanR.fill( 0 );
@@ -207,12 +207,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		return this.#ok;
 	}
-	#process_debug() {
-		if ( currentTime > this.#currentTimeInt ) {
-			console.log( `processing... ${ this.#keys.size }` );
-			this.#currentTimeInt = gswaOscProc.#math_floor( currentTime ) + 1;
-		}
-	}
+	// #process_debug() {
+	// 	if ( currentTime > this.#debugTime ) {
+	// 		console.log( `processing... ${ this.#keys.size }` );
+	// 		this.#debugTime = gswaOscProc.#math_floor( currentTime ) + 1;
+	// 	}
+	// }
 	#process_keys( chanL, chanR, params ) {
 		for ( const o of this.#keys.values() ) {
 			if ( o.$_whenEnd + this.#release <= currentTime ) {
