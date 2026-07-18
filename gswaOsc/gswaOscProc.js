@@ -96,9 +96,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 			case "source":
 				this.#noise = a0 !== "noise" ? null : a1;
 				this.#noiseFn = a0 !== "noise" ? null : gswaOscProc.#noiseFns[ a1 ];
-				this.#wtdata = a0 !== "wavetable" ? null : new Float32Array( a1 );
-				this.#bufferL = a0 !== "buffer" ? null : new Float32Array( a1 );
-				this.#bufferR = a0 !== "buffer" ? null : new Float32Array( a2 );
+				this.#wtdata = a0 !== "wavetable" ? null : gswaOscProc.#newArray( a1 );
+				this.#bufferL = a0 !== "buffer" ? null : gswaOscProc.#newArray( a1 );
+				this.#bufferR = a0 !== "buffer" ? null : gswaOscProc.#newArray( a2 );
 				this.port.postMessage( [ "ready" ] );
 				break;
 			case "push":
@@ -132,6 +132,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
+	static #newArray( n ) {
+		return new Float32Array( n );
+	}
 	static #format_new_key_coeff() {
 		return {
 			$count: 0,
@@ -155,10 +158,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_lpR: gswaOscProc.#format_new_key_coeff(),
 			$_hpL: gswaOscProc.#format_new_key_coeff(),
 			$_hpR: gswaOscProc.#format_new_key_coeff(),
-			$_unisonPhaseLA: new Float32Array( gswaOscProc.#unisonMaxVoices ),
-			$_unisonPhaseLB: new Float32Array( gswaOscProc.#unisonMaxVoices ),
-			$_unisonPhaseRA: new Float32Array( gswaOscProc.#unisonMaxVoices ),
-			$_unisonPhaseRB: new Float32Array( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseLA: gswaOscProc.#newArray( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseLB: gswaOscProc.#newArray( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseRA: gswaOscProc.#newArray( gswaOscProc.#unisonMaxVoices ),
+			$_unisonPhaseRB: gswaOscProc.#newArray( gswaOscProc.#unisonMaxVoices ),
 			$_noisePink: [ 0, 0, 0, 0, 0, 0, 0 ],
 			$_noiseBrown: [ 0 ],
 			$_lfoGnPhase: [ lfoGnPhase, lfoGnPhase ],
