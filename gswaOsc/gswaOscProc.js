@@ -196,8 +196,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 		// this.#process_debug();
 		if ( chanR ) {
-			chanL.fill( 0 );
-			chanR.fill( 0 );
 			if ( wtdata ) {
 				this.#wtdataN = wtdata[ 0 ] | 0;
 				this.#wtdataL = wtdata[ 1 ] | 0;
