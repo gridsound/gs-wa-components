@@ -108,8 +108,9 @@ class gswaSynth {
 
 		GSUforEach( obj, ( val, prop ) => {
 			switch ( prop ) {
-				case "source": this.#setOscSource( o, val ); break;
+				case "wavetable":
 				case "wave": this.#setOscWave( o, val ); break;
+				case "source": this.#setOscSource( o, val ); break;
 				case "color": o.$waOsc.$oscSource( "noise", val ); break;
 				case "pan": GSUaudioParamSet( waOsc.$pan, val ); break;
 				case "gain": GSUaudioParamSet( waOsc.$gain, val ); break;
