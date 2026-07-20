@@ -157,6 +157,7 @@ class gswaSynth {
 		const envGn = d.envs.gain;
 		const envDt = d.envs.detune;
 		const envLp = d.envs.lowpass;
+		const envWt = d.envs.wtpos;
 		const lfoGn = d.lfos.gain;
 		const lfoDt = d.lfos.detune;
 
@@ -183,6 +184,13 @@ class gswaSynth {
 				GSUaudioParamSet( o.$waOsc.$envLpSus, envLp.toggle ? envLp.sustain       :    1 );
 				GSUaudioParamSet( o.$waOsc.$envLpRel, envLp.toggle ? envLp.release / bps : 9999 );
 				GSUaudioParamSet( o.$waOsc.$envLpQ,   envLp.toggle ? envLp.q             :    0 );
+			}
+			if ( obj.envs?.wtpos ) {
+				GSUaudioParamSet( o.$waOsc.$envWtAtt, envWt.toggle ? envWt.attack / bps  :    0 );
+				GSUaudioParamSet( o.$waOsc.$envWtHld, envWt.toggle ? envWt.hold / bps    :    0 );
+				GSUaudioParamSet( o.$waOsc.$envWtDec, envWt.toggle ? envWt.decay / bps   :    0 );
+				GSUaudioParamSet( o.$waOsc.$envWtSus, envWt.toggle ? envWt.sustain       :    0 );
+				GSUaudioParamSet( o.$waOsc.$envWtRel, envWt.toggle ? envWt.release / bps : 9999 );
 			}
 			if ( obj.lfos?.gain ) {
 				GSUaudioParamSet( o.$waOsc.$lfoGnWav, lfoGn.toggle ? gswaOsc.$lfoWaveToIndex[ lfoGn.type ] : 0 );

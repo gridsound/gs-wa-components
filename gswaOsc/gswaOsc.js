@@ -38,6 +38,12 @@ class gswaOsc {
 	$envLpSus = null;
 	$envLpRel = null;
 	$envLpQ = null;
+	// envWt
+	$envWtAtt = null;
+	$envWtHld = null;
+	$envWtDec = null;
+	$envWtSus = null;
+	$envWtRel = null;
 	// lfoGn
 	$lfoGnWav = null;
 	$lfoGnDel = null;
@@ -94,6 +100,12 @@ class gswaOsc {
 		this.$envLpSus = params.get( "envLpSus" );
 		this.$envLpRel = params.get( "envLpRel" );
 		this.$envLpQ = params.get( "envLpQ" );
+		// envWt
+		this.$envWtAtt = params.get( "envWtAtt" );
+		this.$envWtHld = params.get( "envWtHld" );
+		this.$envWtDec = params.get( "envWtDec" );
+		this.$envWtSus = params.get( "envWtSus" );
+		this.$envWtRel = params.get( "envWtRel" );
 		// lfoGn
 		this.$lfoGnWav = params.get( "lfoGnWav" );
 		this.$lfoGnDel = params.get( "lfoGnDel" );

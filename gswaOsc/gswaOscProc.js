@@ -68,6 +68,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "envLpSus",     1,     0,    1 ),
 			gswaOscProc.#audpar( "envLpRel",  9999,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpQ",       0,     0,   25 ),
+			// envWt
+			gswaOscProc.#audpar( "envWtAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envWtHld",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envWtDec",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "envWtSus",     0,     0,    1 ),
+			gswaOscProc.#audpar( "envWtRel",  9999,     0, 9999 ),
 			// lfoGn
 			gswaOscProc.#audpar( "lfoGnWav",     0,     0,    3 ),
 			gswaOscProc.#audpar( "lfoGnDel",     0,     0, 9999 ),
@@ -175,7 +181,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$when: k.when,
 				$duration: k.duration,
 				$frequency: k.frequency ?? 440,
-				$wtpos: k.wtpos ?? 0,
 				$gain: k.gain ?? 1,
 				$pan: gswaOscProc.#math_clamp( k.pan ?? 0, -1, 1 ),
 				$lowpass: gswaOscProc.#math_clamp( k.lowpass ?? 1, 0, 1 ),
@@ -257,6 +262,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apEnvLpSus = params.envLpSus;
 		const apEnvLpRel = params.envLpRel;
 		const apEnvLpQ = params.envLpQ;
+		// envWt
+		const apEnvWtAtt = params.envWtAtt;
+		const apEnvWtHld = params.envWtHld;
+		const apEnvWtDec = params.envWtDec;
+		const apEnvWtSus = params.envWtSus;
+		const apEnvWtRel = params.envWtRel;
 		// lfoGn
 		const apLfoGnWav = params.lfoGnWav;
 		const apLfoGnDel = params.lfoGnDel;
@@ -291,7 +302,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const key = keys[ o.$_keyInd ];
 				let keyPan = key.$pan;
 				let keyGain = key.$gain;
-				let keyWtpos = key.$wtpos;
 				let keyLowpass = key.$lowpass;
 				let keyHighpass = key.$highpass;
 				let keyFrequency = key.$frequency;
@@ -308,7 +318,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 
 					keyPan = prev.$pan + ( keyPan - prev.$pan ) * frac;
 					keyGain = prev.$gain + ( keyGain - prev.$gain ) * frac;
-					keyWtpos = prev.$wtpos + ( keyWtpos - prev.$wtpos ) * frac;
 					keyLowpass = prev.$lowpass + ( keyLowpass - prev.$lowpass ) * frac;
 					keyHighpass = prev.$highpass + ( keyHighpass - prev.$highpass ) * frac;
 					keyFrequency = prev.$frequency + ( keyFrequency - prev.$frequency ) * frac;
@@ -345,6 +354,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apEnvLpSusI = gswaOscProc.#audparF( apEnvLpSus, i );
 				const apEnvLpRelI = gswaOscProc.#audparF( apEnvLpRel, i );
 				const apEnvLpQI = gswaOscProc.#audparF( apEnvLpQ, i );
+				// envWt
+				const apEnvWtAttI = gswaOscProc.#audparF( apEnvWtAtt, i );
+				const apEnvWtHldI = gswaOscProc.#audparF( apEnvWtHld, i );
+				const apEnvWtDecI = gswaOscProc.#audparF( apEnvWtDec, i );
+				const apEnvWtSusI = gswaOscProc.#audparF( apEnvWtSus, i );
+				const apEnvWtRelI = gswaOscProc.#audparF( apEnvWtRel, i );
 				// lfoGn
 				const apLfoGnWavI = gswaOscProc.#audparI( apLfoGnWav, i );
 				const apLfoGnDelI = gswaOscProc.#audparF( apLfoGnDel, i );
@@ -368,6 +383,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const envGnRemain = o.$_whenEnd + this.#release - now;
 				const envDtRemain = envGnRemain - ( this.#release - apEnvDtRelI );
 				const envLpRemain = envGnRemain - ( this.#release - apEnvLpRelI );
+				const envWtRemain = envGnRemain - ( this.#release - apEnvWtRelI );
 				const envGainVal = gswaOscProc.#process_env(
 					apEnvGnAttI,
 					apEnvGnHldI,
@@ -385,6 +401,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 					apEnvDtRelI,
 					elapsed,
 					envDtRemain
+				);
+				const envWtposVal = gswaOscProc.#process_env(
+					apEnvWtAttI,
+					apEnvWtHldI,
+					apEnvWtDecI,
+					apEnvWtSusI,
+					apEnvWtRelI,
+					elapsed,
+					envWtRemain
 				);
 				const lfoGainVal = gswaOscProc.#process_lfo(
 					o.$_lfoGnPhase,
@@ -440,7 +465,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					smpL = this.#process_unison_wavetable(
 						o.$_unisonPhaseLB,
 						keyFrequency,
-						keyWtpos,
+						envWtposVal,
 						apPhaseI,
 						baseDetune,
 						apUnisonVoicesI,
