@@ -185,10 +185,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 				$pan: gswaOscProc.#math_clamp( k.pan ?? 0, -1, 1 ),
 				$lowpass: gswaOscProc.#math_clamp( k.lowpass ?? 1, 0, 1 ),
 				$highpass: gswaOscProc.#math_clamp( k.highpass ?? 1, 0, 1 ),
-				$lfoGainAmp: gswaOscProc.#math_clamp( k.lfoGainAmp ?? 1, 0, 4 ),
-				$lfoGainFrequency: gswaOscProc.#math_clamp( k.lfoGainFrequency ?? 1, 0, 4 ),
-				$lfoDetuneAmp: gswaOscProc.#math_clamp( k.lfoDetuneAmp ?? 1, 0, 4 ),
-				$lfoDetuneFrequency: gswaOscProc.#math_clamp( k.lfoDetuneFrequency ?? 1, 0, 4 ),
+				$lfoGnAmp: gswaOscProc.#math_clamp( k.lfoGainAmp ?? 1, 0, 4 ),
+				$lfoGnFrq: gswaOscProc.#math_clamp( k.lfoGainFrequency ?? 1, 0, 4 ),
+				$lfoDtAmp: gswaOscProc.#math_clamp( k.lfoDetuneAmp ?? 1, 0, 4 ),
+				$lfoDtFrq: gswaOscProc.#math_clamp( k.lfoDetuneFrequency ?? 1, 0, 4 ),
 			} ) ),
 		};
 	}
@@ -300,15 +300,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 				}
 
 				const key = keys[ o.$_keyInd ];
-				let keyPan = key.$pan;
-				let keyGain = key.$gain;
-				let keyLowpass = key.$lowpass;
-				let keyHighpass = key.$highpass;
-				let keyFrequency = key.$frequency;
-				let keyLfoGainAmp = key.$lfoGainAmp;
-				let keyLfoGainFrequency = key.$lfoGainFrequency;
-				let keyLfoDetuneAmp = key.$lfoDetuneAmp;
-				let keyLfoDetuneFrequency = key.$lfoDetuneFrequency;
+				let keyPn = key.$pan;
+				let keyGn = key.$gain;
+				let keyLp = key.$lowpass;
+				let keyHp = key.$highpass;
+				let keyFrq = key.$frequency;
+				let keyLfoGnAmp = key.$lfoGnAmp;
+				let keyLfoGnFrq = key.$lfoGnFrq;
+				let keyLfoDtAmp = key.$lfoDtAmp;
+				let keyLfoDtFrq = key.$lfoDtFrq;
 
 				if ( nowOff < key.$when ) {
 					const prev = keys[ o.$_keyInd - 1 ];
@@ -316,15 +316,15 @@ class gswaOscProc extends AudioWorkletProcessor {
 					const gapLen = key.$when - prevEnd;
 					const frac = gapLen > 0 ? gswaOscProc.#math_clamp( ( nowOff - prevEnd ) / gapLen, 0, 1 ) : 1;
 
-					keyPan = prev.$pan + ( keyPan - prev.$pan ) * frac;
-					keyGain = prev.$gain + ( keyGain - prev.$gain ) * frac;
-					keyLowpass = prev.$lowpass + ( keyLowpass - prev.$lowpass ) * frac;
-					keyHighpass = prev.$highpass + ( keyHighpass - prev.$highpass ) * frac;
-					keyFrequency = prev.$frequency + ( keyFrequency - prev.$frequency ) * frac;
-					keyLfoGainAmp = prev.$lfoGainAmp + ( keyLfoGainAmp - prev.$lfoGainAmp ) * frac;
-					keyLfoGainFrequency = prev.$lfoGainFrequency + ( keyLfoGainFrequency - prev.$lfoGainFrequency ) * frac;
-					keyLfoDetuneAmp = prev.$lfoDetuneAmp + ( keyLfoDetuneAmp - prev.$lfoDetuneAmp ) * frac;
-					keyLfoDetuneFrequency = prev.$lfoDetuneFrequency + ( keyLfoDetuneFrequency - prev.$lfoDetuneFrequency ) * frac;
+					keyPn = prev.$pan + ( keyPn - prev.$pan ) * frac;
+					keyGn = prev.$gain + ( keyGn - prev.$gain ) * frac;
+					keyLp = prev.$lowpass + ( keyLp - prev.$lowpass ) * frac;
+					keyHp = prev.$highpass + ( keyHp - prev.$highpass ) * frac;
+					keyFrq = prev.$frequency + ( keyFrq - prev.$frequency ) * frac;
+					keyLfoGnAmp = prev.$lfoGnAmp + ( keyLfoGnAmp - prev.$lfoGnAmp ) * frac;
+					keyLfoGnFrq = prev.$lfoGnFrq + ( keyLfoGnFrq - prev.$lfoGnFrq ) * frac;
+					keyLfoDtAmp = prev.$lfoDtAmp + ( keyLfoDtAmp - prev.$lfoDtAmp ) * frac;
+					keyLfoDtFrq = prev.$lfoDtFrq + ( keyLfoDtFrq - prev.$lfoDtFrq ) * frac;
 				}
 
 				const apPanI = gswaOscProc.#audparF( apPan, i );
@@ -416,8 +416,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					apLfoGnWavI,
 					apLfoGnDelI,
 					apLfoGnAttI,
-					apLfoGnAmpI * keyLfoGainAmp,
-					apLfoGnFrqI * keyLfoGainFrequency,
+					apLfoGnAmpI * keyLfoGnAmp,
+					apLfoGnFrqI * keyLfoGnFrq,
 					elapsed
 				) + 1;
 				const lfoDetuneVal = gswaOscProc.#process_lfo(
@@ -425,14 +425,14 @@ class gswaOscProc extends AudioWorkletProcessor {
 					apLfoDtWavI,
 					apLfoDtDelI,
 					apLfoDtAttI,
-					apLfoDtAmpI * keyLfoDetuneAmp,
-					apLfoDtFrqI * keyLfoDetuneFrequency,
+					apLfoDtAmpI * keyLfoDtAmp,
+					apLfoDtFrqI * keyLfoDtFrq,
 					elapsed
 				);
 
 				gswaOscProc.#process_lowpass_coeffs_recalc(
 					o.$_lpL,
-					keyLowpass,
+					keyLp,
 					apEnvLpAttI,
 					apEnvLpHldI,
 					apEnvLpDecI,
@@ -444,7 +444,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				);
 				gswaOscProc.#process_lowpass_coeffs_recalc(
 					o.$_lpR,
-					keyLowpass,
+					keyLp,
 					apEnvLpAttI,
 					apEnvLpHldI,
 					apEnvLpDecI,
@@ -454,8 +454,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					elapsed,
 					envLpRemain
 				);
-				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHighpass );
-				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHighpass );
+				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHp );
+				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHp );
 
 				const baseDetune = apDetuneI + envDetuneVal * apEnvDtAmpI + lfoDetuneVal;
 				let smpL;
@@ -464,7 +464,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				if ( this.#wtdata ) {
 					smpL = this.#process_unison_wavetable(
 						o.$_unisonPhaseLB,
-						keyFrequency,
+						keyFrq,
 						envWtposVal,
 						apPhaseI,
 						baseDetune,
@@ -485,7 +485,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				} else {
 					smpL = this.#process_unison_buffer(
 						o.$_unisonPhaseLB,
-						keyFrequency,
+						keyFrq,
 						baseDetune,
 						this.#bufferL,
 						apUnisonVoicesI,
@@ -494,7 +494,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 					);
 					smpR = this.#process_unison_buffer(
 						o.$_unisonPhaseRB,
-						keyFrequency,
+						keyFrq,
 						baseDetune,
 						this.#bufferR,
 						apUnisonVoicesI,
@@ -507,8 +507,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_hpR, smpR );
 				}
 
-				const finalGain = apGainI * keyGain * envGainVal * lfoGainVal;
-				const finalPan = gswaOscProc.#math_clamp( apPanI + keyPan, -1, 1 );
+				const finalGain = apGainI * keyGn * envGainVal * lfoGainVal;
+				const finalPan = gswaOscProc.#math_clamp( apPanI + keyPn, -1, 1 );
 
 				chanL[ i ] += smpL * finalGain * ( finalPan > 0 ? 1 - finalPan : 1 );
 				chanR[ i ] += smpR * finalGain * ( finalPan < 0 ? 1 + finalPan : 1 );
@@ -709,10 +709,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	static #process_lowpass_coeffs_recalc( cf, keyLowpass, A, H, D, S, R, Q, elapsed, remain ) {
+	static #process_lowpass_coeffs_recalc( cf, keyLp, A, H, D, S, R, Q, elapsed, remain ) {
 		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
 			const envVal = gswaOscProc.#process_env( A, H, D, S, R, elapsed, remain );
-			const openness = gswaOscProc.#math_clamp( envVal * keyLowpass, 0, 1 );
+			const openness = gswaOscProc.#math_clamp( envVal * keyLp, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** openness;
 			const q = .707 + gswaOscProc.#math_max( 0, Q );
@@ -720,9 +720,9 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#process_filter_coeffs_recalc( cf, cutoff, q, "lp" );
 		}
 	}
-	static #process_highpass_coeffs_recalc( cf, keyHighpass ) {
+	static #process_highpass_coeffs_recalc( cf, keyHp ) {
 		if ( ( cf.$count % gswaOscProc.#filterCoefUpdateRate ) === 0 ) {
-			const openness = gswaOscProc.#math_clamp( keyHighpass, 0, 1 );
+			const openness = gswaOscProc.#math_clamp( keyHp, 0, 1 );
 			const maxFreq = sampleRate * .45;
 			const cutoff = gswaOscProc.#filterMinFreq * ( maxFreq / gswaOscProc.#filterMinFreq ) ** ( 1 - openness );
 
