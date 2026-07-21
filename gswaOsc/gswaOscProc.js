@@ -15,6 +15,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#wtdataN = 0;
 	#wtdataL = 0;
 	#release = 10;
+	#unison = Object.seal( [ 1, 0, 0 ] );
 	#lfoGnFrq = 0;
 	#lfoGnDel = 0;
 	#lfoDtFrq = 0;
@@ -239,9 +240,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const apGain = params.gain;
 		const apPhase = params.phase;
 		const apDetune = params.detune;
-		const apUnisonVoices = params.unisonvoices;
-		const apUnisonDetune = params.unisondetune;
-		const apUnisonBlend = params.unisonblend;
+		// uni
+		const apUniVoc = params.unisonvoices;
+		const apUniDet = params.unisondetune;
+		const apUniBld = params.unisonblend;
 		// envGn
 		const apEnvGnAtt = params.envGnAtt;
 		const apEnvGnHld = params.envGnHld;
@@ -331,9 +333,10 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const apGainI = gswaOscProc.#audparF( apGain, i );
 				const apPhaseI = gswaOscProc.#audparF( apPhase, i );
 				const apDetuneI = gswaOscProc.#audparF( apDetune, i );
-				const apUnisonVoicesI = gswaOscProc.#audparI( apUnisonVoices, i );
-				const apUnisonDetuneI = gswaOscProc.#audparF( apUnisonDetune, i );
-				const apUnisonBlendI = gswaOscProc.#audparF( apUnisonBlend, i );
+				// uni
+				this.#unison[ 0 ] = gswaOscProc.#audparI( apUniVoc, i );
+				this.#unison[ 1 ] = gswaOscProc.#audparF( apUniDet, i );
+				this.#unison[ 2 ] = gswaOscProc.#audparF( apUniBld, i );
 				// envGn
 				const apEnvGnAttI = gswaOscProc.#audparF( apEnvGnAtt, i );
 				const apEnvGnHldI = gswaOscProc.#audparF( apEnvGnHld, i );
@@ -468,9 +471,6 @@ class gswaOscProc extends AudioWorkletProcessor {
 						envWtposVal,
 						apPhaseI,
 						baseDetune,
-						apUnisonVoicesI,
-						apUnisonDetuneI,
-						apUnisonBlendI,
 					);
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lpL, smpL );
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_hpL, smpL );
@@ -488,18 +488,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 						keyFrq,
 						baseDetune,
 						this.#bufferL,
-						apUnisonVoicesI,
-						apUnisonDetuneI,
-						apUnisonBlendI,
 					);
 					smpR = this.#process_unison_buffer(
 						o.$_unisonPhaseRB,
 						keyFrq,
 						baseDetune,
 						this.#bufferR,
-						apUnisonVoicesI,
-						apUnisonDetuneI,
-						apUnisonBlendI,
 					);
 					smpL = gswaOscProc.#process_filter_coeffs_update( o.$_lpL, smpL );
 					smpR = gswaOscProc.#process_filter_coeffs_update( o.$_lpR, smpR );
@@ -551,7 +545,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 	}
 
 	// .........................................................................
-	#process_unison_buffer( phaseArr, frequency, baseDetune, buf, univoices, unidetune, uniblend ) {
+	#process_unison_buffer( phaseArr, frequency, baseDetune, buf ) {
+		const [ univoices, unidetune, uniblend ] = this.#unison;
 		let val = 0;
 		let div = 0;
 
@@ -572,7 +567,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 		}
 		return val / div;
 	}
-	#process_unison_wavetable( phaseArr, frequency, wtpos, apPhaseI, baseDetune, univoices, unidetune, uniblend ) {
+	#process_unison_wavetable( phaseArr, frequency, wtpos, apPhaseI, baseDetune ) {
+		const [ univoices, unidetune, uniblend ] = this.#unison;
 		let val = 0;
 		let div = 0;
 
