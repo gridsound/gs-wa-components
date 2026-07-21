@@ -14,48 +14,20 @@ class gswaOsc {
 	$gain = null;
 	$phase = null;
 	$detune = null;
+	$envs = {
+		$gain: [],
+		$detune: [],
+		$lowpass: [],
+		$wtpos: [],
+	};
+	$lfos = {
+		$gain: [],
+		$detune: [],
+	};
 	// uni
 	$unisonvoices = null;
 	$unisondetune = null;
 	$unisonblend = null;
-	// envGn
-	$envGnAtt = null;
-	$envGnHld = null;
-	$envGnDec = null;
-	$envGnSus = null;
-	$envGnRel = null;
-	// envDt
-	$envDtAtt = null;
-	$envDtHld = null;
-	$envDtDec = null;
-	$envDtSus = null;
-	$envDtRel = null;
-	$envDtAmp = null;
-	// envLp
-	$envLpAtt = null;
-	$envLpHld = null;
-	$envLpDec = null;
-	$envLpSus = null;
-	$envLpRel = null;
-	$envLpQ = null;
-	// envWt
-	$envWtAtt = null;
-	$envWtHld = null;
-	$envWtDec = null;
-	$envWtSus = null;
-	$envWtRel = null;
-	// lfoGn
-	$lfoGnWav = null;
-	$lfoGnDel = null;
-	$lfoGnAtt = null;
-	$lfoGnFrq = null;
-	$lfoGnAmp = null;
-	// lfoDt
-	$lfoDtWav = null;
-	$lfoDtDel = null;
-	$lfoDtAtt = null;
-	$lfoDtFrq = null;
-	$lfoDtAmp = null;
 
 	static $oscLoadModule( ctx ) {
 		return ctx.audioWorklet.addModule( gswaOsc.#path );
@@ -70,6 +42,8 @@ class gswaOsc {
 			processorOptions: { renderQuantumSize: 2048 },
 		} );
 		const params = node.parameters;
+		const envs = this.$envs;
+		const lfos = this.$lfos;
 
 		node.port.onmessage = this.#onmsg.bind( this );
 		this.#node = node;
@@ -80,44 +54,16 @@ class gswaOsc {
 		this.$unisonvoices = params.get( "unisonvoices" );
 		this.$unisondetune = params.get( "unisondetune" );
 		this.$unisonblend = params.get( "unisonblend" );
-		// envGn
-		this.$envGnAtt = params.get( "envGnAtt" );
-		this.$envGnHld = params.get( "envGnHld" );
-		this.$envGnDec = params.get( "envGnDec" );
-		this.$envGnSus = params.get( "envGnSus" );
-		this.$envGnRel = params.get( "envGnRel" );
-		// envDt
-		this.$envDtAtt = params.get( "envDtAtt" );
-		this.$envDtHld = params.get( "envDtHld" );
-		this.$envDtDec = params.get( "envDtDec" );
-		this.$envDtSus = params.get( "envDtSus" );
-		this.$envDtRel = params.get( "envDtRel" );
-		this.$envDtAmp = params.get( "envDtAmp" );
-		// envLp
-		this.$envLpAtt = params.get( "envLpAtt" );
-		this.$envLpHld = params.get( "envLpHld" );
-		this.$envLpDec = params.get( "envLpDec" );
-		this.$envLpSus = params.get( "envLpSus" );
-		this.$envLpRel = params.get( "envLpRel" );
-		this.$envLpQ = params.get( "envLpQ" );
-		// envWt
-		this.$envWtAtt = params.get( "envWtAtt" );
-		this.$envWtHld = params.get( "envWtHld" );
-		this.$envWtDec = params.get( "envWtDec" );
-		this.$envWtSus = params.get( "envWtSus" );
-		this.$envWtRel = params.get( "envWtRel" );
-		// lfoGn
-		this.$lfoGnWav = params.get( "lfoGnWav" );
-		this.$lfoGnDel = params.get( "lfoGnDel" );
-		this.$lfoGnAtt = params.get( "lfoGnAtt" );
-		this.$lfoGnFrq = params.get( "lfoGnFrq" );
-		this.$lfoGnAmp = params.get( "lfoGnAmp" );
-		// lfoDt
-		this.$lfoDtWav = params.get( "lfoDtWav" );
-		this.$lfoDtDel = params.get( "lfoDtDel" );
-		this.$lfoDtAtt = params.get( "lfoDtAtt" );
-		this.$lfoDtFrq = params.get( "lfoDtFrq" );
-		this.$lfoDtAmp = params.get( "lfoDtAmp" );
+		gswaOsc.#initEnvParams( envs.$gain, params, "envGn" );
+		gswaOsc.#initEnvParams( envs.$detune, params, "envDt" );
+		gswaOsc.#initEnvParams( envs.$lowpass, params, "envLp" );
+		gswaOsc.#initEnvParams( envs.$wtpos, params, "envWt" );
+		envs.$detune.push( params.get( "envDtAmp" ) );
+		envs.$lowpass.push( params.get( "envLpQ" ) );
+		gswaOsc.#initLfoParams( lfos.$gain, params, "lfoGn" );
+		gswaOsc.#initLfoParams( lfos.$detune, params, "lfoDt" );
+		GSUdeepFreeze( envs );
+		GSUdeepFreeze( lfos );
 	}
 	#onmsg( e ) {
 		const [ type ] = e.data;
@@ -125,6 +71,24 @@ class gswaOsc {
 		switch ( type ) {
 			case "ready": this.#ready = true; break;
 		}
+	}
+	static #initEnvParams( arr, params, prefix ) {
+		arr.push(
+			params.get( `${ prefix }Att` ),
+			params.get( `${ prefix }Hld` ),
+			params.get( `${ prefix }Dec` ),
+			params.get( `${ prefix }Sus` ),
+			params.get( `${ prefix }Rel` ),
+		);
+	}
+	static #initLfoParams( arr, params, prefix ) {
+		arr.push(
+			params.get( `${ prefix }Wav` ),
+			params.get( `${ prefix }Del` ),
+			params.get( `${ prefix }Att` ),
+			params.get( `${ prefix }Frq` ),
+			params.get( `${ prefix }Amp` ),
+		);
 	}
 
 	// .........................................................................
