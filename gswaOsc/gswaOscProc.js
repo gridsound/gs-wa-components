@@ -66,7 +66,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "pan",          0,    -1,    1 ),
 			gswaOscProc.#audpar( "gain",         1,     0,    1 ),
 			gswaOscProc.#audpar( "phase",        0,     0,    1 ),
-			gswaOscProc.#audpar( "detune",       0, -2400, 2400 ),
+			gswaOscProc.#audpar( "detune",       0,   -24,   24 ),
 			// uni
 			gswaOscProc.#audpar( "unisonvoices", 1,     1,    9 ),
 			gswaOscProc.#audpar( "unisondetune", 0,     0,  200 ),
@@ -83,7 +83,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "envDtDec",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envDtSus",     0,     0,    1 ),
 			gswaOscProc.#audpar( "envDtRel",     0,     0, 9999 ),
-			gswaOscProc.#audpar( "envDtAmp",     0, -2400, 2400 ),
+			gswaOscProc.#audpar( "envDtAmp",     0,   -24,   24 ),
 			// envLp
 			gswaOscProc.#audpar( "envLpAtt",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "envLpHld",     0,     0, 9999 ),
@@ -108,7 +108,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "lfoDtDel",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "lfoDtAtt",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "lfoDtFrq",     0,     0, 9999 ),
-			gswaOscProc.#audpar( "lfoDtAmp",     0, -1200, 1200 ),
+			gswaOscProc.#audpar( "lfoDtAmp",     0,   -12,   12 ),
 		];
 	}
 
@@ -516,7 +516,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			return 0;
 		}
 
-		const rate = ( frequency * 2 ** ( detune / 1200 ) ) / gswaOscProc.#bufferRootFreq;
+		const rate = ( frequency * 2 ** ( detune / 12 ) ) / gswaOscProc.#bufferRootFreq;
 		const i0 = pos | 0;
 		const i1 = gswaOscProc.#math_min( i0 + 1, buf.length - 1 );
 		const frac = pos - i0;
@@ -526,7 +526,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		return smp;
 	}
 	static #process_wavetable( phaseArr, voiceInd, frequency, wtpos, apPhaseI, detune, wtdata, nbWaves, waveLen ) {
-		const fEff = frequency * 2 ** ( detune / 1200 );
+		const fEff = frequency * 2 ** ( detune / 12 );
 		const phaseInc = fEff / sampleRate;
 		const tPosi = gswaOscProc.#math_clamp( wtpos, 0, 1 ) * ( nbWaves - 1 );
 		const tLoww = tPosi | 0;
