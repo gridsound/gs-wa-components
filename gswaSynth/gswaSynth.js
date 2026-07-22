@@ -35,9 +35,11 @@ class gswaSynth {
 		if ( prevCtx ) {
 			this.$synStopAllKeys();
 			oscs.forEach( kv => this.#removeOsc( prevCtx, kv[ 0 ] ) );
+			this.#removeOsc( prevCtx, "noise" );
 		}
 		this.$output = GSUaudioGain( ctx );
 		oscs.forEach( kv => this.#addOsc( ctx, ...kv ) );
+		this.#changeNoise( ctx, this.#data.noise );
 	}
 	$synSetBPM( bpm ) {
 		this.#bps = bpm / 60;
@@ -49,7 +51,7 @@ class gswaSynth {
 			this.#changeNoise( ctx, obj.noise );
 		}
 		if ( obj.envs || obj.lfos ) {
-			this.#changeEnvsLfos( obj );
+			this.#oscList.forEach( o => this.#changeEnvsLfos( obj, o ) );
 		}
 	}
 	$synStopAllKeys() {
@@ -102,6 +104,7 @@ class gswaSynth {
 
 		this.#oscList.set( id, o );
 		this.#changeOsc2( o, osc, osc );
+		this.#changeEnvsLfos( this.#data, o );
 		waOsc.$oscConnect( this.$output );
 	}
 	#changeOsc( _ctx, id, obj ) {
@@ -159,29 +162,20 @@ class gswaSynth {
 			this.#changeOsc( ctx, "noise", obj );
 		}
 	}
-	#changeEnvsLfos( obj ) {
+	#changeEnvsLfos( obj, o ) {
 		const d = this.#data;
 		const bps = this.#bps;
-		const envGn = d.envs.gain;
-		const envDt = d.envs.detune;
-		const envLp = d.envs.lowpass;
-		const envWt = d.envs.wtpos;
-		const lfoGn = d.lfos.gain;
-		const lfoDt = d.lfos.detune;
-		const lfoWt = d.lfos.wtpos;
+		const def = gswaSynth.#envs;
+		const waEnvs = o.$waOsc.$envs;
+		const waLfos = o.$waOsc.$lfos;
 
-		this.#oscList.forEach( o => {
-			const waEnvs = o.$waOsc.$envs;
-			const waLfos = o.$waOsc.$lfos;
-
-			obj.envs?.gain    && gswaSynth.#setEnv( bps, waEnvs.$gain,    envGn, gswaSynth.#envs.$gain );
-			obj.envs?.detune  && gswaSynth.#setEnv( bps, waEnvs.$detune,  envDt, gswaSynth.#envs.$detune, envDt.amp );
-			obj.envs?.lowpass && gswaSynth.#setEnv( bps, waEnvs.$lowpass, envLp, gswaSynth.#envs.$lowpass, envLp.q );
-			obj.envs?.wtpos   && gswaSynth.#setEnv( bps, waEnvs.$wtpos,   envWt, gswaSynth.#envs.$wtpos );
-			obj.lfos?.gain    && gswaSynth.#setLfo( bps, waLfos.$gain,    lfoGn );
-			obj.lfos?.detune  && gswaSynth.#setLfo( bps, waLfos.$detune,  lfoDt );
-			obj.lfos?.wtpos   && gswaSynth.#setLfo( bps, waLfos.$wtpos,   lfoWt );
-		} );
+		obj.envs?.gain    && gswaSynth.#setEnv( bps, waEnvs.$gain,    d.envs.gain,    def.$gain );
+		obj.envs?.detune  && gswaSynth.#setEnv( bps, waEnvs.$detune,  d.envs.detune,  def.$detune, d.envs.detune.amp );
+		obj.envs?.lowpass && gswaSynth.#setEnv( bps, waEnvs.$lowpass, d.envs.lowpass, def.$lowpass, d.envs.lowpass.q );
+		obj.envs?.wtpos   && gswaSynth.#setEnv( bps, waEnvs.$wtpos,   d.envs.wtpos,   def.$wtpos );
+		obj.lfos?.gain    && gswaSynth.#setLfo( bps, waLfos.$gain,    d.lfos.gain     );
+		obj.lfos?.detune  && gswaSynth.#setLfo( bps, waLfos.$detune,  d.lfos.detune   );
+		obj.lfos?.wtpos   && gswaSynth.#setLfo( bps, waLfos.$wtpos,   d.lfos.wtpos    );
 	}
 	static #setEnv( bps, waParams, env, def, addValue ) {
 		const ok = env.toggle;
