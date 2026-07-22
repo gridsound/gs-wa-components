@@ -168,6 +168,7 @@ class gswaSynth {
 		const envWt = d.envs.wtpos;
 		const lfoGn = d.lfos.gain;
 		const lfoDt = d.lfos.detune;
+		const lfoWt = d.lfos.wtpos;
 
 		this.#oscList.forEach( o => {
 			const waEnvs = o.$waOsc.$envs;
@@ -179,6 +180,7 @@ class gswaSynth {
 			obj.envs?.wtpos   && gswaSynth.#setEnv( bps, waEnvs.$wtpos,   envWt, gswaSynth.#envs.$wtpos );
 			obj.lfos?.gain    && gswaSynth.#setLfo( bps, waLfos.$gain,    lfoGn );
 			obj.lfos?.detune  && gswaSynth.#setLfo( bps, waLfos.$detune,  lfoDt );
+			obj.lfos?.wtpos   && gswaSynth.#setLfo( bps, waLfos.$wtpos,   lfoWt );
 		} );
 	}
 	static #setEnv( bps, waParams, env, def, addValue ) {

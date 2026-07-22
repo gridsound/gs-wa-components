@@ -23,6 +23,7 @@ class gswaOsc {
 	$lfos = {
 		$gain: [],
 		$detune: [],
+		$wtpos: [],
 	};
 	// uni
 	$unisonvoices = null;
@@ -62,6 +63,7 @@ class gswaOsc {
 		envs.$lowpass.push( params.get( "envLpQ" ) );
 		gswaOsc.#initLfoParams( lfos.$gain, params, "lfoGn" );
 		gswaOsc.#initLfoParams( lfos.$detune, params, "lfoDt" );
+		gswaOsc.#initLfoParams( lfos.$wtpos, params, "lfoWt" );
 		GSUdeepFreeze( envs );
 		GSUdeepFreeze( lfos );
 	}
