@@ -28,6 +28,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$pan: gswaOscProc.#seal( { $wv: 0, $dl: 0, $at: 0, $hz: 0, $am: 0 } ),
 			$gain: gswaOscProc.#seal( { $wv: 0, $dl: 0, $at: 0, $hz: 0, $am: 0 } ),
 			$detune: gswaOscProc.#seal( { $wv: 0, $dl: 0, $at: 0, $hz: 0, $am: 0 } ),
+			$lowpass: gswaOscProc.#seal( { $wv: 0, $dl: 0, $at: 0, $hz: 0, $am: 0 } ),
 			$wtpos: gswaOscProc.#seal( { $wv: 0, $dl: 0, $at: 0, $hz: 0, $am: 0 } ),
 		} ),
 	} );
@@ -37,6 +38,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 	#lfoGnDel = 0;
 	#lfoDtFrq = 0;
 	#lfoDtDel = 0;
+	#lfoLpFrq = 0;
+	#lfoLpDel = 0;
 	#lfoWtFrq = 0;
 	#lfoWtDel = 0;
 	// #debugTime = 0;
@@ -121,6 +124,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 			gswaOscProc.#audpar( "lfoDtAtt",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "lfoDtFrq",     0,     0, 9999 ),
 			gswaOscProc.#audpar( "lfoDtAmp",     0,   -12,   12 ),
+			// lfoLp
+			gswaOscProc.#audpar( "lfoLpWav",     0,     0,    3 ),
+			gswaOscProc.#audpar( "lfoLpDel",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoLpAtt",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoLpFrq",     0,     0, 9999 ),
+			gswaOscProc.#audpar( "lfoLpAmp",     0,    -1,    1 ),
 			// lfoWt
 			gswaOscProc.#audpar( "lfoWtWav",     0,     0,    3 ),
 			gswaOscProc.#audpar( "lfoWtDel",     0,     0, 9999 ),
@@ -200,6 +209,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		const lfoPnPhase = this.#lfoPnFrq * ( offset - this.#lfoPnDel ) % 1;
 		const lfoGnPhase = this.#lfoGnFrq * ( offset - this.#lfoGnDel ) % 1;
 		const lfoDtPhase = this.#lfoDtFrq * ( offset - this.#lfoDtDel ) % 1;
+		const lfoLpPhase = this.#lfoLpFrq * ( offset - this.#lfoLpDel ) % 1;
 		const lfoWtPhase = this.#lfoWtFrq * ( offset - this.#lfoWtDel ) % 1;
 
 		return {
@@ -221,6 +231,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 			$_lfoPnPhase: [ lfoPnPhase, lfoPnPhase ],
 			$_lfoGnPhase: [ lfoGnPhase, lfoGnPhase ],
 			$_lfoDtPhase: [ lfoDtPhase, lfoDtPhase ],
+			$_lfoLpPhase: [ lfoLpPhase, lfoLpPhase ],
 			$_lfoWtPhase: [ lfoWtPhase, lfoWtPhase ],
 			$keys: d.keys.map( k => ( {
 				$when: k.when,
@@ -335,6 +346,12 @@ class gswaOscProc extends AudioWorkletProcessor {
 		lfos.$detune.$at = gswaOscProc.#audparF( p.lfoDtAtt, i );
 		lfos.$detune.$am = gswaOscProc.#audparF( p.lfoDtAmp, i );
 		lfos.$detune.$hz = gswaOscProc.#audparF( p.lfoDtFrq, i );
+		// lfoLp
+		lfos.$lowpass.$wv = gswaOscProc.#audparI( p.lfoLpWav, i );
+		lfos.$lowpass.$dl = gswaOscProc.#audparF( p.lfoLpDel, i );
+		lfos.$lowpass.$at = gswaOscProc.#audparF( p.lfoLpAtt, i );
+		lfos.$lowpass.$am = gswaOscProc.#audparF( p.lfoLpAmp, i );
+		lfos.$lowpass.$hz = gswaOscProc.#audparF( p.lfoLpFrq, i );
 		// lfoWt
 		lfos.$wtpos.$wv = gswaOscProc.#audparI( p.lfoWtWav, i );
 		lfos.$wtpos.$dl = gswaOscProc.#audparF( p.lfoWtDel, i );
@@ -350,6 +367,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$_lfoPnPhase[ 1 ] = o.$_lfoPnPhase[ 0 ];
 		o.$_lfoGnPhase[ 1 ] = o.$_lfoGnPhase[ 0 ];
 		o.$_lfoDtPhase[ 1 ] = o.$_lfoDtPhase[ 0 ];
+		o.$_lfoLpPhase[ 1 ] = o.$_lfoLpPhase[ 0 ];
 		o.$_lfoWtPhase[ 1 ] = o.$_lfoWtPhase[ 0 ];
 		o.$_unisonPhaseLB.set( o.$_unisonPhaseLA );
 		o.$_unisonPhaseRB.set( o.$_unisonPhaseRA );
@@ -418,6 +436,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 				const lfoPnVal = gswaOscProc.#process_lfo( o.$_lfoPnPhase, ap.$lfos.$pan, t );
 				const lfoGnVal = gswaOscProc.#process_lfo( o.$_lfoGnPhase, ap.$lfos.$gain, t );
 				const lfoDtVal = gswaOscProc.#process_lfo( o.$_lfoDtPhase, ap.$lfos.$detune, t );
+				const lfoLpVal = gswaOscProc.#process_lfo( o.$_lfoLpPhase, ap.$lfos.$lowpass, t );
 				const lfoWtVal = gswaOscProc.#process_lfo( o.$_lfoWtPhase, ap.$lfos.$wtpos, t );
 				const finalPan = gswaOscProc.#math_clamp( ap.$osc.$pn + keyPn + lfoPnVal, -1, 1 );
 				const finalGain = ap.$osc.$gn * keyGn * envGnVal * ( 1 + lfoGnVal );
@@ -425,8 +444,8 @@ class gswaOscProc extends AudioWorkletProcessor {
 				let smpL;
 				let smpR;
 
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLp, ap.$envs.$lowpass, t, envLpRest );
-				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLp, ap.$envs.$lowpass, t, envLpRest );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpL, keyLp + lfoLpVal, ap.$envs.$lowpass, t, envLpRest );
+				gswaOscProc.#process_lowpass_coeffs_recalc( o.$_lpR, keyLp + lfoLpVal, ap.$envs.$lowpass, t, envLpRest );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpL, keyHp );
 				gswaOscProc.#process_highpass_coeffs_recalc( o.$_hpR, keyHp );
 				if ( this.#wtdata ) {
@@ -458,6 +477,7 @@ class gswaOscProc extends AudioWorkletProcessor {
 		o.$_lfoPnPhase[ 0 ] = o.$_lfoPnPhase[ 1 ];
 		o.$_lfoGnPhase[ 0 ] = o.$_lfoGnPhase[ 1 ];
 		o.$_lfoDtPhase[ 0 ] = o.$_lfoDtPhase[ 1 ];
+		o.$_lfoLpPhase[ 0 ] = o.$_lfoLpPhase[ 1 ];
 		o.$_lfoWtPhase[ 0 ] = o.$_lfoWtPhase[ 1 ];
 		o.$_unisonPhaseLA.set( o.$_unisonPhaseLB );
 		o.$_unisonPhaseRA.set( o.$_unisonPhaseRB );

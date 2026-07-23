@@ -24,6 +24,7 @@ class gswaOsc {
 		$pan: [],
 		$gain: [],
 		$detune: [],
+		$lowpass: [],
 		$wtpos: [],
 	};
 	// uni
@@ -65,6 +66,7 @@ class gswaOsc {
 		gswaOsc.#initLfoParams( lfos.$pan, params, "lfoPn" );
 		gswaOsc.#initLfoParams( lfos.$gain, params, "lfoGn" );
 		gswaOsc.#initLfoParams( lfos.$detune, params, "lfoDt" );
+		gswaOsc.#initLfoParams( lfos.$lowpass, params, "lfoLp" );
 		gswaOsc.#initLfoParams( lfos.$wtpos, params, "lfoWt" );
 		GSUdeepFreeze( envs );
 		GSUdeepFreeze( lfos );
