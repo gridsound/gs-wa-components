@@ -173,6 +173,7 @@ class gswaSynth {
 		obj.envs?.detune  && gswaSynth.#setEnv( bps, waEnvs.$detune,  d.envs.detune,  def.$detune, d.envs.detune.amp );
 		obj.envs?.lowpass && gswaSynth.#setEnv( bps, waEnvs.$lowpass, d.envs.lowpass, def.$lowpass, d.envs.lowpass.q );
 		obj.envs?.wtpos   && gswaSynth.#setEnv( bps, waEnvs.$wtpos,   d.envs.wtpos,   def.$wtpos );
+		obj.lfos?.pan     && gswaSynth.#setLfo( bps, waLfos.$pan,     d.lfos.pan      );
 		obj.lfos?.gain    && gswaSynth.#setLfo( bps, waLfos.$gain,    d.lfos.gain     );
 		obj.lfos?.detune  && gswaSynth.#setLfo( bps, waLfos.$detune,  d.lfos.detune   );
 		obj.lfos?.wtpos   && gswaSynth.#setLfo( bps, waLfos.$wtpos,   d.lfos.wtpos    );

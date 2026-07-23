@@ -21,6 +21,7 @@ class gswaOsc {
 		$wtpos: [],
 	};
 	$lfos = {
+		$pan: [],
 		$gain: [],
 		$detune: [],
 		$wtpos: [],
@@ -61,6 +62,7 @@ class gswaOsc {
 		gswaOsc.#initEnvParams( envs.$wtpos, params, "envWt" );
 		envs.$detune.push( params.get( "envDtAmp" ) );
 		envs.$lowpass.push( params.get( "envLpQ" ) );
+		gswaOsc.#initLfoParams( lfos.$pan, params, "lfoPn" );
 		gswaOsc.#initLfoParams( lfos.$gain, params, "lfoGn" );
 		gswaOsc.#initLfoParams( lfos.$detune, params, "lfoDt" );
 		gswaOsc.#initLfoParams( lfos.$wtpos, params, "lfoWt" );
