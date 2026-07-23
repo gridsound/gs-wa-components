@@ -86,6 +86,8 @@ class gswaSynth {
 			highpass: blc.highpass,
 			lfoGainAmp: blc.gainLFOAmp,
 			lfoGainFrequency: blc.gainLFOSpeed,
+			lfoDetuneAmp: blc.detuneLFOAmp,
+			lfoDetuneFrequency: blc.detuneLFOSpeed,
 		} ) );
 	}
 
